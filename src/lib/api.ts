@@ -240,7 +240,7 @@ class ApiClient {
 export const apiClient = new ApiClient();
 
 // Export types
-export type { ApiResponse, PaginatedResponse, ApiError };
+// export type { ApiResponse, PaginatedResponse, ApiError };
 
 // Export convenience methods
 export const api = {

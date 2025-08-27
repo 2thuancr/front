@@ -18,15 +18,21 @@ export const fetchUserProfile = createAsyncThunk(
   'user/fetchProfile',
   async (_, { rejectWithValue }) => {
     try {
-      // TODO: Replace with actual API call
-      const response = await fetch('/api/user/profile', {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch('http://localhost:5000/api/users/profile', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`,
+          'accept': 'application/json',
         },
       });
       
       if (!response.ok) {
-        throw new Error('Failed to fetch profile');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to fetch profile');
       }
       
       const data = await response.json();
@@ -41,18 +47,24 @@ export const updateUserProfile = createAsyncThunk(
   'user/updateProfile',
   async (profileData: UpdateProfileData, { rejectWithValue }) => {
     try {
-      // TODO: Replace with actual API call
-      const response = await fetch('/api/user/profile', {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch('http://localhost:5000/api/users/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`,
+          'accept': 'application/json',
         },
         body: JSON.stringify(profileData),
       });
       
       if (!response.ok) {
-        throw new Error('Failed to update profile');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to update profile');
       }
       
       const data = await response.json();

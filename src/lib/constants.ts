@@ -1,6 +1,6 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'https://localhost:5000',
+  BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000',
   TIMEOUT: parseInt(process.env.NEXT_PUBLIC_API_TIMEOUT || '10000'),
   ENDPOINTS: {
     AUTH: '/api/auth',

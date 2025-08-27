@@ -1,17 +1,13 @@
 export interface User {
-  id: string;
-  email: string;
+  id: number;
+  name: string;
   username: string;
-  firstName?: string;
-  lastName?: string;
-  avatar?: string;
-  role: 'user' | 'admin';
-  createdAt: string;
-  updatedAt: string;
+  email: string;
+  isVerified: boolean;
 }
 
 export interface LoginCredentials {
-  email: string;
+  username: string;
   password: string;
 }
 
@@ -27,12 +23,13 @@ export interface RegisterCredentials {
 export interface AuthResponse {
   user: User;
   token: string;
-  refreshToken?: string;
+  refreshToken: string;
 }
 
 export interface AuthState {
   user: User | null;
   token: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;

@@ -21,6 +21,7 @@ export const useAuth = () => {
       const result = await dispatch(loginUser(credentials)).unwrap();
       if (result.token) {
         localStorage.setItem('token', result.token);
+        localStorage.setItem('refresh_token', result.refreshToken);
         router.push('/profile');
       }
       return result;
@@ -34,6 +35,7 @@ export const useAuth = () => {
       const result = await dispatch(registerUser(credentials)).unwrap();
       if (result.token) {
         localStorage.setItem('token', result.token);
+        localStorage.setItem('refresh_token', result.refreshToken);
         router.push('/profile');
       }
       return result;

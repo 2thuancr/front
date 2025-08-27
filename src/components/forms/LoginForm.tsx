@@ -17,10 +17,9 @@ import Link from 'next/link';
 import Input from '@/components/ui/Input';
 
 const loginSchema = yup.object({
-  email: yup
+  username: yup
     .string()
-    .email('Email không hợp lệ')
-    .required('Email là bắt buộc'),
+    .required('Tên đăng nhập là bắt buộc'),
   password: yup
     .string()
     .required('Mật khẩu là bắt buộc')
@@ -63,21 +62,21 @@ const LoginForm: React.FC = () => {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="field">
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-              Email
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+              Tên đăng nhập
             </label>
             <span className="p-input-icon-left w-full">
               <Mail className="h-4 w-4" />
               <InputText
-                id="email"
-                type="email"
-                placeholder="Nhập email của bạn"
-                className={`w-full ${errors.email ? 'p-invalid' : ''}`}
-                {...register('email')}
+                id="username"
+                type="text"
+                placeholder="Nhập tên đăng nhập của bạn"
+                className={`w-full ${errors.username ? 'p-invalid' : ''}`}
+                {...register('username')}
               />
             </span>
-            {errors.email && (
-              <small className="p-error block mt-1">{errors.email.message}</small>
+            {errors.username && (
+              <small className="p-error block mt-1">{errors.username.message}</small>
             )}
           </div>
 
@@ -99,7 +98,7 @@ const LoginForm: React.FC = () => {
                 )}
               </button>
             }
-            error={errors.password?.message}
+            error={errors.password?.message || ''}
             {...register('password')}
           />
 
