@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Shield, Truck, CreditCard, Headphones, Star, Users } from 'lucide-react';
-import Card from '@/components/ui/Card';
+import { Card } from 'primereact/card';
 
 const Features: React.FC = () => {
   const features = [
@@ -70,7 +70,6 @@ const Features: React.FC = () => {
             <Card
               key={index}
               className="text-center hover:shadow-lg transition-all duration-300 group"
-              hover
             >
               <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full ${feature.bgColor} mb-6 group-hover:scale-110 transition-transform duration-300`}>
                 <feature.icon className={`w-8 h-8 ${feature.color}`} />

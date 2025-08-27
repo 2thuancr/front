@@ -24,3 +24,41 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.p-inputtext:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Responsive form styling */
+@media (max-width: 768px) {
+  .field {
+    margin-bottom: 1rem;
+  }
+  
+  .p-password .p-inputtext,
+  .p-inputtext {
+    padding: 0.625rem 0.875rem;
+    font-size: 1rem; /* Prevent zoom on iOS */
+  }
+  
+  .p-password-panel {
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+  }
+}
+
+/* Error state styling */
+.p-error {
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* Success state styling */
+.p-success {
+  color: #10b981;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}

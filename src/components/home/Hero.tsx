@@ -4,7 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Play, Star, Users, Zap, Shield, User, LogIn, UserPlus, Gift, ShoppingBag, Heart, Sparkles } from 'lucide-react';
 import Link from 'next/link';
-import Button from '@/components/ui/Button';
+import { Button } from 'primereact/button';
 import Logo from '@/components/ui/Logo';
 
 const Hero: React.FC = () => {
@@ -85,12 +85,10 @@ const Hero: React.FC = () => {
           >
             <Link href="/register">
               <Button
-                size="lg"
                 className="bg-gradient-to-r from-pink-600 to-red-600 hover:from-pink-700 hover:to-red-700 text-white font-semibold px-8 py-4 rounded-xl shadow-xl transform transition-all duration-200 hover:scale-105 hover:shadow-2xl"
-              >
-                Mua sắm ngay
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
+                label="Mua sắm ngay"
+                icon={<ArrowRight className="ml-2 h-5 w-5" />}
+              />
             </Link>
             
             <button className="inline-flex items-center px-8 py-4 text-gray-700 bg-white hover:bg-gray-50 font-semibold rounded-xl shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl">
@@ -137,13 +135,11 @@ const Hero: React.FC = () => {
               {quickActions.map((action, index) => (
                 <Link key={action.name} href={action.href}>
                   <Button
-                    variant={action.variant as any}
-                    size="md"
                     className="flex items-center space-x-2"
-                  >
-                    <action.icon className="w-4 h-4" />
-                    <span>{action.name}</span>
-                  </Button>
+                    label={action.name}
+                    icon={<action.icon className="w-4 h-4" />}
+                    outlined={action.variant === 'outline'}
+                  />
                 </Link>
               ))}
             </div>

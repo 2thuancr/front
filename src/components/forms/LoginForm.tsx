@@ -6,10 +6,15 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useAuth } from '@/hooks/useAuth';
 import { LoginCredentials } from '@/types/auth';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+import { Button } from 'primereact/button';
+import { InputText } from 'primereact/inputtext';
+import { Password } from 'primereact/password';
+import { Checkbox } from 'primereact/checkbox';
+import { Card } from 'primereact/card';
+import { Message } from 'primereact/message';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
+import Input from '@/components/ui/Input';
 
 const loginSchema = yup.object({
   email: yup
@@ -24,12 +29,14 @@ const loginSchema = yup.object({
 
 const LoginForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [password, setPassword] = useState('');
   const { login, isLoading, error, clearAuthError } = useAuth();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
+    setValue,
   } = useForm<LoginCredentials>({
     resolver: yupResolver(loginSchema),
   });
@@ -44,7 +51,7 @@ const LoginForm: React.FC = () => {
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <div className="bg-white rounded-lg shadow-lg p-8">
+      <Card className="shadow-lg">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Đăng nhập
@@ -55,14 +62,24 @@ const LoginForm: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <Input
-            label="Email"
-            type="email"
-            placeholder="Nhập email của bạn"
-            leftIcon={<Mail className="h-4 w-4" />}
-            error={errors.email?.message}
-            {...register('email')}
-          />
+          <div className="field">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              Email
+            </label>
+            <span className="p-input-icon-left w-full">
+              <Mail className="h-4 w-4" />
+              <InputText
+                id="email"
+                type="email"
+                placeholder="Nhập email của bạn"
+                className={`w-full ${errors.email ? 'p-invalid' : ''}`}
+                {...register('email')}
+              />
+            </span>
+            {errors.email && (
+              <small className="p-error block mt-1">{errors.email.message}</small>
+            )}
+          </div>
 
           <Input
             label="Mật khẩu"
@@ -87,21 +104,16 @@ const LoginForm: React.FC = () => {
           />
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3">
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
+            <Message severity="error" text={error} className="w-full" />
           )}
 
           <div className="flex items-center justify-between">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <span className="ml-2 text-sm text-gray-600">
+            <div className="flex items-center">
+              <Checkbox inputId="remember" checked={false} onChange={() => {}} />
+              <label htmlFor="remember" className="ml-2 text-sm text-gray-600">
                 Ghi nhớ đăng nhập
-              </span>
-            </label>
+              </label>
+            </div>
             <Link
               href="/forgot-password"
               className="text-sm text-blue-600 hover:text-blue-500"
@@ -112,12 +124,11 @@ const LoginForm: React.FC = () => {
 
           <Button
             type="submit"
+            label="Đăng nhập"
             className="w-full"
             loading={isLoading}
             onClick={clearAuthError}
-          >
-            Đăng nhập
-          </Button>
+          />
         </form>
 
         <div className="mt-6 text-center">
@@ -131,7 +142,7 @@ const LoginForm: React.FC = () => {
             </Link>
           </p>
         </div>
-      </div>
+      </Card>
     </div>
   );
 };

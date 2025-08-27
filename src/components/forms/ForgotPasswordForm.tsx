@@ -4,8 +4,10 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+import { Button } from 'primereact/button';
+import { InputText } from 'primereact/inputtext';
+import { Card } from 'primereact/card';
+import { Message } from 'primereact/message';
 import { Mail, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -63,7 +65,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = () => {
         animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-md mx-auto"
       >
-        <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center">
+        <Card className="shadow-2xl border border-gray-100 text-center">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -132,7 +134,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = () => {
               Gửi lại email
             </button>
           </motion.div>
-        </div>
+        </Card>
       </motion.div>
     );
   }
@@ -143,111 +145,117 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100"
       >
-        <div className="text-center mb-8">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-            className="mx-auto w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center mb-4"
-          >
-            <Mail className="h-8 w-8 text-white" />
-          </motion.div>
-          
-          <motion.h1
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="text-3xl font-bold text-gray-900 mb-2"
-          >
-            Quên mật khẩu?
-          </motion.h1>
-          
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="text-gray-600"
-          >
-            Đừng lo lắng! Chúng tôi sẽ gửi hướng dẫn đặt lại mật khẩu 
-            đến email của bạn.
-          </motion.p>
-        </div>
-
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-          <Input
-            label="Email"
-            type="email"
-            placeholder="Nhập email của bạn"
-            leftIcon={<Mail className="h-4 w-4" />}
-            error={errors.email?.message}
-            helperText="Chúng tôi sẽ gửi link đặt lại mật khẩu đến email này"
-            {...register('email')}
-          />
-
-          <AnimatePresence>
-            {submitError && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                className="bg-red-50 border border-red-200 rounded-lg p-4"
-              >
-                <p className="text-sm text-red-600 flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4" />
-                  {submitError}
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <Button
-            type="submit"
-            className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-semibold py-3 rounded-lg shadow-lg transform transition-all duration-200 hover:scale-105"
-            loading={isSubmitting}
-          >
-            {isSubmitting ? 'Đang gửi...' : 'Gửi link đặt lại mật khẩu'}
-          </Button>
-        </form>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="mt-8 text-center"
-        >
-          <Link
-            href="/login"
-            className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Quay lại đăng nhập
-          </Link>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="mt-6 p-4 bg-orange-50 rounded-lg border border-orange-200"
-        >
-          <div className="flex items-start space-x-3">
-            <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-orange-800">
-              <p className="font-medium">Bạn nhớ mật khẩu?</p>
-              <p className="mt-1">
-                <Link
-                  href="/login"
-                  className="text-orange-600 hover:text-orange-700 font-medium underline"
-                >
-                  Đăng nhập ngay
-                </Link>{' '}
-                để truy cập tài khoản của bạn.
-              </p>
-            </div>
+        <Card className="shadow-2xl border border-gray-100">
+          <div className="text-center mb-8">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              className="mx-auto w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center mb-4"
+            >
+              <Mail className="h-8 w-8 text-white" />
+            </motion.div>
+            
+            <motion.h1
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="text-3xl font-bold text-gray-900 mb-2"
+            >
+              Quên mật khẩu?
+            </motion.h1>
+            
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="text-gray-600"
+            >
+              Đừng lo lắng! Chúng tôi sẽ gửi hướng dẫn đặt lại mật khẩu 
+              đến email của bạn.
+            </motion.p>
           </div>
-        </motion.div>
+
+          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+            <div className="field">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                Email
+              </label>
+              <span className="p-input-icon-left w-full">
+                <Mail className="h-4 w-4" />
+                <InputText
+                  id="email"
+                  type="email"
+                  placeholder="Nhập email của bạn"
+                  className={`w-full ${errors.email ? 'p-invalid' : ''}`}
+                  {...register('email')}
+                />
+              </span>
+              <small className="text-gray-500 block mt-1">Chúng tôi sẽ gửi link đặt lại mật khẩu đến email này</small>
+              {errors.email && (
+                <small className="p-error block mt-1">{errors.email.message}</small>
+              )}
+            </div>
+
+            <AnimatePresence>
+              {submitError && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                >
+                  <Message severity="error" text={submitError} className="w-full" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <Button
+              type="submit"
+              label={isSubmitting ? 'Đang gửi...' : 'Gửi link đặt lại mật khẩu'}
+              className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-semibold py-3 rounded-lg shadow-lg transform transition-all duration-200 hover:scale-105"
+              loading={isSubmitting}
+            />
+          </form>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="mt-8 text-center"
+          >
+            <Link
+              href="/login"
+              className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Quay lại đăng nhập
+            </Link>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8 }}
+            className="mt-6 p-4 bg-orange-50 rounded-lg border border-orange-200"
+          >
+            <div className="flex items-start space-x-3">
+              <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-orange-800">
+                <p className="font-medium">Bạn nhớ mật khẩu?</p>
+                <p className="mt-1">
+                  <Link
+                    href="/login"
+                    className="text-orange-600 hover:text-orange-700 font-medium underline"
+                  >
+                    Đăng nhập ngay
+                  </Link>{' '}
+                  để truy cập tài khoản của bạn.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        </Card>
       </motion.div>
     </div>
   );

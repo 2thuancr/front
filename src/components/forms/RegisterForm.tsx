@@ -6,8 +6,13 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useAuth } from '@/hooks/useAuth';
 import { RegisterCredentials } from '@/types/auth';
-import Button from '@/components/ui/Button';
+import { Button } from 'primereact/button';
+import { InputText } from 'primereact/inputtext';
 import Input from '@/components/ui/Input';
+import { Password } from 'primereact/password';
+import { Checkbox } from 'primereact/checkbox';
+import { Card } from 'primereact/card';
+import { Message } from 'primereact/message';
 import { Mail, Lock, Eye, EyeOff, User, UserCheck } from 'lucide-react';
 import Link from 'next/link';
 
@@ -43,12 +48,15 @@ const registerSchema = yup.object({
 const RegisterForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const { register: registerUser, isLoading, error, clearAuthError } = useAuth();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
+    setValue,
   } = useForm<RegisterCredentials>({
     resolver: yupResolver(registerSchema),
   });
@@ -63,7 +71,7 @@ const RegisterForm: React.FC = () => {
 
   return (
     <div className="w-full max-w-lg mx-auto">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100">
+      <Card className="shadow-2xl border border-gray-100">
         <div className="text-center mb-8">
           <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-4">
             <UserCheck className="h-8 w-8 text-white" />
@@ -78,39 +86,80 @@ const RegisterForm: React.FC = () => {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Họ"
-              placeholder="Nhập họ của bạn"
-              leftIcon={<User className="h-4 w-4" />}
-              error={errors.firstName?.message}
-              {...register('firstName')}
-            />
-            <Input
-              label="Tên"
-              placeholder="Nhập tên của bạn"
-              leftIcon={<User className="h-4 w-4" />}
-              error={errors.lastName?.message}
-              {...register('lastName')}
-            />
+            <div className="field">
+              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                Họ
+              </label>
+              <span className="p-input-icon-left w-full">
+                <User className="h-4 w-4" />
+                <InputText
+                  id="firstName"
+                  placeholder="Nhập họ của bạn"
+                  className={`w-full ${errors.firstName ? 'p-invalid' : ''}`}
+                  {...register('firstName')}
+                />
+              </span>
+              {errors.firstName && (
+                <small className="p-error block mt-1">{errors.firstName.message}</small>
+              )}
+            </div>
+            
+            <div className="field">
+              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                Tên
+              </label>
+              <span className="p-input-icon-left w-full">
+                <User className="h-4 w-4" />
+                <InputText
+                  id="lastName"
+                  placeholder="Nhập tên của bạn"
+                  className={`w-full ${errors.lastName ? 'p-invalid' : ''}`}
+                  {...register('lastName')}
+                />
+              </span>
+              {errors.lastName && (
+                <small className="p-error block mt-1">{errors.lastName.message}</small>
+              )}
+            </div>
           </div>
 
-          <Input
-            label="Tên đăng nhập"
-            placeholder="Chọn tên đăng nhập"
-            leftIcon={<User className="h-4 w-4" />}
-            error={errors.username?.message}
-            helperText="Chỉ được chứa chữ cái, số và dấu gạch dưới"
-            {...register('username')}
-          />
+          <div className="field">
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+              Tên đăng nhập
+            </label>
+            <span className="p-input-icon-left w-full">
+              <User className="h-4 w-4" />
+              <InputText
+                id="username"
+                placeholder="Chọn tên đăng nhập"
+                className={`w-full ${errors.username ? 'p-invalid' : ''}`}
+                {...register('username')}
+              />
+            </span>
+            <small className="text-gray-500 block mt-1">Chỉ được chứa chữ cái, số và dấu gạch dưới</small>
+            {errors.username && (
+              <small className="p-error block mt-1">{errors.username.message}</small>
+            )}
+          </div>
 
-          <Input
-            label="Email"
-            type="email"
-            placeholder="Nhập email của bạn"
-            leftIcon={<Mail className="h-4 w-4" />}
-            error={errors.email?.message}
-            {...register('email')}
-          />
+          <div className="field">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              Email
+            </label>
+            <span className="p-input-icon-left w-full">
+              <Mail className="h-4 w-4" />
+              <InputText
+                id="email"
+                type="email"
+                placeholder="Nhập email của bạn"
+                className={`w-full ${errors.email ? 'p-invalid' : ''}`}
+                {...register('email')}
+              />
+            </span>
+            {errors.email && (
+              <small className="p-error block mt-1">{errors.email.message}</small>
+            )}
+          </div>
 
           <Input
             label="Mật khẩu"
@@ -158,19 +207,14 @@ const RegisterForm: React.FC = () => {
           />
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-sm text-red-600 flex items-center gap-2">
-                <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                {error}
-              </p>
-            </div>
+            <Message severity="error" text={error} className="w-full" />
           )}
 
           <div className="flex items-start">
-            <input
-              type="checkbox"
-              id="terms"
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"
+            <Checkbox
+              inputId="terms"
+              checked={false}
+              onChange={() => {}}
               required
             />
             <label htmlFor="terms" className="ml-2 text-sm text-gray-600">
@@ -187,12 +231,11 @@ const RegisterForm: React.FC = () => {
 
           <Button
             type="submit"
+            label="Tạo tài khoản"
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 rounded-lg shadow-lg transform transition-all duration-200 hover:scale-105"
             loading={isLoading}
             onClick={clearAuthError}
-          >
-            Tạo tài khoản
-          </Button>
+          />
         </form>
 
         <div className="mt-8 text-center">
@@ -206,7 +249,7 @@ const RegisterForm: React.FC = () => {
             </Link>
           </p>
         </div>
-      </div>
+      </Card>
     </div>
   );
 };
