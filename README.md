@@ -1,215 +1,142 @@
-# 🚀 MTSE Final - Frontend Application
+# HCMUTE Gift Shop - Frontend
 
-## 📋 Tổng quan
+Frontend application cho HCMUTE Gift Shop được xây dựng với Next.js 15 và các công nghệ hiện đại.
 
-Ứng dụng frontend hiện đại được xây dựng với Next.js 14, TailwindCSS và Redux Toolkit. Giao diện được thiết kế đẹp mắt với animation mượt mà và responsive design.
+## 🚀 Tính năng
 
-## ✨ Tính năng chính
+- **Next.js 15** với App Router
+- **TypeScript** cho type safety
+- **Tailwind CSS** cho styling
+- **PrimeReact** cho UI components
+- **Redux Toolkit** cho state management
+- **Axios** cho API calls
+- **ESLint & Prettier** cho code quality
 
-### 🔐 Authentication System
-- **Login**: Form đăng nhập với validation
-- **Register**: Form đăng ký tài khoản mới  
-- **Forgot Password**: Form quên mật khẩu
-- **OTP Verification**: Xác thực OTP 6 số
-- **Profile Management**: Quản lý thông tin cá nhân
-
-### 🎨 UI/UX Features
-- **Modern Design**: Giao diện hiện đại với gradient và shadow
-- **Responsive**: Tối ưu cho mọi thiết bị
-- **Animations**: Framer Motion animations mượt mà
-- **Dark Mode Ready**: Sẵn sàng cho dark mode
-- **Accessibility**: Tuân thủ tiêu chuẩn accessibility
-
-### 🏗️ Technical Features
-- **TypeScript**: Type safety hoàn chỉnh
-- **Redux Toolkit**: State management hiện đại
-- **React Hook Form**: Form handling với validation
-- **TailwindCSS**: Utility-first CSS framework
-- **Next.js 14**: App Router và server components
-
-## 🚀 Cài đặt và chạy
-
-### Yêu cầu hệ thống
-- Node.js 18+ 
-- npm hoặc yarn
-
-### Cài đặt dependencies
-```bash
-npm install
-```
-
-### Chạy development server
-```bash
-npm run dev
-```
-
-Ứng dụng sẽ chạy tại: [http://localhost:3000](http://localhost:3000)
-
-### Build production
-```bash
-npm run build
-npm start
-```
-
-## 📁 Cấu trúc thư mục
+## 🏗️ Cấu trúc dự án
 
 ```
 src/
 ├── app/                    # Next.js App Router
-│   ├── (auth)/            # Auth route group
-│   │   ├── login/         # Login page
-│   │   ├── register/      # Register page
-│   │   └── forgot-password/ # Forgot password page
-│   ├── profile/           # Profile page
-│   ├── globals.css        # Global styles
+│   ├── (auth)/            # Auth routes (grouped)
 │   ├── layout.tsx         # Root layout
 │   └── page.tsx           # Home page
-├── components/            # Reusable components
-│   ├── ui/                # Base UI components
+├── components/             # Reusable components
 │   ├── forms/             # Form components
+│   ├── home/              # Home page components
 │   ├── layout/            # Layout components
-│   └── home/              # Home page components
-├── lib/                   # Utility libraries
-├── store/                 # Redux store
-├── hooks/                 # Custom hooks
-├── types/                 # TypeScript types
-└── styles/                # Additional styles
+│   └── ui/                # UI components
+├── hooks/                  # Custom React hooks
+├── lib/                    # Utility libraries
+│   ├── api.ts             # API client
+│   ├── constants.ts       # App constants
+│   └── utils.ts           # Utility functions
+├── store/                  # Redux store
+├── styles/                 # Global styles
+└── types/                  # TypeScript type definitions
 ```
 
-## 🎨 Components
+## 🛠️ Cài đặt
 
-### UI Components
-- **Button**: Button với nhiều variants và sizes
-- **Input**: Input field với validation states
-- **Card**: Card component với shadow và border
+1. **Clone repository:**
+   ```bash
+   git clone <repository-url>
+   cd front
+   ```
 
-### Form Components
-- **LoginForm**: Form đăng nhập
-- **RegisterForm**: Form đăng ký
-- **ForgotPasswordForm**: Form quên mật khẩu
-- **OTPVerificationForm**: Form xác thực OTP
-- **ProfileForm**: Form quản lý profile
+2. **Cài đặt dependencies:**
+   ```bash
+   npm install
+   ```
 
-### Home Components
-- **Hero**: Hero section với animation
-- **Features**: Features section
-- **ProductGrid**: Grid hiển thị sản phẩm
+3. **Tạo file môi trường:**
+   ```bash
+   cp env.example .env.local
+   # Cập nhật các biến môi trường trong .env.local
+   ```
 
-## 🔧 Configuration
+4. **Chạy development server:**
+   ```bash
+   npm run dev
+   ```
 
-### TailwindCSS
-File `tailwind.config.ts` chứa:
-- Custom animations (blob, fade-in, slide-up)
-- Custom colors
-- Animation delays
+## 📝 Scripts
 
-### Redux Store
-- **authSlice**: Quản lý authentication state
-- **userSlice**: Quản lý user profile state
+- `npm run dev` - Chạy development server
+- `npm run build` - Build production
+- `npm run start` - Chạy production server
+- `npm run lint` - Kiểm tra code quality
+- `npm run lint:fix` - Tự động sửa lỗi linting
+- `npm run type-check` - Kiểm tra TypeScript
+- `npm run clean` - Xóa build files
+- `npm run analyze` - Phân tích bundle size
 
-### API Configuration
-- Axios instance với interceptors
-- JWT token handling
-- Error handling
+## 🔧 Cấu hình
 
-## 🎯 Routes
+### Next.js
+- **Turbopack** cho development
+- **Image optimization** với WebP/AVIF
+- **Security headers** tự động
+- **Bundle optimization** cho production
 
-- `/` - Trang chủ
-- `/login` - Đăng nhập
-- `/register` - Đăng ký
-- `/forgot-password` - Quên mật khẩu
-- `/profile` - Quản lý profile
+### TypeScript
+- **Strict mode** enabled
+- **Path aliases** cho imports
+- **Modern ES2022** target
 
-## 🚀 Deployment
+### ESLint & Prettier
+- **Next.js rules** tích hợp
+- **TypeScript rules** tối ưu
+- **Code formatting** tự động
 
-### Vercel (Recommended)
-```bash
-npm install -g vercel
-vercel
-```
+## 🌐 API Integration
 
-### Docker
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-RUN npm run build
-EXPOSE 3000
-CMD ["npm", "start"]
-```
-
-## 🧪 Testing
-
-```bash
-# Unit tests
-npm run test
-
-# E2E tests
-npm run test:e2e
-
-# Coverage
-npm run test:cov
-```
+- **Axios client** với interceptors
+- **Token refresh** tự động
+- **Error handling** tập trung
+- **Type-safe** API calls
 
 ## 📱 Responsive Design
 
-- **Mobile**: < 768px
-- **Tablet**: 768px - 1024px  
-- **Desktop**: > 1024px
+- **Mobile-first** approach
+- **Tailwind CSS** utilities
+- **PrimeReact** components
+- **Custom breakpoints**
 
-## 🎨 Design System
+## 🚀 Performance
 
-### Colors
-- **Primary**: Blue tones (#3B82F6)
-- **Secondary**: Gray tones (#6B7280)
-- **Success**: Green (#10B981)
-- **Error**: Red (#EF4444)
-- **Warning**: Yellow (#F59E0B)
-
-### Typography
-- **Font Family**: Inter
-- **Heading**: Bold weights
-- **Body**: Regular weights
-
-### Spacing
-- **xs**: 4px, **sm**: 8px, **md**: 16px
-- **lg**: 24px, **xl**: 32px, **2xl**: 48px
+- **Code splitting** tự động
+- **Image optimization**
+- **Bundle analysis**
+- **Lazy loading** components
 
 ## 🔒 Security
 
-- JWT token storage
-- Input validation & sanitization
-- CSRF protection
-- Secure headers
+- **Environment variables**
+- **Security headers**
+- **Token management**
+- **Input validation**
 
-## 📈 Performance
+## 📚 Best Practices
 
-- Code splitting
-- Image optimization
-- Bundle optimization
-- Lazy loading
+- **Component composition**
+- **Custom hooks** cho logic
+- **Type safety** với TypeScript
+- **Error boundaries**
+- **Loading states**
+- **Accessibility** support
 
 ## 🤝 Contributing
 
 1. Fork repository
-2. Create feature branch
+2. Tạo feature branch
 3. Commit changes
 4. Push to branch
-5. Create Pull Request
+5. Tạo Pull Request
 
 ## 📄 License
 
-MIT License - xem file LICENSE để biết thêm chi tiết.
+MIT License - xem file [LICENSE](LICENSE) để biết thêm chi tiết.
 
 ## 🆘 Support
 
-Nếu gặp vấn đề, vui lòng:
-1. Kiểm tra documentation
-2. Tìm trong issues
-3. Tạo issue mới
-
----
-
-**Made with ❤️ by MTSE Team**
+Nếu có vấn đề, vui lòng tạo issue hoặc liên hệ team development.

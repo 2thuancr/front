@@ -1,83 +1,53 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { CURRENCY, DATE_FORMATS } from './constants';
 
-// Utility function to merge Tailwind classes
+// Tailwind CSS class merging utility
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Format date to readable string
-export function formatDate(date: string | Date): string {
-  const d = new Date(date);
-  return d.toLocaleDateString('vi-VN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+// Currency formatting
+export function formatCurrency(amount: number, currency = CURRENCY.CODE): string {
+  return new Intl.NumberFormat(CURRENCY.LOCALE, {
+    style: 'currency',
+    currency,
+  }).format(amount);
 }
 
-// Format date time
-export function formatDateTime(date: string | Date): string {
-  const d = new Date(date);
-  return d.toLocaleString('vi-VN', {
+// Date formatting
+export function formatDate(date: Date | string, format: keyof typeof DATE_FORMATS = 'DISPLAY'): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  if (isNaN(dateObj.getTime())) {
+    return 'Invalid Date';
+  }
+  
+  return new Intl.DateTimeFormat(CURRENCY.LOCALE, {
     year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(dateObj);
+}
+
+// DateTime formatting
+export function formatDateTime(date: Date | string): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  if (isNaN(dateObj.getTime())) {
+    return 'Invalid Date';
+  }
+  
+  return new Intl.DateTimeFormat(CURRENCY.LOCALE, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
-  });
+  }).format(dateObj);
 }
 
-// Capitalize first letter
-export function capitalize(str: string): string {
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-}
-
-// Generate initials from name
-export function getInitials(firstName: string, lastName: string): string {
-  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-}
-
-// Validate email format
-export function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
-
-// Validate password strength
-export function validatePassword(password: string): {
-  isValid: boolean;
-  errors: string[];
-} {
-  const errors: string[] = [];
-  
-  if (password.length < 8) {
-    errors.push('Mật khẩu phải có ít nhất 8 ký tự');
-  }
-  
-  if (!/[A-Z]/.test(password)) {
-    errors.push('Mật khẩu phải có ít nhất 1 chữ hoa');
-  }
-  
-  if (!/[a-z]/.test(password)) {
-    errors.push('Mật khẩu phải có ít nhất 1 chữ thường');
-  }
-  
-  if (!/\d/.test(password)) {
-    errors.push('Mật khẩu phải có ít nhất 1 số');
-  }
-  
-  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-    errors.push('Mật khẩu phải có ít nhất 1 ký tự đặc biệt');
-  }
-  
-  return {
-    isValid: errors.length === 0,
-    errors,
-  };
-}
-
-// Debounce function
+// Debounce utility
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
@@ -90,7 +60,7 @@ export function debounce<T extends (...args: any[]) => any>(
   };
 }
 
-// Throttle function
+// Throttle utility
 export function throttle<T extends (...args: any[]) => any>(
   func: T,
   limit: number
@@ -106,22 +76,106 @@ export function throttle<T extends (...args: any[]) => any>(
   };
 }
 
-// Generate random ID
-export function generateId(): string {
-  return Math.random().toString(36).substr(2, 9);
+// Local storage utilities
+export const storage = {
+  get: <T>(key: string, defaultValue?: T): T | null => {
+    if (typeof window === 'undefined') return defaultValue || null;
+    
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : defaultValue || null;
+    } catch {
+      return defaultValue || null;
+    }
+  },
+  
+  set: <T>(key: string, value: T): void => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+    } catch {
+      // Handle error silently
+    }
+  },
+  
+  remove: (key: string): void => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      window.localStorage.removeItem(key);
+    } catch {
+      // Handle error silently
+    }
+  },
+  
+  clear: (): void => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      window.localStorage.clear();
+    } catch {
+      // Handle error silently
+    }
+  },
+};
+
+// Validation utilities
+export const validation = {
+  email: (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  },
+  
+  phone: (phone: string): boolean => {
+    const phoneRegex = /^(\+84|84|0)[0-9]{9}$/;
+    return phoneRegex.test(phone);
+  },
+  
+  password: (password: string): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+    
+    if (password.length < 8) {
+      errors.push('Mật khẩu phải có ít nhất 8 ký tự');
+    }
+    
+    if (!/[A-Z]/.test(password)) {
+      errors.push('Mật khẩu phải có ít nhất 1 chữ hoa');
+    }
+    
+    if (!/[a-z]/.test(password)) {
+      errors.push('Mật khẩu phải có ít nhất 1 chữ thường');
+    }
+    
+    if (!/\d/.test(password)) {
+      errors.push('Mật khẩu phải có ít nhất 1 số');
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
+  },
+};
+
+// Error handling utilities
+export function createError(message: string, code?: string, details?: any): Error {
+  const error = new Error(message);
+  (error as any).code = code;
+  (error as any).details = details;
+  return error;
 }
 
-// Format currency
-export function formatCurrency(amount: number, currency = 'VND'): string {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency,
-  }).format(amount);
-}
-
-// Truncate text
-export function truncateText(text: string, maxLength: number): string {
-  if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength) + '...';
+// Async error handling
+export async function handleAsyncError<T>(
+  promise: Promise<T>,
+  fallback?: T
+): Promise<{ data: T | null; error: Error | null }> {
+  try {
+    const data = await promise;
+    return { data, error: null };
+  } catch (error) {
+    return { data: fallback || null, error: error as Error };
+  }
 }
 

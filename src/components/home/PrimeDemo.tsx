@@ -11,6 +11,8 @@ import { Calendar } from 'primereact/calendar';
 import { Rating } from 'primereact/rating';
 import { Tag } from 'primereact/tag';
 import ClientOnly from '@/components/ui/ClientOnly';
+import { PRODUCT_CATEGORIES, PAGINATION } from '@/lib/constants';
+import { formatCurrency, formatDate } from '@/lib/utils';
 
 interface Product {
   id: number;
@@ -27,14 +29,6 @@ const PrimeDemoContent: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchText, setSearchText] = useState('');
 
-  const categories = [
-    { label: 'Tất cả', value: '' },
-    { label: 'Áo thun', value: 'Áo thun' },
-    { label: 'Ba lô', value: 'Ba lô' },
-    { label: 'Mũ nón', value: 'Mũ nón' },
-    { label: 'Túi xách', value: 'Túi xách' },
-  ];
-
   useEffect(() => {
     setProducts([
       { id: 1, name: 'Áo Thun HCMUTE', category: 'Áo thun', price: 299000, rating: 4.8, date: new Date() },
@@ -45,10 +39,7 @@ const PrimeDemoContent: React.FC = () => {
   }, []);
 
   const priceBodyTemplate = (rowData: Product) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(rowData.price);
+    return formatCurrency(rowData.price);
   };
 
   const ratingBodyTemplate = (rowData: Product) => {
@@ -60,11 +51,7 @@ const PrimeDemoContent: React.FC = () => {
   };
 
   const dateBodyTemplate = (rowData: Product) => {
-    return new Intl.DateTimeFormat('vi-VN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    }).format(rowData.date);
+    return formatDate(rowData.date);
   };
 
   const actionBodyTemplate = (rowData: Product) => {
@@ -108,7 +95,7 @@ const PrimeDemoContent: React.FC = () => {
               <Dropdown
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.value)}
-                options={categories}
+                options={PRODUCT_CATEGORIES}
                 placeholder="Chọn danh mục"
                 className="w-full"
               />
@@ -140,8 +127,8 @@ const PrimeDemoContent: React.FC = () => {
           <DataTable
             value={products}
             paginator
-            rows={5}
-            rowsPerPageOptions={[5, 10, 25]}
+            rows={PAGINATION.DEFAULT_PAGE_SIZE}
+            rowsPerPageOptions={PAGINATION.PAGE_SIZE_OPTIONS}
             tableStyle={{ minWidth: '50rem' }}
             className="shadow-lg"
             stripedRows
