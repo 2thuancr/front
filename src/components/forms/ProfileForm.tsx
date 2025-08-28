@@ -132,7 +132,9 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
                       className="w-24 h-24 rounded-full object-cover"
                     />
                   ) : (
-                    getInitials(profile.firstName, profile.lastName)
+                    profile.firstName && profile.lastName ? 
+                      getInitials(profile.firstName, profile.lastName) : 
+                      '?'
                   )}
                 </div>
                 
