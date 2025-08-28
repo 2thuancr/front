@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useRouter } from 'next/navigation';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useAuth } from '@/hooks/useAuth';
@@ -25,6 +26,7 @@ const loginSchema = yup.object({
 const LoginForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const { login, isLoading, error, clearAuthError } = useAuth();
+  const router = useRouter(); 
 
   const {
     register,
@@ -37,6 +39,7 @@ const LoginForm: React.FC = () => {
   const onSubmit = async (data: LoginCredentials) => {
     try {
       await login(data);
+      router.push('/'); // Chuyển về trang chủ sau khi đăng nhập thành công
     } catch (error) {
       console.error('Login error:', error);
     }

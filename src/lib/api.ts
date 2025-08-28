@@ -4,7 +4,7 @@ import { logoutUser } from '@/store/authSlice';
 
 // Create axios instance
 const api: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
+  baseURL: 'http://localhost:3001',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -60,17 +60,15 @@ export const authAPI = {
     api.post('/auth/login', credentials),
   
   register: (userData: {
+    name: string;
     email: string;
-    username: string;
     password: string;
-    firstName?: string;
-    lastName?: string;
   }) => api.post('/auth/register', userData),
   
   forgotPassword: (email: string) =>
     api.post('/auth/forgot-password', { email }),
   
-  resetPassword: (data: { token: string; password: string }) =>
+  resetPassword: (data: { email: string; otp: string; newPassword: string }) =>
     api.post('/auth/reset-password', data),
   
   refreshToken: () => api.post('/auth/refresh-token'),

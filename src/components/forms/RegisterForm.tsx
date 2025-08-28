@@ -5,57 +5,49 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useAuth } from '@/hooks/useAuth';
-import { RegisterCredentials } from '@/types/auth';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
-import { Mail, Lock, Eye, EyeOff, User, UserCheck } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, UserCheck } from 'lucide-react';
 import Link from 'next/link';
 
 const registerSchema = yup.object({
+  name: yup
+    .string()
+    .required('Tên là bắt buộc')
+    .min(2, 'Tên phải có ít nhất 2 ký tự'),
   email: yup
     .string()
     .email('Email không hợp lệ')
     .required('Email là bắt buộc'),
-  username: yup
-    .string()
-    .required('Tên đăng nhập là bắt buộc')
-    .min(3, 'Tên đăng nhập phải có ít nhất 3 ký tự')
-    .matches(/^[a-zA-Z0-9_]+$/, 'Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới'),
   password: yup
     .string()
     .required('Mật khẩu là bắt buộc')
     .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, 'Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt'),
-  confirmPassword: yup
-    .string()
-    .required('Xác nhận mật khẩu là bắt buộc')
-    .oneOf([yup.ref('password')], 'Mật khẩu xác nhận không khớp'),
-  firstName: yup
-    .string()
-    .required('Họ là bắt buộc')
-    .min(2, 'Họ phải có ít nhất 2 ký tự'),
-  lastName: yup
-    .string()
-    .required('Tên là bắt buộc')
-    .min(2, 'Tên phải có ít nhất 2 ký tự'),
 });
+
+type RegisterFormValues = {
+  name: string;
+  email: string;
+  password: string;
+};
 
 const RegisterForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { register: registerUser, isLoading, error, clearAuthError } = useAuth();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<RegisterCredentials>({
+  } = useForm<RegisterFormValues>({
     resolver: yupResolver(registerSchema),
   });
 
-  const onSubmit = async (data: RegisterCredentials) => {
+  const onSubmit = async (data: RegisterFormValues) => {
     try {
       await registerUser(data);
+      // Optionally redirect to login or home page here
     } catch (error) {
       console.error('Registration error:', error);
     }
@@ -77,30 +69,12 @@ const RegisterForm: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Họ"
-              placeholder="Nhập họ của bạn"
-              leftIcon={<User className="h-4 w-4" />}
-              error={errors.firstName?.message}
-              {...register('firstName')}
-            />
-            <Input
-              label="Tên"
-              placeholder="Nhập tên của bạn"
-              leftIcon={<User className="h-4 w-4" />}
-              error={errors.lastName?.message}
-              {...register('lastName')}
-            />
-          </div>
-
           <Input
-            label="Tên đăng nhập"
-            placeholder="Chọn tên đăng nhập"
-            leftIcon={<User className="h-4 w-4" />}
-            error={errors.username?.message}
-            helperText="Chỉ được chứa chữ cái, số và dấu gạch dưới"
-            {...register('username')}
+            label="Tên"
+            placeholder="Nhập tên của bạn"
+            leftIcon={<UserCheck className="h-4 w-4" />}
+            error={errors.name?.message}
+            {...register('name')}
           />
 
           <Input
@@ -133,28 +107,6 @@ const RegisterForm: React.FC = () => {
             error={errors.password?.message}
             helperText="Ít nhất 8 ký tự, 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt"
             {...register('password')}
-          />
-
-          <Input
-            label="Xác nhận mật khẩu"
-            type={showConfirmPassword ? 'text' : 'password'}
-            placeholder="Nhập lại mật khẩu"
-            leftIcon={<Lock className="h-4 w-4" />}
-            rightIcon={
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                {showConfirmPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </button>
-            }
-            error={errors.confirmPassword?.message}
-            {...register('confirmPassword')}
           />
 
           {error && (
@@ -212,4 +164,3 @@ const RegisterForm: React.FC = () => {
 };
 
 export default RegisterForm;
-
