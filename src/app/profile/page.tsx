@@ -1,3 +1,4 @@
+'use client';
 import React from 'react';
 import ProfileForm from '@/components/forms/ProfileForm';
 import { UserProfile } from '@/types/user';
