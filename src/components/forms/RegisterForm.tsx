@@ -55,7 +55,7 @@ const RegisterForm: React.FC = () => {
 
   return (
     <div className="w-full max-w-lg mx-auto">
-      <Card className="shadow-2xl border border-gray-100">
+      <div className="bg-white shadow-2xl border border-gray-100 rounded-lg p-8">
         <div className="text-center mb-8">
           <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-4">
             <UserCheck className="h-8 w-8 text-white" />
@@ -73,7 +73,7 @@ const RegisterForm: React.FC = () => {
             label="Tên"
             placeholder="Nhập tên của bạn"
             leftIcon={<UserCheck className="h-4 w-4" />}
-            error={errors.name?.message}
+            error={errors.name?.message || ''}
             {...register('name')}
           />
 
@@ -82,7 +82,7 @@ const RegisterForm: React.FC = () => {
             type="email"
             placeholder="Nhập email của bạn"
             leftIcon={<Mail className="h-4 w-4" />}
-            error={errors.email?.message}
+            error={errors.email?.message || ''}
             {...register('email')}
           />
 
@@ -104,7 +104,7 @@ const RegisterForm: React.FC = () => {
                 )}
               </button>
             }
-            error={errors.password?.message}
+            error={errors.password?.message || ''}
             helperText="Ít nhất 8 ký tự, 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt"
             {...register('password')}
           />
@@ -143,7 +143,7 @@ const RegisterForm: React.FC = () => {
             disabled={isLoading}
             onClick={clearAuthError}
           >
-            Tạo tài khoản
+            {isLoading ? 'Đang tạo...' : 'Tạo tài khoản'}
           </Button>
         </form>
 
@@ -158,7 +158,7 @@ const RegisterForm: React.FC = () => {
             </Link>
           </p>
         </div>
-      </Card>
+      </div>
     </div>
   );
 };

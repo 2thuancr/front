@@ -1,8 +1,6 @@
 'use client';
 
 import React, { useEffect } from 'react';
-'use client';
-import React from 'react';
 import ProfileForm from '@/components/forms/ProfileForm';
 import { useProfile } from '@/hooks/useProfile';
 
