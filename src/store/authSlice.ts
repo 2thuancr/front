@@ -1,6 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { AuthState, LoginCredentials, RegisterCredentials, User, AuthResponse } from '@/types/auth';
+import { AuthState, LoginCredentials, RegisterCredentials, User } from '@/types/auth';
+import { authAPI } from '@/lib/api';
 
+// Initial state
 const initialState: AuthState = {
   user: null,
   token: null,
@@ -10,29 +12,15 @@ const initialState: AuthState = {
   error: null,
 };
 
-// Async thunks
+// Async Thunks
 export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(credentials),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Login failed');
-      }
-      
-      const data: AuthResponse = await response.json();
-      return data;
+      const response = await authAPI.login(credentials); // POST /auth/login
+      return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.response?.data?.message || 'Login failed');
     }
   }
 );
@@ -41,24 +29,22 @@ export const registerUser = createAsyncThunk(
   'auth/register',
   async (credentials: RegisterCredentials, { rejectWithValue }) => {
     try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(credentials),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Registration failed');
-      }
-      
-      const data = await response.json();
-      return data;
+      const response = await authAPI.register(credentials); // POST /auth/register
+      return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.response?.data?.message || 'Registration failed');
+    }
+  }
+);
+
+export const forgotPassword = createAsyncThunk(
+  'auth/forgotPassword',
+  async (email: string, { rejectWithValue }) => {
+    try {
+      const response = await authAPI.forgotPassword(email);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Forgot password failed');
     }
   }
 );
@@ -66,11 +52,12 @@ export const registerUser = createAsyncThunk(
 export const logoutUser = createAsyncThunk(
   'auth/logout',
   async () => {
-    // TODO: Call logout API if needed
+    // Nếu backend có API logout thì gọi ở đây
     return null;
   }
 );
 
+// Slice
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -87,7 +74,7 @@ const authSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // Login
+    // LOGIN
     builder
       .addCase(loginUser.pending, (state) => {
         state.isLoading = true;
@@ -97,8 +84,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = true;
         state.user = action.payload.user;
-        state.token = action.payload.token;
-        state.refreshToken = action.payload.refreshToken;
+        state.token = action.payload.access_token;
         state.error = null;
       })
       .addCase(loginUser.rejected, (state, action) => {
@@ -106,7 +92,7 @@ const authSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // Register
+    // REGISTER
     builder
       .addCase(registerUser.pending, (state) => {
         state.isLoading = true;
@@ -116,8 +102,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = true;
         state.user = action.payload.user;
-        state.token = action.payload.token;
-        state.refreshToken = action.payload.refreshToken;
+        state.token = action.payload.access_token;
         state.error = null;
       })
       .addCase(registerUser.rejected, (state, action) => {
@@ -125,7 +110,7 @@ const authSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // Logout
+    // LOGOUT
     builder
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
@@ -139,4 +124,3 @@ const authSlice = createSlice({
 
 export const { clearError, setUser, setToken } = authSlice.actions;
 export default authSlice.reducer;
-
