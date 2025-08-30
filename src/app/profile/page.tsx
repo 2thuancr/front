@@ -40,13 +40,36 @@ export default function ProfilePage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
         <div className="container mx-auto py-8">
           <div className="text-center">
+            <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
+              <p className="font-bold">⚠️ Backend đang gặp sự cố!</p>
+              <p className="text-sm">API /users/profile trả về lỗi 500 Internal Server Error</p>
+            </div>
+            
             <p className="text-gray-600">Không thể tải thông tin hồ sơ</p>
-            <button 
-              onClick={fetchProfile}
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Thử lại
-            </button>
+            <p className="text-sm text-gray-500 mt-2">Lỗi: {error || 'Không xác định'}</p>
+            
+            <div className="mt-4 space-y-2">
+              <button 
+                onClick={fetchProfile}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mr-2"
+              >
+                Thử lại
+              </button>
+              
+              <button 
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+              >
+                Refresh trang
+              </button>
+            </div>
+            
+            <div className="mt-6 text-sm text-gray-500">
+              <p><strong>Debug info:</strong></p>
+              <p>Token: {localStorage.getItem('token') ? 'Có' : 'Không có'}</p>
+              <p>User: {localStorage.getItem('user') ? 'Có' : 'Không có'}</p>
+              <p>Error: {error}</p>
+            </div>
           </div>
         </div>
       </div>

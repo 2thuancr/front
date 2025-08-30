@@ -18,27 +18,39 @@ export const fetchUserProfile = createAsyncThunk(
   'user/fetchProfile',
   async (_, { rejectWithValue }) => {
     try {
+      console.log('🔄 fetchUserProfile thunk started');
+      
       const token = localStorage.getItem('token');
       if (!token) {
-        throw new Error('No authentication token found');
+        console.log('⚠️ No token found in localStorage');
+        return rejectWithValue('No authentication token found');
       }
 
-      const response = await fetch('http://localhost:5000/api/users/profile', {
+      const response = await fetch('http://localhost:3001/users/profile', {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'accept': 'application/json',
+          'Content-Type': 'application/json',
         },
       });
       
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response statusText:', response.statusText);
+      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+      console.log('📡 Response URL:', response.url);
+      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to fetch profile');
+        console.error('❌ Backend error response:', errorData);
+        console.error('❌ HTTP Status:', response.status, response.statusText);
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
       }
       
       const data = await response.json();
+      console.log('📡 API response:', data);
       return data;
     } catch (error: any) {
-      return rejectWithValue(error.message);
+      console.error('💥 fetchUserProfile error:', error);
+      return rejectWithValue(error.message || 'Failed to fetch profile');
     }
   }
 );
@@ -52,12 +64,11 @@ export const updateUserProfile = createAsyncThunk(
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch('http://localhost:5000/api/users/profile', {
+      const response = await fetch('http://localhost:3001/users/profile', {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
-          'accept': 'application/json',
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(profileData),
       });

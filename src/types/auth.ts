@@ -1,29 +1,22 @@
-export interface User {
-  id: number;
-  name: string;
-  username: string;
-  email: string;
-  isVerified: boolean;
-}
+import { UserProfile } from './user';
+
+export interface User extends UserProfile {}
 
 export interface LoginCredentials {
   username: string;
   password: string;
 }
 
-// export interface RegisterCredentials {
-//   email: string;
-//   username: string;
-//   password: string;
-//   confirmPassword: string;
-//   firstName?: string;
-//   lastName?: string;
-// }
-
 export interface RegisterCredentials {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
+  phone: string;
+  address: string;
+  city: string;
+  gender: 'male' | 'female' | 'other';
+  dateOfBirth: string;
 }
 
 export interface AuthResponse {

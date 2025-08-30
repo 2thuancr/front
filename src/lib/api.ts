@@ -17,10 +17,14 @@ api.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('🚀 API Request:', config.method?.toUpperCase(), config.url, 'with token');
+    } else {
+      console.log('⚠️ API Request:', config.method?.toUpperCase(), config.url, 'without token');
     }
     return config;
   },
   (error) => {
+    console.error('❌ Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -28,24 +32,22 @@ api.interceptors.request.use(
 // Response interceptor
 api.interceptors.response.use(
   (response: AxiosResponse) => {
+    console.log('✅ API Response:', response.status, response.config.url, response.data);
     return response;
   },
   async (error) => {
-    const originalRequest = error.config;
-
-    // Handle 401 Unauthorized
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      
-      // Clear token and redirect to login
-      store.dispatch(logoutUser());
-      localStorage.removeItem('token');
-      
-      // Redirect to login page
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
-      }
-    }
+    console.error('❌ API Error:', error.response?.status, error.config?.url, error.response?.data);
+    
+    // Don't automatically logout on 401, let the component handle it
+    // const originalRequest = error.config;
+    // if (error.response?.status === 401 && !originalRequest._retry) {
+    //   originalRequest._retry = true;
+    //   store.dispatch(logoutUser());
+    //   localStorage.removeItem('token');
+    //   if (typeof window !== 'undefined') {
+    //     window.location.href = '/login';
+    //   }
+    // }
 
     return Promise.reject(error);
   }
@@ -57,9 +59,15 @@ export const authAPI = {
     api.post('/auth/login', credentials),
   
   register: (userData: {
-    name: string;
+    firstName: string;
+    lastName: string;
     email: string;
     password: string;
+    phone: string;
+    address: string;
+    city: string;
+    gender: 'male' | 'female' | 'other';
+    dateOfBirth: string;
   }) => api.post('/auth/register', userData),
   
   forgotPassword: (email: string) =>
@@ -72,18 +80,18 @@ export const authAPI = {
 };
 
 export const userAPI = {
-  getProfile: () => api.get('/user/profile'),
+  getProfile: () => api.get('/users/profile'),
   
   updateProfile: (data: any) =>
-    api.put('/user/profile', data),
+    api.put('/users/profile', data),
   
   changePassword: (data: {
     currentPassword: string;
     newPassword: string;
-  }) => api.put('/user/change-password', data),
+  }) => api.put('/users/change-password', data),
   
   uploadAvatar: (formData: FormData) =>
-    api.post('/user/avatar', formData, {
+    api.post('/users/avatar', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

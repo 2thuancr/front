@@ -75,6 +75,12 @@ const authSlice = createSlice({
     setToken: (state, action: PayloadAction<string>) => {
       state.token = action.payload;
     },
+    restoreAuth: (state, action: PayloadAction<{ user: User; token: string }>) => {
+      state.user = action.payload.user;
+      state.token = action.payload.token;
+      state.isAuthenticated = true;
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     // LOGIN
@@ -87,7 +93,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = true;
         state.user = action.payload.user;
-        state.token = action.payload.access_token;
+        state.token = action.payload.token || action.payload.access_token;
         state.error = null;
       })
       .addCase(loginUser.rejected, (state, action) => {
@@ -105,7 +111,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = true;
         state.user = action.payload.user;
-        state.token = action.payload.access_token;
+        state.token = action.payload.token || action.payload.access_token;
         state.error = null;
       })
       .addCase(registerUser.rejected, (state, action) => {
@@ -125,5 +131,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, setUser, setToken } = authSlice.actions;
+export const { clearError, setUser, setToken, restoreAuth } = authSlice.actions;
 export default authSlice.reducer;

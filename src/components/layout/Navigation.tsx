@@ -7,6 +7,7 @@ import { Menu, X, ShoppingCart, User, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import Logo from '@/components/ui/Logo';
+import ClientOnly from '@/components/ui/ClientOnly';
 
 const Navigation: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -92,21 +93,25 @@ const Navigation: React.FC = () => {
               <button className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                 <ShoppingCart className="h-5 w-5" />
               </button>
-              {isAuthenticated ? (
-                <Link
-                  href="/profile"
-                  className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                >
-                  <User className="h-5 w-5" />
-                </Link>
-              ) : (
-                <Link
-                  href="/login"
-                  className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
-                >
-                  Đăng nhập
-                </Link>
-              )}
+              
+              {/* Wrap authentication-dependent content in ClientOnly */}
+              <ClientOnly>
+                {isAuthenticated ? (
+                  <Link
+                    href="/profile"
+                    className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  >
+                    <User className="h-5 w-5" />
+                  </Link>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                  >
+                    Đăng nhập
+                  </Link>
+                )}
+              </ClientOnly>
             </div>
           </div>
 
@@ -157,23 +162,25 @@ const Navigation: React.FC = () => {
 
             {/* Mobile action buttons */}
             <div className="px-3 py-2 space-y-2">
-              {isAuthenticated ? (
-                <Link
-                  href="/profile"
-                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Hồ sơ cá nhân
-                </Link>
-              ) : (
-                <Link
-                  href="/login"
-                  className="block px-3 py-2 text-base font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Đăng nhập
-                </Link>
-              )}
+              <ClientOnly>
+                {isAuthenticated ? (
+                  <Link
+                    href="/profile"
+                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Hồ sơ cá nhân
+                  </Link>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="block px-3 py-2 text-base font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Đăng nhập
+                  </Link>
+                )}
+              </ClientOnly>
             </div>
           </div>
         </div>

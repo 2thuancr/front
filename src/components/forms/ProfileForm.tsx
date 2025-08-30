@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -47,18 +47,23 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
     formState: { errors, isDirty },
     reset,
     watch,
+    setValue,
   } = useForm<UpdateProfileData>({
     resolver: yupResolver(profileSchema),
-    defaultValues: {
-      firstName: profile.firstName,
-      lastName: profile.lastName,
-      phone: profile.phone || '',
-      address: profile.address || '',
-      bio: profile.bio || '',
-      dateOfBirth: profile.dateOfBirth || '',
-      gender: profile.gender || 'other',
-    },
   });
+
+  // Set form values when profile changes
+  useEffect(() => {
+    if (profile) {
+      setValue('firstName', profile.firstName);
+      setValue('lastName', profile.lastName);
+      setValue('phone', profile.phone || '');
+      setValue('address', profile.address || '');
+      setValue('bio', profile.bio || '');
+      setValue('dateOfBirth', profile.dateOfBirth || '');
+      setValue('gender', profile.gender || 'other');
+    }
+  }, [profile, setValue]);
 
   const watchedValues = watch();
 
