@@ -1,94 +1,177 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, ShoppingCart, Star, Eye } from 'lucide-react';
 import { Card } from 'primereact/card';
 import { Button } from 'primereact/button';
-
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  rating: number;
-  reviewCount: number;
-  image: string;
-  category: string;
-  isNew?: boolean;
-  isHot?: boolean;
-  discount?: number;
-}
+import { motion } from 'framer-motion';
+import { productAPI } from '@/lib/api';
+import { Product, LegacyProduct } from '@/types/api';
 
 const ProductGrid: React.FC = () => {
   const [wishlist, setWishlist] = useState<number[]>([]);
+  const [products, setProducts] = useState<LegacyProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  const products: Product[] = [
-    {
-      id: 1,
-      name: 'Áo Thun HCMUTE Premium',
-      price: 299000,
-      originalPrice: 399000,
-      rating: 4.8,
-      reviewCount: 127,
-      image: '/images/ao-thun-hcmute.jpg',
-      category: 'Áo thun',
-      isNew: true,
-      discount: 25,
-    },
-    {
-      id: 2,
-      name: 'Ba Lô HCMUTE Sport',
-      price: 599000,
-      originalPrice: 699000,
-      rating: 4.9,
-      reviewCount: 89,
-      image: '/images/ba-lo-hcmute.jpg',
-      category: 'Ba lô',
-      isHot: true,
-      discount: 15,
-    },
-    {
-      id: 3,
-      name: 'Mũ Nón HCMUTE Classic',
-      price: 199000,
-      rating: 4.7,
-      reviewCount: 56,
-      image: '/images/hcmute-logo.png',
-      category: 'Mũ nón',
-    },
-    {
-      id: 4,
-      name: 'Túi Xách HCMUTE Elegant',
-      price: 399000,
-      originalPrice: 499000,
-      rating: 4.6,
-      reviewCount: 34,
-      image: '/images/hcmute-logo.png',
-      category: 'Túi xách',
-      discount: 20,
-    },
-    {
-      id: 5,
-      name: 'Hoodie HCMUTE Winter',
-      price: 799000,
-      rating: 4.9,
-      reviewCount: 78,
-      image: '/images/hcmute-logo.png',
-      category: 'Áo khoác',
-      isNew: true,
-    },
-    {
-      id: 6,
-      name: 'Ví HCMUTE Leather',
-      price: 299000,
-      originalPrice: 399000,
-      rating: 4.5,
-      reviewCount: 23,
-      image: '/images/hcmute-logo.png',
-      category: 'Phụ kiện',
-      discount: 25,
-    },
-  ];
+  useEffect(() => {
+    const fetchLatestProducts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await productAPI.getLatestProducts(8);
+        const productsData = response.data.data || response.data;
+        
+        // Transform API response to match component expectations
+        const transformedProducts: LegacyProduct[] = productsData.map((product: Product, index: number) => {
+          // Find primary image
+          const primaryImage = product.images?.find(img => img.isPrimary);
+          const imageUrl = primaryImage?.imageUrl || product.images?.[0]?.imageUrl || '/images/hcmute-logo.png';
+          
+          // Calculate original price if there's a discount
+          const price = parseFloat(product.price);
+          const discountPercent = product.discountPercent ? parseFloat(product.discountPercent) : 0;
+          const originalPrice = discountPercent > 0 ? price / (1 - discountPercent / 100) : undefined;
+          
+          return {
+            id: product.productId,
+            name: product.productName,
+            description: product.description,
+            price: price,
+            originalPrice: originalPrice,
+            rating: 4.5, // Default rating since not in API
+            reviewCount: Math.floor(Math.random() * 100) + 10, // Mock review count
+            image: imageUrl,
+            images: product.images?.map(img => img.imageUrl) || [],
+            category: product.category.categoryName,
+            categoryId: product.categoryId,
+            isNew: false, // Could be determined by createdAt date
+            isHot: false, // Could be determined by stock quantity or other logic
+            discount: discountPercent > 0 ? Math.round(discountPercent) : undefined,
+            stock: product.stockQuantity,
+            createdAt: product.createdAt,
+            updatedAt: product.updatedAt,
+          };
+        });
+        
+        setProducts(transformedProducts);
+      } catch (err: any) {
+        console.error('Error fetching latest products:', err);
+        setError('Không thể tải sản phẩm. Vui lòng thử lại sau.');
+        // Fallback to mock data if API fails
+        setProducts([
+          {
+            id: 1,
+            name: 'Áo Thun HCMUTE Premium',
+            price: 299000,
+            originalPrice: 399000,
+            rating: 4.8,
+            reviewCount: 127,
+            image: '/images/ao-thun-hcmute.jpg',
+            category: 'Áo thun',
+            isNew: true,
+            discount: 25,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          {
+            id: 2,
+            name: 'Ba Lô HCMUTE Sport',
+            price: 599000,
+            originalPrice: 699000,
+            rating: 4.9,
+            reviewCount: 89,
+            image: '/images/ba-lo-hcmute.jpg',
+            category: 'Ba lô',
+            isHot: true,
+            discount: 15,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          {
+            id: 3,
+            name: 'Mũ Nón HCMUTE Classic',
+            price: 199000,
+            rating: 4.7,
+            reviewCount: 56,
+            image: '/images/hcmute-logo.png',
+            category: 'Mũ nón',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          {
+            id: 4,
+            name: 'Túi Xách HCMUTE Elegant',
+            price: 399000,
+            originalPrice: 499000,
+            rating: 4.6,
+            reviewCount: 34,
+            image: '/images/hcmute-logo.png',
+            category: 'Túi xách',
+            discount: 20,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          {
+            id: 5,
+            name: 'Hoodie HCMUTE Winter',
+            price: 799000,
+            rating: 4.9,
+            reviewCount: 78,
+            image: '/images/hcmute-logo.png',
+            category: 'Áo khoác',
+            isNew: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          {
+            id: 6,
+            name: 'Ví HCMUTE Leather',
+            price: 299000,
+            originalPrice: 399000,
+            rating: 4.5,
+            reviewCount: 23,
+            image: '/images/hcmute-logo.png',
+            category: 'Phụ kiện',
+            discount: 25,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          {
+            id: 7,
+            name: 'Áo Khoác HCMUTE Windbreaker',
+            price: 899000,
+            originalPrice: 1099000,
+            rating: 4.8,
+            reviewCount: 45,
+            image: '/images/hcmute-logo.png',
+            category: 'Áo khoác',
+            isHot: true,
+            discount: 18,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          {
+            id: 8,
+            name: 'Mũ Lưỡi Trai HCMUTE Cap',
+            price: 149000,
+            rating: 4.4,
+            reviewCount: 67,
+            image: '/images/hcmute-logo.png',
+            category: 'Mũ nón',
+            isNew: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLatestProducts();
+  }, []);
 
   const toggleWishlist = (productId: number) => {
     setWishlist(prev => 
@@ -105,147 +188,206 @@ const ProductGrid: React.FC = () => {
     }).format(price);
   };
 
-  const renderRating = (rating: number) => {
-    return (
-      <div className="flex items-center gap-1">
-        {[...Array(5)].map((_, index) => (
-          <Star
-            key={index}
-            className={`w-4 h-4 ${
-              index < Math.floor(rating)
-                ? 'text-yellow-400 fill-current'
-                : 'text-gray-300'
-            }`}
+  const ProductCard = ({ product }: { product: LegacyProduct }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -5 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Card className="h-full border-0 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group flex flex-col">
+        <div className="relative">
+          <img
+            src={product.image}
+            alt={product.name}
+            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
           />
-        ))}
-        <span className="text-sm text-gray-600 ml-1">({rating})</span>
-      </div>
+          
+          {/* Badges */}
+          <div className="absolute top-2 left-2 space-y-2">
+            {product.isNew && (
+              <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                Mới
+              </span>
+            )}
+            {product.isHot && (
+              <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                Hot
+              </span>
+            )}
+          </div>
+          
+          {/* Discount Badge */}
+          {product.discount && product.discount > 0 && (
+            <div className="absolute top-2 right-2">
+              <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                -{product.discount}%
+              </span>
+            </div>
+          )}
+          
+          {/* Quick Actions */}
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+            <div className="flex space-x-2">
+              <Button
+                icon={<Heart className="w-4 h-4" />}
+                className="p-button-rounded p-button-text p-button-lg bg-white/90 hover:bg-white"
+                tooltip="Yêu thích"
+                onClick={() => toggleWishlist(product.id)}
+              />
+              <Button
+                icon={<Eye className="w-4 h-4" />}
+                className="p-button-rounded p-button-text p-button-lg bg-white/90 hover:bg-white"
+                tooltip="Xem chi tiết"
+              />
+            </div>
+          </div>
+        </div>
+        
+        <div className="p-4 flex flex-col flex-1">
+          <div className="flex-1">
+            <div className="mb-2">
+              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                {product.category}
+              </span>
+            </div>
+            
+            <h3 className="text-lg font-semibold text-gray-800 mb-2 line-clamp-2">
+              {product.name}
+            </h3>
+            
+            <div className="flex items-center mb-2">
+              <div className="flex items-center">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`w-4 h-4 ${
+                      i < Math.floor(product.rating)
+                        ? 'text-yellow-400 fill-current'
+                        : 'text-gray-300'
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-sm text-gray-600 ml-2">
+                ({product.reviewCount})
+              </span>
+            </div>
+            
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-2">
+                <span className="text-xl font-bold text-blue-600">
+                  {formatPrice(product.price)}
+                </span>
+                {product.originalPrice && product.originalPrice > product.price && (
+                  <span className="text-sm text-gray-500 line-through">
+                    {formatPrice(product.originalPrice)}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Button docked to bottom */}
+        <div className="p-4 pt-0">
+          <Button
+            label="Thêm vào giỏ"
+            icon={<ShoppingCart className="w-4 h-4" />}
+            className="w-full bg-blue-600 hover:bg-blue-700 border-0"
+          />
+        </div>
+      </Card>
+    </motion.div>
+  );
+
+  if (loading) {
+    return (
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Sản phẩm mới nhất
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Khám phá bộ sưu tập sản phẩm độc đáo với thiết kế riêng biệt dành cho sinh viên HCMUTE
+            </p>
+          </div>
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <span className="ml-3 text-lg text-gray-600">Đang tải sản phẩm...</span>
+          </div>
+        </div>
+      </section>
     );
-  };
+  }
 
   return (
     <section className="py-16 bg-white">
-      <div className="container mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Sản phẩm nổi bật
+            Sản phẩm mới nhất
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Khám phá bộ sưu tập sản phẩm độc đáo với thiết kế riêng biệt dành cho sinh viên HCMUTE
           </p>
+          {error && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600">{error}</p>
+            </div>
+          )}
+        </div>
+
+        {/* View Mode Toggle */}
+        <div className="flex justify-center mb-8">
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <Button
+              icon={<div className="grid grid-cols-2 gap-1 w-4 h-4"><div className="bg-current rounded-sm"></div><div className="bg-current rounded-sm"></div><div className="bg-current rounded-sm"></div><div className="bg-current rounded-sm"></div></div>}
+              className={`p-3 ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-transparent text-gray-600'}`}
+              onClick={() => setViewMode('grid')}
+              tooltip="Xem dạng lưới"
+            />
+            <Button
+              icon={<div className="w-4 h-4 space-y-1"><div className="bg-current rounded-sm h-1"></div><div className="bg-current rounded-sm h-1"></div><div className="bg-current rounded-sm h-1"></div></div>}
+              className={`p-3 ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-transparent text-gray-600'}`}
+              onClick={() => setViewMode('list')}
+              tooltip="Xem dạng danh sách"
+            />
+          </div>
         </div>
 
         {/* Filters */}
         <div className="flex flex-wrap justify-center gap-4 mb-8">
-          {['Tất cả', 'Áo thun', 'Ba lô', 'Mũ nón', 'Túi xách', 'Áo khoác', 'Phụ kiện'].map((category) => (
-            <button
+          {['Tất cả', 'Tivi & Âm thanh', 'Điện thoại', 'Laptop', 'Phụ kiện'].map((category) => (
+            <Button
               key={category}
+              outlined
+              label={category}
               className="px-6 py-2 rounded-full border border-gray-300 text-gray-700 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-            >
-              {category}
-            </button>
+            />
           ))}
         </div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className={`grid gap-6 ${
+          viewMode === 'grid' 
+            ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
+            : 'grid-cols-1'
+        }`}>
           {products.map((product) => (
-            <Card
-              key={product.id}
-              className="group overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
-            >
-              {/* Product Image */}
-              <div className="relative overflow-hidden">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
-                />
-                
-                {/* Badges */}
-                <div className="absolute top-2 left-2 flex flex-col gap-2">
-                  {product.isNew && (
-                    <span className="px-2 py-1 bg-blue-500 text-white text-xs font-semibold rounded-full">
-                      Mới
-                    </span>
-                  )}
-                  {product.isHot && (
-                    <span className="px-2 py-1 bg-red-500 text-white text-xs font-semibold rounded-full">
-                      Hot
-                    </span>
-                  )}
-                  {product.discount && (
-                    <span className="px-2 py-1 bg-green-500 text-white text-xs font-semibold rounded-full">
-                      -{product.discount}%
-                    </span>
-                  )}
-                </div>
-
-                {/* Quick Actions */}
-                <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <button
-                    onClick={() => toggleWishlist(product.id)}
-                    className={`p-2 rounded-full ${
-                      wishlist.includes(product.id)
-                        ? 'bg-red-500 text-white'
-                        : 'bg-white text-gray-600 hover:text-red-500'
-                    } shadow-lg hover:scale-110 transition-all duration-200`}
-                  >
-                    <Heart className="w-4 h-4" />
-                  </button>
-                  <button className="p-2 rounded-full bg-white text-gray-600 shadow-lg hover:scale-110 hover:text-blue-500 transition-all duration-200">
-                    <Eye className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Product Info */}
-              <div className="p-4">
-                <div className="text-sm text-gray-500 mb-2">{product.category}</div>
-                <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                  {product.name}
-                </h3>
-                
-                {/* Rating */}
-                <div className="flex items-center justify-between mb-3">
-                  {renderRating(product.rating)}
-                  <span className="text-sm text-gray-500">({product.reviewCount})</span>
-                </div>
-
-                {/* Price */}
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-xl font-bold text-gray-900">
-                    {formatPrice(product.price)}
-                  </span>
-                  {product.originalPrice && (
-                    <span className="text-sm text-gray-500 line-through">
-                      {formatPrice(product.originalPrice)}
-                    </span>
-                  )}
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-2">
-                  <Button
-                    className="flex-1"
-                    label="Thêm vào giỏ"
-                    icon={<ShoppingCart className="w-4 h-4 mr-2" />}
-                  />
-                  <Button
-                    outlined
-                    className="px-3"
-                    label="Chi tiết"
-                  />
-                </div>
-              </div>
-            </Card>
+            <ProductCard key={product.id} product={product} />
           ))}
         </div>
 
         {/* Load More */}
         <div className="text-center mt-12">
-          <Button outlined label="Xem thêm sản phẩm" />
+          <Button 
+            outlined 
+            label="Xem thêm sản phẩm" 
+            className="px-8 py-3"
+          />
         </div>
       </div>
     </section>
