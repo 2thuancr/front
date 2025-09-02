@@ -4,13 +4,27 @@ import './globals.css';
 import { Providers } from '@/store/provider';
 import Navigation from '@/components/layout/Navigation';
 import Footer from '@/components/layout/Footer';
+import { APP_CONFIG } from '@/lib/constants';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Gift Shop HCMUTE',
-  description: 'HCMUTE Gift Shop - Nơi lưu giữ những kỷ niệm đẹp của trường Đại học Sư phạm Kỹ thuật TP.HCM',
+  title: APP_CONFIG.NAME,
+  description: APP_CONFIG.DESCRIPTION,
   viewport: 'width=device-width, initial-scale=1',
+  authors: [{ name: APP_CONFIG.AUTHOR }],
+  keywords: ['HCMUTE', 'Gift Shop', 'University', 'Merchandise'],
+  openGraph: {
+    title: APP_CONFIG.NAME,
+    description: APP_CONFIG.DESCRIPTION,
+    type: 'website',
+    locale: 'vi_VN',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: APP_CONFIG.NAME,
+    description: APP_CONFIG.DESCRIPTION,
+  },
 };
 
 export default function RootLayout({

@@ -62,7 +62,6 @@ const ForgotPasswordForm: React.FC = () => {
   const onVerifyOtp = async (data: { otp: string }) => {
     try {
       setError(null);
-
       setToken(data.otp); 
       setStep('reset');
     } catch (err: any) {
@@ -72,19 +71,19 @@ const ForgotPasswordForm: React.FC = () => {
 
   // Đổi mật khẩu
   const onResetPassword = async (data: { password: string }) => {
-  try {
-    setError(null);
-    await authAPI.resetPassword({
-      email,
-      otp: token,
-      newPassword: data.password,
-    });
-    alert('Đổi mật khẩu thành công!');
-    setStep('email');
-  } catch (err: any) {
-    setError(err?.response?.data?.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
-  }
-};
+    try {
+      setError(null);
+      await authAPI.resetPassword({
+        email,
+        otp: token,
+        newPassword: data.password,
+      });
+      alert('Đổi mật khẩu thành công!');
+      setStep('email');
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
+    }
+  };
 
   return (
     <div className="w-full max-w-md mx-auto">
@@ -95,7 +94,7 @@ const ForgotPasswordForm: React.FC = () => {
             type="email"
             placeholder="Nhập email của bạn"
             leftIcon={<Mail className="h-4 w-4" />}
-            error={emailErrors.email?.message}
+            error={emailErrors.email?.message || ''}
             {...registerEmail('email')}
           />
           {error && (
@@ -116,7 +115,7 @@ const ForgotPasswordForm: React.FC = () => {
             label="OTP"
             type="text"
             placeholder="Nhập mã OTP vừa nhận"
-            error={otpErrors.otp?.message}
+            error={otpErrors.otp?.message || ''}
             {...registerOtp('otp')}
           />
           {error && (
@@ -138,7 +137,7 @@ const ForgotPasswordForm: React.FC = () => {
             type="password"
             placeholder="Nhập mật khẩu mới"
             leftIcon={<Lock className="h-4 w-4" />}
-            error={passwordErrors.password?.message}
+            error={passwordErrors.password?.message || ''}
             {...registerPassword('password')}
           />
           {error && (

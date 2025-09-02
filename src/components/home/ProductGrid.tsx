@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { Heart, ShoppingCart, Star, Eye } from 'lucide-react';
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
+import { Card } from 'primereact/card';
+import { Button } from 'primereact/button';
 
 interface Product {
   id: number;
@@ -153,8 +153,7 @@ const ProductGrid: React.FC = () => {
           {products.map((product) => (
             <Card
               key={product.id}
-              className="group overflow-hidden"
-              hover
+              className="group overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
             >
               {/* Product Image */}
               <div className="relative overflow-hidden">
@@ -230,19 +229,14 @@ const ProductGrid: React.FC = () => {
                 <div className="flex gap-2">
                   <Button
                     className="flex-1"
-                    variant="primary"
-                    size="sm"
-                  >
-                    <ShoppingCart className="w-4 h-4 mr-2" />
-                    Thêm vào giỏ
-                  </Button>
+                    label="Thêm vào giỏ"
+                    icon={<ShoppingCart className="w-4 h-4 mr-2" />}
+                  />
                   <Button
-                    variant="outline"
-                    size="sm"
+                    outlined
                     className="px-3"
-                  >
-                    Chi tiết
-                  </Button>
+                    label="Chi tiết"
+                  />
                 </div>
               </div>
             </Card>
@@ -251,9 +245,7 @@ const ProductGrid: React.FC = () => {
 
         {/* Load More */}
         <div className="text-center mt-12">
-          <Button variant="outline" size="lg">
-            Xem thêm sản phẩm
-          </Button>
+          <Button outlined label="Xem thêm sản phẩm" />
         </div>
       </div>
     </section>

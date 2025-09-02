@@ -1,35 +1,80 @@
 'use client';
-import React from 'react';
+
+import React, { useEffect } from 'react';
 import ProfileForm from '@/components/forms/ProfileForm';
-import { UserProfile } from '@/types/user';
+import { useProfile } from '@/hooks/useProfile';
 
 export default function ProfilePage() {
-  // Mock data - replace with actual user data from Redux store
-  const mockProfile: UserProfile = {
-    id: '1',
-    email: 'user@example.com',
-    username: 'johndoe',
-    firstName: 'John',
-    lastName: 'Doe',
-    avatar: '',
-    phone: '+84 123 456 789',
-    address: 'Hà Nội, Việt Nam',
-    bio: 'Lập trình viên full-stack với 5 năm kinh nghiệm trong phát triển web và mobile. Tôi thích tạo ra những ứng dụng đẹp và hữu ích cho người dùng.',
-    dateOfBirth: '1995-06-15',
-    gender: 'male',
-    role: 'user',
-    isEmailVerified: true,
-    createdAt: '2023-01-15T00:00:00Z',
-    updatedAt: '2024-08-27T00:00:00Z',
-  };
+  const { profile, isLoading, error, fetchProfile, updateProfile } = useProfile();
+
+  useEffect(() => {
+    // Fetch profile when component mounts
+    fetchProfile();
+  }, [fetchProfile]);
 
   const handleUpdateProfile = async (data: any) => {
-    // TODO: Implement profile update logic
-    console.log('Update profile:', data);
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    alert('Cập nhật hồ sơ thành công!');
+    try {
+      await updateProfile(data);
+      alert('Cập nhật hồ sơ thành công!');
+    } catch (error) {
+      console.error('Update profile error:', error);
+      alert('Có lỗi xảy ra khi cập nhật hồ sơ!');
+    }
   };
+
+  if (isLoading && !profile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
+        <div className="container mx-auto py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Đang tải thông tin hồ sơ...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
+        <div className="container mx-auto py-8">
+          <div className="text-center">
+            <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
+              <p className="font-bold">⚠️ Backend đang gặp sự cố!</p>
+              <p className="text-sm">API /users/profile trả về lỗi 500 Internal Server Error</p>
+            </div>
+            
+            <p className="text-gray-600">Không thể tải thông tin hồ sơ</p>
+            <p className="text-sm text-gray-500 mt-2">Lỗi: {error || 'Không xác định'}</p>
+            
+            <div className="mt-4 space-y-2">
+              <button 
+                onClick={fetchProfile}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mr-2"
+              >
+                Thử lại
+              </button>
+              
+              <button 
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+              >
+                Refresh trang
+              </button>
+            </div>
+            
+            <div className="mt-6 text-sm text-gray-500">
+              <p><strong>Debug info:</strong></p>
+              <p>Token: {localStorage.getItem('token') ? 'Có' : 'Không có'}</p>
+              <p>User: {localStorage.getItem('user') ? 'Có' : 'Không có'}</p>
+              <p>Error: {error}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
@@ -40,10 +85,14 @@ export default function ProfilePage() {
         </div>
         
         <ProfileForm
-          profile={mockProfile}
+          profile={profile}
           onUpdate={handleUpdateProfile}
+          isLoading={isLoading}
+          {...(error && { error })}
         />
       </div>
     </div>
   );
 }
+
+

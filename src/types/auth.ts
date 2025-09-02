@@ -1,44 +1,34 @@
-export interface User {
-  id: string;
-  email: string;
-  username: string;
-  firstName?: string;
-  lastName?: string;
-  avatar?: string;
-  role: 'user' | 'admin';
-  createdAt: string;
-  updatedAt: string;
-}
+import { UserProfile } from './user';
+
+export interface User extends UserProfile {}
 
 export interface LoginCredentials {
-  email: string;
+  username: string;
   password: string;
 }
 
-// export interface RegisterCredentials {
-//   email: string;
-//   username: string;
-//   password: string;
-//   confirmPassword: string;
-//   firstName?: string;
-//   lastName?: string;
-// }
-
 export interface RegisterCredentials {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
+  phone: string;
+  address: string;
+  city: string;
+  gender: 'male' | 'female' | 'other';
+  dateOfBirth: string;
 }
 
 export interface AuthResponse {
   user: User;
-  token: string;
-  refreshToken?: string;
+  access_token: string;
+  refresh_token: string;
 }
 
 export interface AuthState {
   user: User | null;
   token: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
@@ -52,5 +42,10 @@ export interface ResetPasswordData {
   token: string;
   password: string;
   confirmPassword: string;
+}
+
+export interface VerifyOTPData {
+  email: string;
+  otp: string;
 }
 

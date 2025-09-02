@@ -1,0 +1,6 @@
+[33m85a5810[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature/Thuan_auth[m[33m, [m[1;31morigin/feature/Thuan_auth[m[33m)[m Add About, Contact, and Products pages
+[33mcd77532[m Implement Login function
+[33mf9a09d7[m Refactor forms to use PrimeReact components
+[33m670d8c8[m Enhance project structure and configuration
+[33mbfaa2d3[m  init
+[33m677fbdf[m Initial commit from Create Next App

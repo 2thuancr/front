@@ -18,21 +18,39 @@ export const fetchUserProfile = createAsyncThunk(
   'user/fetchProfile',
   async (_, { rejectWithValue }) => {
     try {
-      // TODO: Replace with actual API call
-      const response = await fetch('/api/user/profile', {
+      console.log('🔄 fetchUserProfile thunk started');
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.log('⚠️ No token found in localStorage');
+        return rejectWithValue('No authentication token found');
+      }
+
+      const response = await fetch('http://localhost:3001/users/profile', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
       
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response statusText:', response.statusText);
+      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+      console.log('📡 Response URL:', response.url);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch profile');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Backend error response:', errorData);
+        console.error('❌ HTTP Status:', response.status, response.statusText);
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
       }
       
       const data = await response.json();
+      console.log('📡 API response:', data);
       return data;
     } catch (error: any) {
-      return rejectWithValue(error.message);
+      console.error('💥 fetchUserProfile error:', error);
+      return rejectWithValue(error.message || 'Failed to fetch profile');
     }
   }
 );
@@ -41,18 +59,23 @@ export const updateUserProfile = createAsyncThunk(
   'user/updateProfile',
   async (profileData: UpdateProfileData, { rejectWithValue }) => {
     try {
-      // TODO: Replace with actual API call
-      const response = await fetch('/api/user/profile', {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch('http://localhost:3001/users/profile', {
         method: 'PUT',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
         body: JSON.stringify(profileData),
       });
       
       if (!response.ok) {
-        throw new Error('Failed to update profile');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to update profile');
       }
       
       const data = await response.json();
