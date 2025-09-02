@@ -44,9 +44,16 @@ const OTPVerificationForm: React.FC<OTPVerificationFormProps> = ({
   const {
     handleSubmit,
     formState: { errors },
+    setValue,
+    watch,
   } = useForm<OTPFormData>({
     resolver: yupResolver(otpSchema),
+    defaultValues: {
+      otp: new Array(6).fill(''),
+    },
   });
+
+  const watchedOtp = watch('otp');
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -66,6 +73,9 @@ const OTPVerificationForm: React.FC<OTPVerificationFormProps> = ({
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
+    
+    // Update form value
+    setValue('otp', newOtp);
 
     // Move to next input if value is entered
     if (value && index < 5) {
@@ -91,8 +101,8 @@ const OTPVerificationForm: React.FC<OTPVerificationFormProps> = ({
     }
   };
 
-  const onSubmit = async () => {
-    const otpString = otp.join('');
+  const onSubmit = async (data: OTPFormData) => {
+    const otpString = data.otp.join('');
     if (otpString.length === 6) {
       await onVerify(otpString);
     }

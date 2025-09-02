@@ -7,6 +7,7 @@ import * as yup from 'yup';
 import { useAuth } from '@/hooks/useAuth';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import OTPVerificationForm from './OTPVerificationForm';
 import { Mail, Lock, Eye, EyeOff, UserCheck, Phone, MapPin, Calendar, User } from 'lucide-react';
 import Link from 'next/link';
 
@@ -73,7 +74,9 @@ type RegisterFormValues = {
 
 const RegisterForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const { register: registerUser, isLoading, error, clearAuthError } = useAuth();
+  const [showOTPForm, setShowOTPForm] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const { register: registerUser, isLoading, error, clearAuthError, verifyOTPCode, resendOTPCode } = useAuth();
 
   const {
     register,
@@ -86,11 +89,47 @@ const RegisterForm: React.FC = () => {
   const onSubmit = async (data: RegisterFormValues) => {
     try {
       await registerUser(data);
-      // Optionally redirect to login or home page here
+      // Sau khi đăng ký thành công, chuyển sang form OTP
+      setRegisteredEmail(data.email);
+      setShowOTPForm(true);
     } catch (error) {
       console.error('Registration error:', error);
     }
   };
+
+  const handleOTPVerify = async (otp: string) => {
+    try {
+      console.log('Verifying OTP:', otp, 'for email:', registeredEmail);
+      await verifyOTPCode({ email: registeredEmail, otp });
+      // Sau khi verify thành công, useAuth sẽ tự động redirect đến /profile
+    } catch (error) {
+      console.error('OTP verification error:', error);
+      throw error;
+    }
+  };
+
+  const handleOTPResend = async () => {
+    try {
+      console.log('Resending OTP for email:', registeredEmail);
+      await resendOTPCode(registeredEmail);
+    } catch (error) {
+      console.error('Resend OTP error:', error);
+      throw error;
+    }
+  };
+
+  // Nếu đang hiển thị form OTP, render OTPVerificationForm
+  if (showOTPForm) {
+    return (
+      <OTPVerificationForm
+        email={registeredEmail}
+        onVerify={handleOTPVerify}
+        onResend={handleOTPResend}
+        isLoading={isLoading}
+        error={error || ''}
+      />
+    );
+  }
 
   return (
     <div className="w-full max-w-2xl mx-auto">

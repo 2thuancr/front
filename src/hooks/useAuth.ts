@@ -7,8 +7,10 @@ import {
   logoutUser,
   clearError,
   restoreAuth,
+  verifyOTP,
+  resendOTP,
 } from '@/store/authSlice';
-import { LoginCredentials, RegisterCredentials } from '@/types/auth';
+import { LoginCredentials, RegisterCredentials, VerifyOTPData } from '@/types/auth';
 import { useEffect } from 'react';
 
 export const useAuth = () => {
@@ -57,14 +59,13 @@ export const useAuth = () => {
       console.log('📡 Login result:', result);
       
       // Check what we got from the API
-      if (result.token || result.access_token) {
-        const tokenToSave = result.token || result.access_token;
-        console.log('💾 Saving token to localStorage:', tokenToSave ? 'exists' : 'null');
+      if (result.access_token) {
+        console.log('💾 Saving token to localStorage:', result.access_token ? 'exists' : 'null');
         
-        localStorage.setItem('token', tokenToSave);
+        localStorage.setItem('token', result.access_token);
         
-        if (result.refreshToken) {
-          localStorage.setItem('refresh_token', result.refreshToken);
+        if (result.refresh_token) {
+          localStorage.setItem('refresh_token', result.refresh_token);
         }
         if (result.user) {
           localStorage.setItem('user', JSON.stringify(result.user));
@@ -90,11 +91,7 @@ export const useAuth = () => {
   const register = async (credentials: RegisterCredentials) => {
     try {
       const result = await dispatch(registerUser(credentials)).unwrap();
-      if (result.token) {
-        localStorage.setItem('token', result.token);
-        localStorage.setItem('refresh_token', result.refreshToken);
-        router.push('/profile');
-      }
+      // Note: Register might not return tokens immediately, OTP verification will handle auth
       return result;
     } catch (error) {
       throw error;
@@ -111,6 +108,34 @@ export const useAuth = () => {
     }
   };
 
+  const verifyOTPCode = async (data: VerifyOTPData) => {
+    try {
+      const result = await dispatch(verifyOTP(data)).unwrap();
+      if (result.access_token) {
+        localStorage.setItem('token', result.access_token);
+        if (result.refresh_token) {
+          localStorage.setItem('refresh_token', result.refresh_token);
+        }
+        if (result.user) {
+          localStorage.setItem('user', JSON.stringify(result.user));
+        }
+        router.push('/profile');
+      }
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const resendOTPCode = async (email: string) => {
+    try {
+      const result = await dispatch(resendOTP(email)).unwrap();
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const clearAuthError = () => {
     dispatch(clearError());
   };
@@ -124,6 +149,8 @@ export const useAuth = () => {
     login,
     register,
     logout,
+    verifyOTPCode,
+    resendOTPCode,
     clearAuthError,
   };
 };

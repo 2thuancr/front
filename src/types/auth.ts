@@ -21,8 +21,8 @@ export interface RegisterCredentials {
 
 export interface AuthResponse {
   user: User;
-  token: string;
-  refreshToken: string;
+  access_token: string;
+  refresh_token: string;
 }
 
 export interface AuthState {
@@ -42,5 +42,10 @@ export interface ResetPasswordData {
   token: string;
   password: string;
   confirmPassword: string;
+}
+
+export interface VerifyOTPData {
+  email: string;
+  otp: string;
 }
 

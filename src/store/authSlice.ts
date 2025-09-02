@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { AuthState, LoginCredentials, RegisterCredentials, User } from '@/types/auth';
+import { AuthState, LoginCredentials, RegisterCredentials, User, VerifyOTPData } from '@/types/auth';
 import { authAPI } from '@/lib/api';
 
 // Initial state
@@ -52,6 +52,30 @@ export const forgotPassword = createAsyncThunk(
   }
 );
 
+export const verifyOTP = createAsyncThunk(
+  'auth/verifyOTP',
+  async (data: VerifyOTPData, { rejectWithValue }) => {
+    try {
+      const response = await authAPI.verifyOTP(data);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'OTP verification failed');
+    }
+  }
+);
+
+export const resendOTP = createAsyncThunk(
+  'auth/resendOTP',
+  async (email: string, { rejectWithValue }) => {
+    try {
+      const response = await authAPI.resendOTP(email);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Resend OTP failed');
+    }
+  }
+);
+
 export const logoutUser = createAsyncThunk(
   'auth/logout',
   async () => {
@@ -93,7 +117,8 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = true;
         state.user = action.payload.user;
-        state.token = action.payload.token || action.payload.access_token;
+        state.token = action.payload.access_token;
+        state.refreshToken = action.payload.refresh_token;
         state.error = null;
       })
       .addCase(loginUser.rejected, (state, action) => {
@@ -109,12 +134,44 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.isAuthenticated = true;
-        state.user = action.payload.user;
-        state.token = action.payload.token || action.payload.access_token;
+        // Note: Register might not set authenticated state immediately, OTP verification will handle it
         state.error = null;
       })
       .addCase(registerUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
+    // VERIFY OTP
+    builder
+      .addCase(verifyOTP.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(verifyOTP.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isAuthenticated = true;
+        state.user = action.payload.user;
+        state.token = action.payload.access_token;
+        state.refreshToken = action.payload.refresh_token;
+        state.error = null;
+      })
+      .addCase(verifyOTP.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
+    // RESEND OTP
+    builder
+      .addCase(resendOTP.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(resendOTP.fulfilled, (state) => {
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(resendOTP.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });
