@@ -16,9 +16,15 @@ import { useEffect } from 'react';
 export const useAuth = () => {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
-  const { user, token, isAuthenticated, isLoading, error } = useSelector(
+  const { user: authUser, token, isAuthenticated, isLoading, error } = useSelector(
     (state: RootState) => state.auth
   );
+  const { profile: userProfile } = useSelector(
+    (state: RootState) => state.user
+  );
+
+  // Use userProfile from userSlice if available, otherwise fallback to authUser
+  const user = userProfile || authUser;
 
   // Check localStorage token
   const localStorageToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -52,7 +58,9 @@ export const useAuth = () => {
   }, [dispatch, isAuthenticated]);
 
   console.log('🔐 useAuth hook:', { 
-    user, 
+    authUser,
+    userProfile,
+    user, // Final user object
     token, 
     isAuthenticated, 
     localStorageToken,
