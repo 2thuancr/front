@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import Logo from '@/components/ui/Logo';
 import ClientOnly from '@/components/ui/ClientOnly';
+import UserDropdown from './UserDropdown';
 
 const Navigation: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -97,12 +98,7 @@ const Navigation: React.FC = () => {
               {/* Wrap authentication-dependent content in ClientOnly */}
               <ClientOnly>
                 {isAuthenticated ? (
-                  <Link
-                    href="/profile"
-                    className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                  >
-                    <User className="h-5 w-5" />
-                  </Link>
+                  <UserDropdown />
                 ) : (
                   <Link
                     href="/login"
@@ -164,13 +160,57 @@ const Navigation: React.FC = () => {
             <div className="px-3 py-2 space-y-2">
               <ClientOnly>
                 {isAuthenticated ? (
-                  <Link
-                    href="/profile"
-                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Hồ sơ cá nhân
-                  </Link>
+                  <div className="space-y-1">
+                    {/* User Info */}
+                    <div className="px-3 py-2 bg-gray-50 rounded-md">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                          {user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {user?.firstName && user?.lastName 
+                              ? `${user.firstName} ${user.lastName}` 
+                              : user?.email?.split('@')[0] || 'User'
+                            }
+                          </p>
+                          <p className="text-xs text-gray-500">{user?.email}</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Mobile Menu Items */}
+                    <Link
+                      href="/profile"
+                      className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Hồ sơ cá nhân
+                    </Link>
+                    <Link
+                      href="/orders"
+                      className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Đơn hàng của tôi
+                    </Link>
+                    <Link
+                      href="/settings"
+                      className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Cài đặt
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        // Handle logout
+                      }}
+                      className="block w-full text-left px-3 py-2 text-base font-medium text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                    >
+                      Đăng xuất
+                    </button>
+                  </div>
                 ) : (
                   <Link
                     href="/login"
