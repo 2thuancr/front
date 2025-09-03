@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { UserProfile, UpdateProfileData } from '@/types/user';
+import { userAPI } from '@/lib/api';
 
 interface UserState {
   profile: UserProfile | null;
@@ -26,31 +27,40 @@ export const fetchUserProfile = createAsyncThunk(
         return rejectWithValue('No authentication token found');
       }
 
-      const response = await fetch('http://localhost:3001/users/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      console.log('📡 Response status:', response.status);
-      console.log('📡 Response statusText:', response.statusText);
-      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
-      console.log('📡 Response URL:', response.url);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('❌ Backend error response:', errorData);
-        console.error('❌ HTTP Status:', response.status, response.statusText);
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      // Try to get user data from localStorage first (fallback)
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          console.log('✅ Using user data from localStorage:', user);
+          return user;
+        } catch (parseError) {
+          console.error('❌ Failed to parse user data from localStorage:', parseError);
+        }
       }
-      
-      const data = await response.json();
-      console.log('📡 API response:', data);
-      return data;
+
+      // If no localStorage data, try API
+      console.log('📡 Calling userAPI.getProfile()...');
+      const response = await userAPI.getProfile();
+      console.log('✅ Profile API response:', response.data);
+      return response.data;
     } catch (error: any) {
       console.error('💥 fetchUserProfile error:', error);
-      return rejectWithValue(error.message || 'Failed to fetch profile');
+      
+      // If API fails, try to use localStorage data as fallback
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          console.log('✅ Fallback: Using user data from localStorage after API error:', user);
+          return user;
+        } catch (parseError) {
+          console.error('❌ Failed to parse user data from localStorage:', parseError);
+        }
+      }
+      
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch profile';
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -64,24 +74,14 @@ export const updateUserProfile = createAsyncThunk(
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch('http://localhost:3001/users/profile', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(profileData),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to update profile');
-      }
-      
-      const data = await response.json();
-      return data;
+      console.log('📡 Calling userAPI.updateProfile()...');
+      const response = await userAPI.updateProfile(profileData);
+      console.log('✅ Update profile API response:', response.data);
+      return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.message);
+      console.error('💥 updateUserProfile error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to update profile';
+      return rejectWithValue(errorMessage);
     }
   }
 );
