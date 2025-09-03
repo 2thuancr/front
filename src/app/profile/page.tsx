@@ -35,17 +35,17 @@ export default function ProfilePage() {
     );
   }
 
-  if (!profile) {
+  if (!profile && error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
         <div className="container mx-auto py-8">
           <div className="text-center">
             <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
-              <p className="font-bold">⚠️ Backend đang gặp sự cố!</p>
-              <p className="text-sm">API /users/profile trả về lỗi 500 Internal Server Error</p>
+              <p className="font-bold">⚠️ Backend không khả dụng!</p>
+              <p className="text-sm">Không thể kết nối đến server backend</p>
             </div>
             
-            <p className="text-gray-600">Không thể tải thông tin hồ sơ</p>
+            <p className="text-gray-600">Không thể tải thông tin hồ sơ từ server</p>
             <p className="text-sm text-gray-500 mt-2">Lỗi: {error || 'Không xác định'}</p>
             
             <div className="mt-4 space-y-2">
@@ -64,11 +64,12 @@ export default function ProfilePage() {
               </button>
             </div>
             
-            <div className="mt-6 text-sm text-gray-500">
+            <div className="mt-6 text-sm text-gray-500 bg-gray-100 p-4 rounded">
               <p><strong>Debug info:</strong></p>
-              <p>Token: {localStorage.getItem('token') ? 'Có' : 'Không có'}</p>
-              <p>User: {localStorage.getItem('user') ? 'Có' : 'Không có'}</p>
+              <p>Token: {typeof window !== 'undefined' && localStorage.getItem('token') ? 'Có' : 'Không có'}</p>
+              <p>User: {typeof window !== 'undefined' && localStorage.getItem('user') ? 'Có' : 'Không có'}</p>
               <p>Error: {error}</p>
+              <p>Backend URL: http://localhost:3001</p>
             </div>
           </div>
         </div>
@@ -88,7 +89,7 @@ export default function ProfilePage() {
           profile={profile}
           onUpdate={handleUpdateProfile}
           isLoading={isLoading}
-          {...(error && { error })}
+          error={error}
         />
       </div>
     </div>

@@ -16,7 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { UserProfile, UpdateProfileData } from '@/types/user';
 
 interface ProfileFormProps {
-  profile: UserProfile;
+  profile: UserProfile | null;
   onUpdate: (data: UpdateProfileData) => Promise<void>;
   isLoading?: boolean;
   error?: string;
@@ -55,8 +55,8 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
   // Set form values when profile changes
   useEffect(() => {
     if (profile) {
-      setValue('firstName', profile.firstName);
-      setValue('lastName', profile.lastName);
+      setValue('firstName', profile.firstName || '');
+      setValue('lastName', profile.lastName || '');
       setValue('phone', profile.phone || '');
       setValue('address', profile.address || '');
       setValue('bio', profile.bio || '');
@@ -110,6 +110,20 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
     { label: 'Khác', value: 'other' },
   ];
 
+  // Early return if profile is null
+  if (!profile) {
+    return (
+      <div className="w-full max-w-4xl mx-auto">
+        <Card className="shadow-2xl border border-gray-100 overflow-hidden">
+          <div className="p-8 text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Đang tải thông tin hồ sơ...</p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-4xl mx-auto">
       <motion.div
@@ -130,14 +144,14 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
                       alt="Avatar preview"
                       className="w-24 h-24 rounded-full object-cover"
                     />
-                  ) : profile.avatar ? (
+                  ) : profile?.avatar ? (
                     <img
                       src={profile.avatar}
                       alt="Profile avatar"
                       className="w-24 h-24 rounded-full object-cover"
                     />
                   ) : (
-                    profile.firstName && profile.lastName ? 
+                    profile?.firstName && profile?.lastName ? 
                       getInitials(profile.firstName, profile.lastName) : 
                       '?'
                   )}
@@ -159,17 +173,17 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
               {/* Profile Info */}
               <div className="text-center md:text-left">
                 <h1 className="text-3xl font-bold mb-2">
-                  {profile.firstName} {profile.lastName}
+                  {profile?.firstName || ''} {profile?.lastName || ''}
                 </h1>
-                <p className="text-blue-100 text-lg mb-1">@{profile.username}</p>
-                <p className="text-blue-100">{profile.email}</p>
+                <p className="text-blue-100 text-lg mb-1">@{profile?.username || 'username'}</p>
+                <p className="text-blue-100">{profile?.email || ''}</p>
                 
                 <div className="flex items-center justify-center md:justify-start mt-3 space-x-2">
                   <Shield className="w-4 h-4" />
                   <span className="text-sm">
-                    {profile.role === 'admin' ? 'Quản trị viên' : 'Người dùng'}
+                    {profile?.role === 'admin' ? 'Quản trị viên' : 'Người dùng'}
                   </span>
-                  {profile.isEmailVerified && (
+                  {profile?.isEmailVerified && (
                     <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
                       Đã xác thực
                     </span>
@@ -278,7 +292,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
                     <InputText
                       id="email"
                       type="email"
-                      value={profile.email}
+                      value={profile?.email || ''}
                       className="w-full"
                       disabled
                     />
@@ -389,24 +403,24 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-gray-600">Tên đăng nhập:</span>
-                    <span className="ml-2 font-medium text-gray-900">@{profile.username}</span>
+                    <span className="ml-2 font-medium text-gray-900">@{profile?.username || 'N/A'}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Vai trò:</span>
                     <span className="ml-2 font-medium text-gray-900">
-                      {profile.role === 'admin' ? 'Quản trị viên' : 'Người dùng'}
+                      {profile?.role === 'admin' ? 'Quản trị viên' : 'Người dùng'}
                     </span>
                   </div>
                   <div>
                     <span className="text-gray-600">Ngày tham gia:</span>
                     <span className="ml-2 font-medium text-gray-900">
-                      {formatDate(profile.createdAt)}
+                      {profile?.createdAt ? formatDate(profile.createdAt) : 'N/A'}
                     </span>
                   </div>
                   <div>
                     <span className="text-gray-600">Cập nhật lần cuối:</span>
                     <span className="ml-2 font-medium text-gray-900">
-                      {formatDate(profile.updatedAt)}
+                      {profile?.updatedAt ? formatDate(profile.updatedAt) : 'N/A'}
                     </span>
                   </div>
                 </div>
