@@ -17,6 +17,15 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ className = '' }) => {
   const { user, logout } = useAuth();
   const router = useRouter();
 
+  // Debug logging
+  console.log('🎯 UserDropdown render:', { 
+    user, 
+    hasUser: !!user,
+    userFirstName: user?.firstName,
+    userLastName: user?.lastName,
+    userEmail: user?.email
+  });
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -42,15 +51,17 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ className = '' }) => {
   };
 
   const getUserDisplayName = () => {
-    // Try to get from Redux state first
-    if (user?.firstName && user?.lastName) {
-      return `${user.firstName} ${user.lastName}`;
-    }
-    if (user?.email) {
-      return user.email.split('@')[0];
+    // Always prioritize Redux state if available
+    if (user && (user.firstName || user.lastName || user.email)) {
+      if (user.firstName && user.lastName) {
+        return `${user.firstName} ${user.lastName}`;
+      }
+      if (user.email) {
+        return user.email.split('@')[0];
+      }
     }
     
-    // Fallback to localStorage if Redux state is not ready
+    // Only fallback to localStorage if Redux state is completely empty
     if (typeof window !== 'undefined') {
       const userData = localStorage.getItem('user');
       if (userData) {
@@ -72,15 +83,17 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ className = '' }) => {
   };
 
   const getUserInitials = () => {
-    // Try to get from Redux state first
-    if (user?.firstName && user?.lastName) {
-      return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
-    }
-    if (user?.email) {
-      return user.email.charAt(0).toUpperCase();
+    // Always prioritize Redux state if available
+    if (user && (user.firstName || user.lastName || user.email)) {
+      if (user.firstName && user.lastName) {
+        return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+      }
+      if (user.email) {
+        return user.email.charAt(0).toUpperCase();
+      }
     }
     
-    // Fallback to localStorage if Redux state is not ready
+    // Only fallback to localStorage if Redux state is completely empty
     if (typeof window !== 'undefined') {
       const userData = localStorage.getItem('user');
       if (userData) {
@@ -169,7 +182,10 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ className = '' }) => {
                   </p>
                                      <p className="text-xs text-gray-500 truncate">
                      {(() => {
+                       // Always prioritize Redux state if available
                        if (user?.email) return user.email;
+                       
+                       // Only fallback to localStorage if Redux state is empty
                        if (typeof window !== 'undefined') {
                          try {
                            const userData = localStorage.getItem('user');

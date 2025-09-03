@@ -17,12 +17,15 @@ export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
+      console.log('🔐 loginUser thunk - credentials:', credentials);
       const response = await authAPI.login({
         email: credentials.username, // Map username to email
         password: credentials.password
       });
+      console.log('🔐 loginUser thunk - API response:', response.data);
       return response.data;
     } catch (error: any) {
+      console.error('🔐 loginUser thunk - error:', error);
       return rejectWithValue(error.response?.data?.message || 'Login failed');
     }
   }
@@ -114,12 +117,17 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
+        console.log('🔐 loginUser.fulfilled - payload:', action.payload);
         state.isLoading = false;
         state.isAuthenticated = true;
         state.user = action.payload.user;
         state.token = action.payload.access_token;
         state.refreshToken = action.payload.refresh_token;
         state.error = null;
+        console.log('🔐 loginUser.fulfilled - state after update:', { 
+          user: state.user, 
+          isAuthenticated: state.isAuthenticated 
+        });
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
