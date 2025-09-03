@@ -104,5 +104,20 @@ export const userAPI = {
     }),
 };
 
+export const productAPI = {
+  getLatestProducts: (limit: number = 8) =>
+    api.get(`/products/latest?limit=${limit}`),
+  
+  getAllProducts: (params?: {
+    page?: number;
+    limit?: number;
+    category?: string;
+    search?: string;
+  }) => api.get('/products', { params }),
+  
+  getProductById: (id: number) =>
+    api.get(`/products/${id}`),
+};
+
 export default api;
 

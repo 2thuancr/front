@@ -26,21 +26,30 @@ export const useAuth = () => {
 
   // Restore auth state from localStorage on mount
   useEffect(() => {
-    if (localStorageToken && !isAuthenticated) {
-      console.log('🔄 Restoring auth state from localStorage');
-      // Try to restore user data from localStorage if available
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('token');
       const userData = localStorage.getItem('user');
-      if (userData) {
+      
+      if (token && userData && !isAuthenticated) {
+        console.log('🔄 Restoring auth state from localStorage');
         try {
           const user = JSON.parse(userData);
-          dispatch(restoreAuth({ user, token: localStorageToken }));
-          console.log('✅ Auth state restored from localStorage');
+          dispatch(restoreAuth({ user, token }));
+          console.log('✅ Auth state restored from localStorage:', { user, token: token ? 'exists' : 'null' });
         } catch (error) {
           console.error('❌ Failed to parse user data from localStorage:', error);
+          // Clear corrupted data
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          localStorage.removeItem('refresh_token');
         }
+      } else if (!token && isAuthenticated) {
+        // If no token in localStorage but still authenticated in Redux, clear Redux state
+        console.log('🔄 No token in localStorage, clearing auth state');
+        dispatch(logoutUser());
       }
     }
-  }, [localStorageToken, isAuthenticated, dispatch]);
+  }, [dispatch, isAuthenticated]);
 
   console.log('🔐 useAuth hook:', { 
     user, 
@@ -100,11 +109,25 @@ export const useAuth = () => {
 
   const logout = async () => {
     try {
+      console.log('🚪 Logout attempt...');
       await dispatch(logoutUser()).unwrap();
+      
+      // Clear all auth data from localStorage
       localStorage.removeItem('token');
-      router.push('/login');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
+      
+      console.log('✅ All auth data cleared from localStorage');
+      console.log('🔄 Redirecting to home...');
+      
+      router.push('/');
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('❌ Logout error:', error);
+      // Even if logout fails, clear localStorage and redirect
+      localStorage.removeItem('token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
+      router.push('/');
     }
   };
 
