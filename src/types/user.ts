@@ -3,12 +3,17 @@ export interface UserProfile {
   email: string;
   firstName: string;
   lastName: string;
+  username?: string;
   phone?: string;
   address?: string;
   city?: string;
+  bio?: string;
+  avatar?: string;
   dateOfBirth?: string;
   gender?: 'male' | 'female' | 'other';
-  isVerified: boolean;
+  role?: 'admin' | 'user';
+  isVerified?: boolean;
+  isEmailVerified?: boolean;
   createdAt: string;
   updatedAt: string;
 }
