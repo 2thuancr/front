@@ -10,6 +10,7 @@ import {
   verifyOTP,
   resendOTP,
 } from '@/store/authSlice';
+import { fetchUserProfile } from '@/store/userSlice';
 import { LoginCredentials, RegisterCredentials, VerifyOTPData } from '@/types/auth';
 import { useEffect } from 'react';
 
@@ -26,36 +27,35 @@ export const useAuth = () => {
   // Use userProfile from userSlice if available, otherwise fallback to authUser
   const user = userProfile || authUser;
 
-  // Check localStorage token
+  // Check if we have a token in localStorage as fallback
   const localStorageToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const actualIsAuthenticated = isAuthenticated || !!localStorageToken;
 
-  // Restore auth state from localStorage on mount
+  // Auto-fetch user profile if authenticated but no user data
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('token');
-      const userData = localStorage.getItem('user');
-      
-      if (token && userData && !isAuthenticated) {
-        console.log('🔄 Restoring auth state from localStorage');
-        try {
-          const user = JSON.parse(userData);
-          dispatch(restoreAuth({ user, token }));
-          console.log('✅ Auth state restored from localStorage:', { user, token: token ? 'exists' : 'null' });
-        } catch (error) {
-          console.error('❌ Failed to parse user data from localStorage:', error);
-          // Clear corrupted data
-          localStorage.removeItem('user');
-          localStorage.removeItem('token');
-          localStorage.removeItem('refresh_token');
+    const fetchUserIfNeeded = async () => {
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('token');
+        
+        // If we have token but no user data, fetch user profile
+        if (token && !user && actualIsAuthenticated) {
+          console.log('🔄 Auto-fetching user profile...');
+          try {
+            await dispatch(fetchUserProfile()).unwrap();
+            console.log('✅ User profile fetched successfully');
+          } catch (error) {
+            console.error('❌ Failed to fetch user profile:', error);
+            // If fetch fails, clear invalid token
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            dispatch(logoutUser());
+          }
         }
-      } else if (!token && isAuthenticated) {
-        // If no token in localStorage but still authenticated in Redux, clear Redux state
-        console.log('🔄 No token in localStorage, clearing auth state');
-        dispatch(logoutUser());
       }
-    }
-  }, [dispatch, isAuthenticated]);
+    };
+
+    fetchUserIfNeeded();
+  }, [dispatch, user, actualIsAuthenticated]);
 
   console.log('🔐 useAuth hook:', { 
     authUser,
@@ -63,7 +63,6 @@ export const useAuth = () => {
     user, // Final user object
     token, 
     isAuthenticated, 
-    localStorageToken,
     actualIsAuthenticated,
     isLoading, 
     error 
@@ -125,7 +124,12 @@ export const useAuth = () => {
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user');
       
-      console.log('✅ All auth data cleared from localStorage');
+      // Clear Redux Persist storage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('persist:root');
+      }
+      
+      console.log('✅ All auth data cleared from localStorage and Redux Persist');
       console.log('🔄 Redirecting to home...');
       
       router.push('/');
@@ -135,6 +139,9 @@ export const useAuth = () => {
       localStorage.removeItem('token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('persist:root');
+      }
       router.push('/');
     }
   };
