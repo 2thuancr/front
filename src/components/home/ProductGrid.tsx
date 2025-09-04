@@ -77,25 +77,20 @@ const ProductGrid: React.FC = () => {
             response = await productAPI.getLatestProducts(productCount);
             break;
           case 'bestseller':
-            // For now, use latest products as fallback
-            // In real implementation, you'd have a getBestsellerProducts API
-            response = await productAPI.getLatestProducts(productCount);
+            response = await productAPI.getBestsellerProducts(productCount);
             break;
           case 'most-viewed':
-            // For now, use latest products as fallback
-            // In real implementation, you'd have a getMostViewedProducts API
-            response = await productAPI.getLatestProducts(productCount);
+            response = await productAPI.getMostViewedProducts(productCount);
             break;
           case 'highest-discount':
-            // For now, use latest products as fallback
-            // In real implementation, you'd have a getHighestDiscountProducts API
-            response = await productAPI.getLatestProducts(productCount);
+            response = await productAPI.getHighestDiscountProducts(productCount);
             break;
           default:
             response = await productAPI.getLatestProducts(productCount);
         }
         
-        const productsData = response.data.data || response.data;
+        // Handle different response structures
+        const productsData = Array.isArray(response.data) ? response.data : (response.data.data || response.data);
         
         // Transform API response to match component expectations
         const transformedProducts: LegacyProduct[] = productsData.map((product: Product, index: number) => {
