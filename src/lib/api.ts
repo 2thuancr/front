@@ -115,7 +115,7 @@ export const productAPI = {
     api.get(`/products/most-viewed?limit=${limit}`),
   
   getHighestDiscountProducts: (limit: number = 8) =>
-    api.get(`/products/highest-discount?limit=${limit}`),
+    api.get(`/products/top-discount?limit=${limit}`),
   
   getAllProducts: (params?: {
     page?: number;

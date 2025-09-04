@@ -39,7 +39,7 @@ export interface ProductImage {
   imageId: number;
   productId: number;
   imageUrl: string;
-  isPrimary: boolean;
+  isPrimary: boolean | number; // Support both boolean and number (0/1)
 }
 
 export interface Product {

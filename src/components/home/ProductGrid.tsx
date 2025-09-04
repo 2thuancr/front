@@ -94,14 +94,19 @@ const ProductGrid: React.FC = () => {
         
         // Transform API response to match component expectations
         const transformedProducts: LegacyProduct[] = productsData.map((product: Product, index: number) => {
-          // Find primary image
-          const primaryImage = product.images?.find(img => img.isPrimary);
+          // Find primary image - handle both boolean and number types for isPrimary
+          const primaryImage = product.images?.find(img => 
+            Boolean(img.isPrimary) || img.isPrimary === 1
+          );
           const imageUrl = primaryImage?.imageUrl || product.images?.[0]?.imageUrl || '/images/hcmute-logo.png';
           
           // Calculate original price if there's a discount
           const price = parseFloat(product.price);
           const discountPercent = product.discountPercent ? parseFloat(product.discountPercent) : 0;
           const originalPrice = discountPercent > 0 ? price / (1 - discountPercent / 100) : undefined;
+          
+          // Use totalViews if available (for most-viewed products)
+          const viewCount = (product as any).totalViews || Math.floor(Math.random() * 100) + 10;
           
           return {
             id: product.productId,
@@ -110,7 +115,7 @@ const ProductGrid: React.FC = () => {
             price: price,
             originalPrice: originalPrice,
             rating: 4.5, // Default rating since not in API
-            reviewCount: Math.floor(Math.random() * 100) + 10, // Mock review count
+            reviewCount: viewCount, // Use totalViews for most-viewed, random for others
             image: imageUrl,
             images: product.images?.map(img => img.imageUrl) || [],
             category: product.category.categoryName,
@@ -284,6 +289,11 @@ const ProductGrid: React.FC = () => {
                 Hot
               </span>
             )}
+            {selectedType === 'highest-discount' && product.discount && product.discount >= 10 && (
+              <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                Siêu Sale
+              </span>
+            )}
           </div>
           
           {/* Discount Badge */}
@@ -339,7 +349,12 @@ const ProductGrid: React.FC = () => {
                 ))}
               </div>
               <span className="text-sm text-gray-600 ml-2">
-                ({product.reviewCount})
+                {selectedType === 'most-viewed' 
+                  ? `(${product.reviewCount} lượt xem)`
+                  : selectedType === 'highest-discount' && product.discount
+                  ? `(Giảm ${product.discount}%)`
+                  : `(${product.reviewCount})`
+                }
               </span>
             </div>
             
