@@ -26,12 +26,14 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserProfile, UpdateProfileData } from '@/types/user';
+import { userAPI } from '@/lib/api';
 
 interface ProfileFormNewProps {
   profile: UserProfile | null;
   onUpdate: (data: UpdateProfileData) => Promise<void>;
   isLoading?: boolean;
   error?: string | undefined;
+  onRefresh?: () => Promise<void>;
 }
 
 const profileSchema = yup.object({
@@ -39,6 +41,7 @@ const profileSchema = yup.object({
   lastName: yup.string().optional().min(2, 'Tên phải có ít nhất 2 ký tự'),
   phone: yup.string().optional().matches(/^[0-9+\-\s()]*$/, 'Số điện thoại không hợp lệ'),
   address: yup.string().optional().max(200, 'Địa chỉ không được quá 200 ký tự'),
+  city: yup.string().optional().max(100, 'Thành phố không được quá 100 ký tự'),
   bio: yup.string().optional().max(500, 'Giới thiệu không được quá 500 ký tự'),
   dateOfBirth: yup.string().optional(),
   gender: yup.string().optional().oneOf(['male', 'female', 'other'], 'Giới tính không hợp lệ'),
@@ -49,6 +52,7 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
   onUpdate,
   isLoading = false,
   error,
+  onRefresh,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -71,6 +75,7 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
       setValue('lastName', profile.lastName || '');
       setValue('phone', profile.phone || '');
       setValue('address', profile.address || '');
+      setValue('city', profile.city || '');
       setValue('bio', profile.bio || '');
       setValue('dateOfBirth', profile.dateOfBirth || '');
       setValue('gender', profile.gender || 'other');
@@ -82,21 +87,79 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setAvatarPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      // Validate file size (1MB = 1024 * 1024 bytes)
+      if (file.size > 1024 * 1024) {
+        alert('Dụng lượng file tối đa 1 MB');
+        return;
+      }
+
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('Định dạng file không hợp lệ. Chỉ chấp nhận .JPEG, .PNG');
+        return;
+      }
+
+      try {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setAvatarPreview(e.target?.result as string);
+        };
+        reader.onerror = () => {
+          alert('Có lỗi xảy ra khi đọc file');
+        };
+        reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('Error reading file:', error);
+        alert('Có lỗi xảy ra khi xử lý file');
+      }
     }
   };
 
   const handleSave = async (data: UpdateProfileData) => {
     try {
-      await onUpdate(data);
+      // First, upload avatar if there's a preview
+      if (avatarPreview) {
+        const fileInput = document.getElementById('avatar-upload') as HTMLInputElement;
+        const file = fileInput?.files?.[0];
+        
+        if (file) {
+          const formData = new FormData();
+          formData.append('avatar', file);
+          
+          await userAPI.uploadAvatar(formData);
+          console.log('Avatar uploaded successfully');
+        }
+      }
+      
+      // Prepare update data with only allowed fields
+      const updateData = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phone: data.phone,
+        address: data.address,
+        city: data.city,
+        gender: data.gender,
+        dateOfBirth: data.dateOfBirth,
+        // Note: avatar will be updated via upload-avatar API
+      };
+      
+      // Update profile data
+      await onUpdate(updateData);
+      
       setIsEditing(false);
       reset(data);
+      setAvatarPreview(null); // Clear preview after successful save
+      
+      // Refresh profile to get updated data
+      if (onRefresh) {
+        await onRefresh();
+      }
+      
+      alert('Hồ sơ đã được cập nhật thành công!');
     } catch (error) {
       console.error('Update profile error:', error);
+      alert('Có lỗi xảy ra khi cập nhật hồ sơ!');
     }
   };
 
@@ -108,6 +171,11 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
 
   const getInitials = (firstName: string, lastName: string) => {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  };
+
+  const getAvatarUrl = (avatarPath?: string) => {
+    if (!avatarPath || avatarPath.trim() === '') return null;
+    return avatarPath.startsWith('http') ? avatarPath : `http://localhost:3001${avatarPath}`;
   };
 
   const formatDate = (dateString: string) => {
@@ -144,6 +212,14 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
     const year = date.getFullYear();
     return `**/**/${year}`;
   };
+
+  // Debug log
+  console.log('ProfileFormNew - Profile data:', profile);
+  console.log('ProfileFormNew - Avatar URL:', profile?.avatar);
+  if (profile?.avatar) {
+    const fullAvatarUrl = profile.avatar.startsWith('http') ? profile.avatar : `http://localhost:3001${profile.avatar}`;
+    console.log('ProfileFormNew - Full Avatar URL:', fullAvatarUrl);
+  }
 
   // Early return if profile is null
   if (!profile) {
@@ -193,48 +269,78 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
                     whileHover={{ scale: 1.05 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg mx-auto">
+                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg mx-auto relative overflow-hidden">
                       {avatarPreview ? (
                         <img
                           src={avatarPreview}
                           alt="Avatar preview"
                           className="w-32 h-32 rounded-full object-cover"
+                          onError={(e) => {
+                            console.log('Avatar preview load error');
+                            e.currentTarget.style.display = 'none';
+                          }}
                         />
-                      ) : profile?.avatar ? (
+                      ) : getAvatarUrl(profile?.avatar) ? (
                         <img
-                          src={profile.avatar}
+                          src={getAvatarUrl(profile.avatar)!}
                           alt="Profile avatar"
                           className="w-32 h-32 rounded-full object-cover"
+                          onError={(e) => {
+                            console.log('Profile avatar load error:', profile.avatar);
+                            e.currentTarget.style.display = 'none';
+                          }}
                         />
-                      ) : (
-                        profile?.firstName && profile?.lastName ?
-                          getInitials(profile.firstName, profile.lastName) :
-                          '?'
+                      ) : null}
+                      
+                      {/* Fallback initials - always show if no image */}
+                      {!avatarPreview && (!profile?.avatar || profile.avatar.trim() === '') && (
+                        <span className="absolute inset-0 flex items-center justify-center">
+                          {profile?.firstName && profile?.lastName ?
+                            getInitials(profile.firstName, profile.lastName) :
+                            '?'
+                          }
+                        </span>
                       )}
                     </div>
 
-                    {isEditing && (
-                      <motion.label
-                        className="absolute bottom-2 right-2 w-10 h-10 bg-white rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:bg-gray-50 transition-all duration-200"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <Camera className="w-5 h-5 text-gray-700" />
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleAvatarChange}
-                          className="hidden"
-                        />
-                      </motion.label>
-                    )}
+                    <motion.label
+                      className="absolute bottom-2 right-2 w-10 h-10 bg-white rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:bg-gray-50 transition-all duration-200"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Camera className="w-5 h-5 text-gray-700" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                        className="hidden"
+                        id="avatar-upload"
+                      />
+                    </motion.label>
                   </motion.div>
 
-                  <Button
-                    label="Chọn Ảnh"
-                    className="p-button-outlined mb-3 px-6 py-2"
-                    onClick={() => document.querySelector('input[type="file"]')?.click()}
-                  />
+                  <div className="space-y-2">
+                    {!isEditing && (
+                      <Button
+                        label="Sửa Hồ Sơ"
+                        className="bg-orange-500 hover:bg-orange-600 border-0 mb-2 px-6 py-2"
+                        onClick={() => setIsEditing(true)}
+                      />
+                    )}
+                    
+                    {isEditing && (
+                      <Button
+                        label="Chọn Ảnh"
+                        className="p-button-outlined mb-2 px-6 py-2"
+                        onClick={() => {
+                          const fileInput = document.getElementById('avatar-upload') as HTMLInputElement;
+                          if (fileInput) {
+                            fileInput.click();
+                          }
+                        }}
+                      />
+                    )}
+                  </div>
 
                   <div className="text-xs text-gray-500 space-y-1">
                     <p>Dụng lượng file tối đa 1 MB</p>
@@ -348,6 +454,24 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
                     />
                     {errors.address && (
                       <small className="p-error block mt-1 text-xs">{errors.address.message}</small>
+                    )}
+                  </div>
+                </div>
+
+                {/* City */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                  <label className="text-sm font-medium text-gray-700">
+                    Thành phố
+                  </label>
+                  <div className="md:col-span-2">
+                    <InputText
+                      {...register('city')}
+                      placeholder="Nhập thành phố của bạn"
+                      className={`w-full ${errors.city ? 'p-invalid' : ''}`}
+                      disabled={!isEditing}
+                    />
+                    {errors.city && (
+                      <small className="p-error block mt-1 text-xs">{errors.city.message}</small>
                     )}
                   </div>
                 </div>

@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { AuthState, LoginCredentials, RegisterCredentials, User, VerifyOTPData } from '@/types/auth';
 import { authAPI } from '@/lib/api';
+import { clearAuthData } from '@/lib/auth';
 
 // Initial state
 const initialState: AuthState = {
@@ -82,7 +83,8 @@ export const resendOTP = createAsyncThunk(
 export const logoutUser = createAsyncThunk(
   'auth/logout',
   async () => {
-    // Nếu backend có API logout thì gọi ở đây
+    // Clear auth data from localStorage
+    clearAuthData();
     return null;
   }
 );

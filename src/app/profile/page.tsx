@@ -18,7 +18,9 @@ export default function ProfilePage() {
   const handleUpdateProfile = async (data: any) => {
     try {
       await updateProfile(data);
-      alert('Cập nhật hồ sơ thành công!');
+      // Refresh profile to get updated data
+      await fetchProfile();
+      console.log('Profile updated successfully');
     } catch (error) {
       console.error('Update profile error:', error);
       alert('Có lỗi xảy ra khi cập nhật hồ sơ!');
@@ -101,6 +103,7 @@ export default function ProfilePage() {
             onUpdate={handleUpdateProfile}
             isLoading={isLoading}
             error={error as any}
+            onRefresh={fetchProfile}
           />
         </motion.div>
       </div>

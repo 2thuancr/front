@@ -1,6 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import { store } from '@/store';
-import { logoutUser } from '@/store/authSlice';
+import { handleUnauthorized } from './auth';
 
 // Create axios instance
 const api: AxiosInstance = axios.create({
@@ -38,20 +37,15 @@ api.interceptors.response.use(
   async (error) => {
     console.error('❌ API Error:', error.response?.status, error.config?.url, error.response?.data);
     
-    // Don't automatically logout on 401, let the component handle it
-    // const originalRequest = error.config;
-    // if (error.response?.status === 401 && !originalRequest._retry) {
-    //   originalRequest._retry = true;
-    //   store.dispatch(logoutUser());
-    //   localStorage.removeItem('token');
-    //   if (typeof window !== 'undefined') {
-    //     window.location.href = '/login';
-    //   }
-    // }
+    // Handle 401 Unauthorized
+    if (error.response?.status === 401) {
+      handleUnauthorized();
+    }
 
     return Promise.reject(error);
   }
 );
+
 
 // API endpoints
 export const authAPI = {
@@ -88,8 +82,8 @@ export const authAPI = {
 export const userAPI = {
   getProfile: () => api.get('/users/profile'),
   
-  updateProfile: (data: any) =>
-    api.put('/users/profile', data),
+  updateProfile: (userId: number, data: any) =>
+    api.post(`/users/update/${userId}`, data),
   
   changePassword: (data: {
     currentPassword: string;
@@ -97,7 +91,7 @@ export const userAPI = {
   }) => api.put('/users/change-password', data),
   
   uploadAvatar: (formData: FormData) =>
-    api.post('/users/avatar', formData, {
+    api.post('/users/upload-avatar', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

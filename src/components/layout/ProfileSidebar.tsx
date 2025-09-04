@@ -90,6 +90,11 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
     return '?';
   };
 
+  const getAvatarUrl = (avatarPath?: string) => {
+    if (!avatarPath || avatarPath.trim() === '') return null;
+    return avatarPath.startsWith('http') ? avatarPath : `http://localhost:3001${avatarPath}`;
+  };
+
   return (
     <div className="w-80 bg-white shadow-lg">
       {/* User Profile Summary */}
@@ -100,15 +105,24 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.2 }}
           >
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
-              {userProfile?.avatar ? (
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg relative overflow-hidden">
+              {getAvatarUrl(userProfile?.avatar) ? (
                 <img
-                  src={userProfile.avatar}
+                  src={getAvatarUrl(userProfile.avatar)!}
                   alt="Avatar"
                   className="w-20 h-20 rounded-full object-cover"
+                  onError={(e) => {
+                    console.log('Sidebar avatar load error:', userProfile.avatar);
+                    e.currentTarget.style.display = 'none';
+                  }}
                 />
-              ) : (
-                getInitials(userProfile?.firstName, userProfile?.lastName)
+              ) : null}
+              
+              {/* Fallback initials */}
+              {(!userProfile?.avatar || userProfile.avatar.trim() === '') && (
+                <span className="absolute inset-0 flex items-center justify-center">
+                  {getInitials(userProfile?.firstName, userProfile?.lastName)}
+                </span>
               )}
             </div>
           </motion.div>
