@@ -12,6 +12,7 @@ import {
 } from '@/store/authSlice';
 import { fetchUserProfile } from '@/store/userSlice';
 import { LoginCredentials, RegisterCredentials, VerifyOTPData } from '@/types/auth';
+import { isTokenValid } from '@/lib/auth';
 import { useEffect } from 'react';
 
 export const useAuth = () => {
@@ -37,18 +38,40 @@ export const useAuth = () => {
       if (typeof window !== 'undefined') {
         const token = localStorage.getItem('token');
         
-        // If we have token but no user data, fetch user profile
-        if (token && !user && actualIsAuthenticated) {
+        // Check if token is valid before making API calls
+        if (token && !isTokenValid()) {
+          console.log('🔒 Token is expired or invalid, clearing auth data...');
+          localStorage.removeItem('token');
+          localStorage.removeItem('refresh_token');
+          localStorage.removeItem('user');
+          dispatch(logoutUser());
+          router.push('/login');
+          return;
+        }
+
+        // If we have valid token but no user data, fetch user profile
+        if (token && !user && actualIsAuthenticated && isTokenValid()) {
           console.log('🔄 Auto-fetching user profile...');
           try {
             await dispatch(fetchUserProfile()).unwrap();
             console.log('✅ User profile fetched successfully');
-          } catch (error) {
+          } catch (error: any) {
             console.error('❌ Failed to fetch user profile:', error);
-            // If fetch fails, clear invalid token
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            dispatch(logoutUser());
+            
+            // If 401 Unauthorized, token is invalid/expired
+            if (error?.response?.status === 401) {
+              console.log('🔒 Token expired or invalid, clearing auth data...');
+              localStorage.removeItem('token');
+              localStorage.removeItem('refresh_token');
+              localStorage.removeItem('user');
+              dispatch(logoutUser());
+              
+              // Redirect to login page
+              router.push('/login');
+            } else {
+              // For other errors, just log but don't clear token
+              console.log('⚠️ Non-auth error, keeping token');
+            }
           }
         }
       }
