@@ -43,6 +43,10 @@ export const fetchUserProfile = createAsyncThunk(
       console.log('📡 Calling userAPI.getProfile()...');
       const response = await userAPI.getProfile();
       console.log('✅ Profile API response:', response.data);
+      
+      // Save user data to localStorage for future use
+      localStorage.setItem('user', JSON.stringify(response.data));
+      
       return response.data;
     } catch (error: any) {
       console.error('💥 fetchUserProfile error:', error);
@@ -67,15 +71,23 @@ export const fetchUserProfile = createAsyncThunk(
 
 export const updateUserProfile = createAsyncThunk(
   'user/updateProfile',
-  async (profileData: UpdateProfileData, { rejectWithValue }) => {
+  async (profileData: UpdateProfileData, { rejectWithValue, getState }) => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error('No authentication token found');
       }
 
-      console.log('📡 Calling userAPI.updateProfile()...');
-      const response = await userAPI.updateProfile(profileData);
+      // Get user ID from state or localStorage
+      const state = getState() as any;
+      const userId = state.user.profile?.userId || state.user.profile?.id;
+      
+      if (!userId) {
+        throw new Error('User ID not found');
+      }
+
+      console.log('📡 Calling userAPI.updateProfile() with userId:', userId);
+      const response = await userAPI.updateProfile(userId, profileData);
       console.log('✅ Update profile API response:', response.data);
       return response.data;
     } catch (error: any) {

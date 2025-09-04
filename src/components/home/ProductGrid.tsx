@@ -1,13 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Heart, ShoppingCart, Star, Eye } from 'lucide-react';
+import { Heart, ShoppingCart, Star, Eye, TrendingUp, Eye as EyeIcon, Percent, Clock } from 'lucide-react';
 import { Card } from 'primereact/card';
 import { Button } from 'primereact/button';
+import { Dropdown } from 'primereact/dropdown';
 import { motion } from 'framer-motion';
 import { productAPI } from '@/lib/api';
 import { Product, LegacyProduct } from '@/types/api';
 import Link from 'next/link';
+
+type ProductType = 'latest' | 'bestseller' | 'most-viewed' | 'highest-discount';
 
 const ProductGrid: React.FC = () => {
   const [wishlist, setWishlist] = useState<number[]>([]);
@@ -15,30 +18,104 @@ const ProductGrid: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [selectedType, setSelectedType] = useState<ProductType>('latest');
+  const [productCount, setProductCount] = useState(8);
+
+  const productTypes = [
+    {
+      value: 'latest' as ProductType,
+      label: 'Sản phẩm mới nhất',
+      icon: Clock,
+      description: 'Những sản phẩm mới được thêm vào'
+    },
+    {
+      value: 'bestseller' as ProductType,
+      label: 'Sản phẩm bán chạy',
+      icon: TrendingUp,
+      description: 'Sản phẩm được mua nhiều nhất'
+    },
+    {
+      value: 'most-viewed' as ProductType,
+      label: 'Sản phẩm xem nhiều',
+      icon: EyeIcon,
+      description: 'Sản phẩm được xem nhiều nhất'
+    },
+    {
+      value: 'highest-discount' as ProductType,
+      label: 'Khuyến mãi cao nhất',
+      icon: Percent,
+      description: 'Sản phẩm có giảm giá cao nhất'
+    }
+  ];
+
+  const quantityOptions = [
+    { label: '4 sản phẩm', value: 4 },
+    { label: '8 sản phẩm', value: 8 },
+    { label: '12 sản phẩm', value: 12 },
+    { label: '16 sản phẩm', value: 16 },
+    { label: '20 sản phẩm', value: 20 }
+  ];
+
+  // Helper function to get current product type info
+  const getCurrentProductType = () => {
+    return productTypes.find(type => type.value === selectedType) || productTypes[0] || {
+      label: 'Sản phẩm',
+      description: 'Khám phá bộ sưu tập sản phẩm độc đáo với thiết kế riêng biệt dành cho sinh viên HCMUTE',
+      value: 'latest' as ProductType,
+      icon: Clock
+    };
+  };
 
   useEffect(() => {
-    const fetchLatestProducts = async () => {
+    const fetchProducts = async () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await productAPI.getLatest(8);
-        const productsData = response.data.data || response.data;
-
+     
+        
+        let response;
+        switch (selectedType) {
+          case 'latest':
+            response = await productAPI.getLatestProducts(productCount);
+            break;
+          case 'bestseller':
+            response = await productAPI.getBestsellerProducts(productCount);
+            break;
+          case 'most-viewed':
+            response = await productAPI.getMostViewedProducts(productCount);
+            break;
+          case 'highest-discount':
+            response = await productAPI.getHighestDiscountProducts(productCount);
+            break;
+          default:
+            response = await productAPI.getLatestProducts(productCount);
+        }
+        
+        // Handle different response structures
+        const productsData = Array.isArray(response.data) ? response.data : (response.data.data || response.data);
+        
+        // Transform API response to match component expectations
         const transformedProducts: LegacyProduct[] = productsData.map((product: Product, index: number) => {
-          const primaryImage = product.images?.find(img => img.isPrimary);
+          // Find primary image - handle both boolean and number types for isPrimary
+          const primaryImage = product.images?.find(img => 
+            Boolean(img.isPrimary) || img.isPrimary === 1
+          );
           const imageUrl = primaryImage?.imageUrl || product.images?.[0]?.imageUrl || '/images/hcmute-logo.png';
           const price = parseFloat(product.price);
           const discountPercent = product.discountPercent ? parseFloat(product.discountPercent) : 0;
           const originalPrice = discountPercent > 0 ? price / (1 - discountPercent / 100) : undefined;
 
+          // Use totalViews if available (for most-viewed products)
+          const viewCount = (product as any).totalViews || Math.floor(Math.random() * 100) + 10;
+          
           return {
             id: product.productId,
             name: product.productName,
             description: product.description,
             price: price,
             originalPrice: originalPrice,
-            rating: 4.5,
-            reviewCount: Math.floor(Math.random() * 100) + 10,
+            rating: 4.5, // Default rating since not in API
+            reviewCount: viewCount, // Use totalViews for most-viewed, random for others
             image: imageUrl,
             images: product.images?.map(img => img.imageUrl) || [],
             category: product.category.categoryName,
@@ -63,8 +140,8 @@ const ProductGrid: React.FC = () => {
       }
     };
 
-    fetchLatestProducts();
-  }, []);
+    fetchProducts();
+  }, [selectedType, productCount]);
 
   const toggleWishlist = (productId: number) => {
     setWishlist(prev =>
@@ -108,6 +185,11 @@ const ProductGrid: React.FC = () => {
             {product.isHot && (
               <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium">
                 Hot
+              </span>
+            )}
+            {selectedType === 'highest-discount' && product.discount && product.discount >= 10 && (
+              <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                Siêu Sale
               </span>
             )}
           </div>
@@ -167,7 +249,12 @@ const ProductGrid: React.FC = () => {
                 ))}
               </div>
               <span className="text-sm text-gray-600 ml-2">
-                ({product.reviewCount})
+                {selectedType === 'most-viewed' 
+                  ? `(${product.reviewCount} lượt xem)`
+                  : selectedType === 'highest-discount' && product.discount
+                  ? `(Giảm ${product.discount}%)`
+                  : `(${product.reviewCount})`
+                }
               </span>
             </div>
             <div className="flex items-center justify-between mb-3">
@@ -199,13 +286,13 @@ const ProductGrid: React.FC = () => {
   if (loading) {
     return (
       <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Sản phẩm mới nhất
+              {getCurrentProductType()?.label || 'Sản phẩm'}
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Khám phá bộ sưu tập sản phẩm độc đáo với thiết kế riêng biệt dành cho sinh viên HCMUTE
+              {getCurrentProductType()?.description || 'Khám phá bộ sưu tập sản phẩm độc đáo với thiết kế riêng biệt dành cho sinh viên HCMUTE'}
             </p>
           </div>
           <div className="flex justify-center items-center py-20">
@@ -220,13 +307,13 @@ const ProductGrid: React.FC = () => {
   return (
     <section className="py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+                {/* Header */}
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Sản phẩm mới nhất
+            {getCurrentProductType()?.label || 'Sản phẩm'}
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Khám phá bộ sưu tập sản phẩm độc đáo với thiết kế riêng biệt dành cho sinh viên HCMUTE
+            {getCurrentProductType()?.description || 'Khám phá bộ sưu tập sản phẩm độc đáo với thiết kế riêng biệt dành cho sinh viên HCMUTE'}
           </p>
           {error && (
             <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -235,8 +322,45 @@ const ProductGrid: React.FC = () => {
           )}
         </div>
 
-        {/* View Mode Toggle */}
-        <div className="flex justify-center mb-8">
+        {/* Product Type Tabs */}
+        <div className="flex flex-wrap justify-center gap-3 mb-8">
+          {productTypes.map((type) => {
+            const IconComponent = type.icon;
+            const isActive = selectedType === type.value;
+            return (
+              <Button
+                key={type.value}
+                className={`flex items-center space-x-2 px-6 py-3 rounded-full transition-all duration-300 transform ${
+                  isActive
+                    ? 'bg-blue-600 text-white shadow-lg scale-105 border-2 border-blue-700'
+                    : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 hover:scale-105'
+                }`}
+                onClick={() => setSelectedType(type.value)}
+              >
+                <IconComponent className={`w-4 h-4 ${isActive ? 'text-white' : 'text-gray-600'}`} />
+                <span className={`font-medium ${isActive ? 'text-white' : 'text-gray-700'}`}>
+                  {type.label}
+                </span>
+              </Button>
+            );
+          })}
+        </div>
+
+        {/* Controls */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
+          {/* Quantity Selector */}
+          <div className="flex items-center space-x-3">
+            <span className="text-sm font-medium text-gray-700">Hiển thị:</span>
+            <Dropdown
+              value={productCount}
+              onChange={(e) => setProductCount(e.value)}
+              options={quantityOptions}
+              className="w-40"
+              placeholder="Chọn số lượng"
+            />
+          </div>
+
+          {/* View Mode Toggle */}
           <div className="flex bg-gray-100 rounded-lg p-1">
             <Button
               icon={<div className="grid grid-cols-2 gap-1 w-4 h-4"><div className="bg-current rounded-sm"></div><div className="bg-current rounded-sm"></div><div className="bg-current rounded-sm"></div><div className="bg-current rounded-sm"></div></div>}
@@ -251,18 +375,6 @@ const ProductGrid: React.FC = () => {
               tooltip="Xem dạng danh sách"
             />
           </div>
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap justify-center gap-4 mb-8">
-          {['Tất cả', 'Tivi & Âm thanh', 'Điện thoại', 'Laptop', 'Phụ kiện'].map((category) => (
-            <Button
-              key={category}
-              outlined
-              label={category}
-              className="px-6 py-2 rounded-full border border-gray-300 text-gray-700 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-            />
-          ))}
         </div>
 
         {/* Products Grid */}

@@ -175,7 +175,9 @@ const OTPVerificationForm: React.FC<OTPVerificationFormProps> = ({
                     transition={{ delay: 0.1 * index }}
                   >
                     <input
-                      ref={(el) => (inputRefs.current[index] = el)}
+                      ref={(el) => {
+                                      inputRefs.current[index] = el;
+                                    }}
                       type="text"
                       maxLength={1}
                       value={digit}
