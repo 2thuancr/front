@@ -1,11 +1,14 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import ProfileForm from '@/components/forms/ProfileForm';
+import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import ProfileFormNew from '@/components/forms/ProfileFormNew';
+import ProfileSidebar from '@/components/layout/ProfileSidebar';
 import { useProfile } from '@/hooks/useProfile';
 
 export default function ProfilePage() {
   const { profile, isLoading, error, fetchProfile, updateProfile } = useProfile();
+  const [activeSection, setActiveSection] = useState('profile');
 
   useEffect(() => {
     // Fetch profile when component mounts
@@ -24,10 +27,10 @@ export default function ProfilePage() {
 
   if (isLoading && !profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
-        <div className="container mx-auto py-8">
+      <div className="min-h-screen bg-gray-50">
+        <div className="flex justify-center items-center h-96">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto"></div>
             <p className="mt-4 text-gray-600">Đang tải thông tin hồ sơ...</p>
           </div>
         </div>
@@ -37,21 +40,21 @@ export default function ProfilePage() {
 
   if (!profile && error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
-        <div className="container mx-auto py-8">
-          <div className="text-center">
+      <div className="min-h-screen bg-gray-50">
+        <div className="flex justify-center items-center h-96">
+          <div className="text-center max-w-md mx-auto p-6">
             <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
               <p className="font-bold">⚠️ Backend không khả dụng!</p>
               <p className="text-sm">Không thể kết nối đến server backend</p>
             </div>
             
-            <p className="text-gray-600">Không thể tải thông tin hồ sơ từ server</p>
-            <p className="text-sm text-gray-500 mt-2">Lỗi: {error || 'Không xác định'}</p>
+            <p className="text-gray-600 mb-4">Không thể tải thông tin hồ sơ từ server</p>
+            <p className="text-sm text-gray-500 mb-4">Lỗi: {error || 'Không xác định'}</p>
             
-            <div className="mt-4 space-y-2">
+            <div className="space-y-2">
               <button 
                 onClick={fetchProfile}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mr-2"
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 mr-2"
               >
                 Thử lại
               </button>
@@ -63,14 +66,6 @@ export default function ProfilePage() {
                 Refresh trang
               </button>
             </div>
-            
-            <div className="mt-6 text-sm text-gray-500 bg-gray-100 p-4 rounded">
-              <p><strong>Debug info:</strong></p>
-              <p>Token: {typeof window !== 'undefined' && localStorage.getItem('token') ? 'Có' : 'Không có'}</p>
-              <p>User: {typeof window !== 'undefined' && localStorage.getItem('user') ? 'Có' : 'Không có'}</p>
-              <p>Error: {error}</p>
-              <p>Backend URL: http://localhost:3001</p>
-            </div>
           </div>
         </div>
       </div>
@@ -78,19 +73,36 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
-      <div className="container mx-auto py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Hồ sơ cá nhân</h1>
-          <p className="text-gray-600">Quản lý thông tin cá nhân và tài khoản của bạn</p>
-        </div>
-        
-        <ProfileForm
-          profile={profile}
-          onUpdate={handleUpdateProfile}
-          isLoading={isLoading}
-          error={error}
-        />
+    <div className="min-h-screen bg-gray-50">
+      {/* Main Layout */}
+      <div className="flex">
+        {/* Sidebar */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <ProfileSidebar
+            activeSection={activeSection}
+            onSectionChange={setActiveSection}
+            userProfile={profile as any}
+          />
+        </motion.div>
+
+        {/* Main Content */}
+        <motion.div
+          className="flex-1"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <ProfileFormNew
+            profile={profile}
+            onUpdate={handleUpdateProfile}
+            isLoading={isLoading}
+            error={error as any}
+          />
+        </motion.div>
       </div>
     </div>
   );
