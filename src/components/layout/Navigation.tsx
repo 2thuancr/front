@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X, ShoppingCart, User, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -14,7 +14,7 @@ const Navigation: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
   const { isAuthenticated, user } = useAuth();
-
+const router = useRouter();
   const navigation = [
     { name: 'Trang chủ', href: '/' },
     { name: 'Sản phẩm', href: '/products' },
@@ -30,6 +30,9 @@ const Navigation: React.FC = () => {
   };
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const goToCart = () => {
+    router.push("/cart"); // ✅ điều hướng đến trang giỏ hàng
+  };
 
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200">
@@ -91,7 +94,7 @@ const Navigation: React.FC = () => {
               <button className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                 <Heart className="h-5 w-5" />
               </button>
-              <button className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+              <button onClick= {goToCart } className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                 <ShoppingCart className="h-5 w-5" />
               </button>
               

@@ -2,38 +2,95 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { productAPI } from '@/lib/api';
+import { productAPI, cartApi } from '@/lib/api';
 import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
-
-
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
   const [product, setProduct] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+  const [cartId, setCartId] = useState<number | null>(null);
+  const [adding, setAdding] = useState(false);
+  const userId = useSelector((state: RootState) => state.user?.profile?.id);
 
-  useEffect(() => {
+  // 🔹 Load sản phẩm + giỏ hàng
+   useEffect(() => {
     async function fetchProduct() {
       try {
         if (!id) return;
         const numericId = Number(id);
+        console.log("📦 Lấy chi tiết sản phẩm ID:", numericId);
+
         const res = await productAPI.getProductById(numericId);
-        const productData = res.data.product || res.data;
+        const productData = res.data?.product || res.data;
+
+        console.log("✅ Dữ liệu sản phẩm:", productData);
         setProduct(productData);
       } catch (error) {
-        console.error("Lỗi khi load chi tiết sản phẩm:", error);
+        console.error("❌ Lỗi khi load chi tiết sản phẩm:", error);
       } finally {
         setLoading(false);
       }
     }
+
+    async function fetchCart() {
+    if (!userId) {
+      console.warn("⚠️ Chưa có userId trong localStorage");
+      return;
+    }
+
+    try {
+      console.log("🛒 Lấy giỏ hàng cho user:", userId);
+      const cart = await cartApi.getCartByUser(userId);
+
+      console.log("✅ Dữ liệu giỏ hàng:", cart);
+
+      // sửa cart.id → cart.cartId
+      setCartId(cart.cartId);
+    } catch (error) {
+      console.error("❌ Lỗi khi lấy giỏ hàng:", error);
+    }
+  }
+
+
     fetchProduct();
-  }, [id]);
+    fetchCart();
+  }, [id, userId]);
+
+  // 🔹 Xử lý thêm vào giỏ hàng
+  const handleAddToCart = async () => {
+    console.log("👉 Click thêm giỏ hàng", { product, cartId, quantity, userId });
+
+    if (!product) {
+      alert("Không tìm thấy sản phẩm");
+      return;
+    }
+    if (!cartId) {
+      alert("Không tìm thấy giỏ hàng");
+      return;
+    }
+
+    setAdding(true);
+    try {
+      const res = await cartApi.addToCart(cartId, product.productId, quantity);
+      console.log("✅ API addToCart response:", res);
+
+      alert("✅ Đã thêm vào giỏ hàng!");
+    } catch (error: any) {
+      console.error("❌ Lỗi khi thêm giỏ hàng:", error);
+      alert("❌ Thêm giỏ hàng thất bại");
+    } finally {
+      setAdding(false);
+    }
+  };
 
   if (loading) return <div className="text-center py-8">Đang tải chi tiết sản phẩm...</div>;
   if (!product) return <div className="text-center py-8 text-red-500">Không tìm thấy sản phẩm</div>;
@@ -47,12 +104,7 @@ export default function ProductDetailPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
         {/* Swiper Hình ảnh */}
         <div className="rounded-xl shadow-lg overflow-hidden">
-          <Swiper
-            modules={[Navigation, Pagination]}
-            navigation
-            pagination={{ clickable: true }}
-            className="rounded-xl"
-          >
+          <Swiper modules={[Navigation, Pagination]} navigation pagination={{ clickable: true }} className="rounded-xl">
             {product.images && product.images.length > 0 ? (
               product.images.map((img: any, index: number) => (
                 <SwiperSlide key={index}>
@@ -64,18 +116,13 @@ export default function ProductDetailPage() {
                 </SwiperSlide>
               ))
             ) : (
-              // Nếu API KHÔNG có ảnh → hiển thị ảnh mẫu trong thư mục public/images
-                    ["/images/ao-thun-hcmute.jpg", "/images/ba-lo-hcmute.jpg", "/images/hcmute-logo.png"].map(
-                    (src, index) => (
-                    <SwiperSlide key={index}>
-                        <img
-                        src={src}
-                        alt={`Ảnh mặc định ${index + 1}`}
-                        className="w-full h-[450px] object-cover"
-                        />
-                    </SwiperSlide>
-                    )
+              ["/images/ao-thun-hcmute.jpg", "/images/ba-lo-hcmute.jpg", "/images/hcmute-logo.png"].map(
+                (src, index) => (
+                  <SwiperSlide key={index}>
+                    <img src={src} alt={`Ảnh mặc định ${index + 1}`} className="w-full h-[450px] object-cover" />
+                  </SwiperSlide>
                 )
+              )
             )}
           </Swiper>
         </div>
@@ -121,10 +168,11 @@ export default function ProductDetailPage() {
 
           {/* Nút thêm giỏ hàng */}
           <button
+            onClick={handleAddToCart}
             className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-            disabled={product.stockQuantity <= 0}
+            disabled={product.stockQuantity <= 0 || adding}
           >
-            Thêm vào giỏ hàng
+            {adding ? "Đang thêm..." : "Thêm vào giỏ hàng"}
           </button>
         </div>
       </div>
