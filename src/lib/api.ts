@@ -187,5 +187,62 @@ export const cartApi = {
     api.delete(`/cart-items/cart/${cartId}/clear`).then((res) => res.data),
 };
 
+// ORDER API
+export const orderApi = {
+  // Orders
+  createOrder: (data: any) =>
+    api.post("/orders", data).then((res) => res.data),
+
+  getOrdersByUser: (userId: number, page = 1, limit = 10) =>
+    api.get(`/orders/user/${userId}?page=${page}&limit=${limit}`).then((res) => res.data),
+
+  getOrderById: (orderId: number) =>
+    api.get(`/orders/${orderId}`).then((res) => res.data),
+
+  getOrderItems: (orderId: number) =>
+    api.get(`/orders/${orderId}/items`).then((res) => res.data),
+
+  updateOrderStatus: (orderId: number, data: any) =>
+    api.put(`/orders/${orderId}/status`, data).then((res) => res.data),
+
+  cancelOrder: (orderId: number) =>
+    api.put(`/orders/${orderId}/cancel`).then((res) => res.data),
+
+  // Order Payment
+  processPayment: (orderId: number, data: any) =>
+    api.post(`/orders/${orderId}/payment`, data).then((res) => res.data),
+
+  getPaymentStatus: (orderId: number) =>
+    api.get(`/orders/${orderId}/payment/status`).then((res) => res.data),
+};
+
+// PAYMENT API
+export const paymentApi = {
+  // Payment Methods
+  getPaymentMethods: () =>
+    api.get("/payment-methods").then((res) => res.data),
+
+  getPaymentMethodById: (id: number) =>
+    api.get(`/payment-methods/${id}`).then((res) => res.data),
+
+  // Payments
+  getPayments: (page = 1, limit = 10) =>
+    api.get(`/payments?page=${page}&limit=${limit}`).then((res) => res.data),
+
+  getPaymentById: (paymentId: number) =>
+    api.get(`/payments/${paymentId}`).then((res) => res.data),
+
+  getPaymentsByUser: (userId: number, page = 1, limit = 10) =>
+    api.get(`/payments/user/${userId}?page=${page}&limit=${limit}`).then((res) => res.data),
+
+  // Payment Statistics
+  getPaymentStats: (period?: string) =>
+    api.get(`/payments/stats${period ? `?period=${period}` : ''}`).then((res) => res.data),
+
+  // Webhook
+  handleWebhook: (gateway: string, data: any) =>
+    api.post(`/payments/webhook/${gateway}`, data).then((res) => res.data),
+};
+
 export default api;
 
