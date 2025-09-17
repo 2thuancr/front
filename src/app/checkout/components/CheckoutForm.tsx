@@ -20,9 +20,35 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
   const [showAddressManager, setShowAddressManager] = useState(false);
   const [showAddAddressForm, setShowAddAddressForm] = useState(false);
 
-  // Auto-fill form with user profile data
+  // Auto-fill form with saved address or user profile data
   useEffect(() => {
     if (userProfile && !shippingInfo.customerName) {
+      // Kiểm tra xem có địa chỉ đã lưu không
+      const savedAddresses = localStorage.getItem(`addresses_${userProfile.id}`);
+      
+      if (savedAddresses) {
+        // Có địa chỉ đã lưu, ưu tiên dùng địa chỉ đó
+        const addresses = JSON.parse(savedAddresses);
+        const defaultAddress = addresses.find((addr: any) => addr.isDefault) || addresses[0];
+        
+        if (defaultAddress) {
+          const autoFilledData: ShippingInfo = {
+            customerName: defaultAddress.name,
+            customerPhone: defaultAddress.phone,
+            shippingAddress: defaultAddress.address,
+            city: defaultAddress.city,
+            ward: defaultAddress.ward,
+            notes: ""
+          };
+          
+          setFormData(autoFilledData);
+          onShippingInfoChange(autoFilledData);
+          console.log("✅ Auto-filled form with saved address:", autoFilledData);
+          return;
+        }
+      }
+      
+      // Không có địa chỉ đã lưu, dùng user profile
       const autoFilledData: ShippingInfo = {
         customerName: `${userProfile.firstName} ${userProfile.lastName}`.trim(),
         customerPhone: userProfile.phone || "",
@@ -111,7 +137,7 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
             </label>
             <input
               type="text"
-              value={formData.customerName}
+              value={formData.customerName || ""}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
               placeholder="Nhập họ và tên"
               readOnly
@@ -124,7 +150,7 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
             </label>
             <input
               type="tel"
-              value={formData.customerPhone}
+              value={formData.customerPhone || ""}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
               placeholder="Nhập số điện thoại"
               readOnly
@@ -138,7 +164,7 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
           </label>
           <input
             type="text"
-            value={formData.shippingAddress}
+            value={formData.shippingAddress || ""}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
             placeholder="Số nhà, tên đường"
             readOnly
@@ -151,7 +177,7 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
               Tỉnh/Thành phố *
             </label>
             <select
-              value={formData.city}
+              value={formData.city || ""}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
               disabled
             >
@@ -227,7 +253,7 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
             </label>
             <input
               type="text"
-              value={formData.ward}
+              value={formData.ward || ""}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
               placeholder="Nhập phường/xã"
               readOnly

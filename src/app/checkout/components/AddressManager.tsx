@@ -30,24 +30,34 @@ export function AddressManager({ isOpen, onClose, onSelectAddress }: AddressMana
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
 
-  // Mock data - trong thực tế sẽ lấy từ API
+  // Load addresses from localStorage on mount
   useEffect(() => {
     if (userProfile) {
-      const mockAddresses: Address[] = [
-        {
-          id: 1,
-          name: `${userProfile.firstName} ${userProfile.lastName}`,
-          phone: userProfile.phone || "",
-          address: userProfile.address || "",
-          city: userProfile.city || "",
-          district: "",
-          ward: "",
-          isDefault: true,
-          type: 'home'
-        }
-      ];
-      setAddresses(mockAddresses);
+      const savedAddresses = localStorage.getItem(`addresses_${userProfile.id}`);
+      if (savedAddresses) {
+        const parsedAddresses = JSON.parse(savedAddresses);
+        setAddresses(parsedAddresses);
+      } else {
+        // Chỉ tạo địa chỉ mặc định từ user profile nếu chưa có địa chỉ nào
+        // Không lưu vào localStorage, chỉ hiển thị tạm thời
+        const defaultAddresses: Address[] = [
+          {
+            id: 1,
+            name: `${userProfile.firstName} ${userProfile.lastName}`,
+            phone: userProfile.phone || "",
+            address: userProfile.address || "",
+            city: userProfile.city || "",
+            district: "",
+            ward: "",
+            isDefault: true,
+            type: 'home'
+          }
+        ];
+        setAddresses(defaultAddresses);
+        // Không lưu vào localStorage, chỉ hiển thị tạm thời
+      }
     }
   }, [userProfile]);
 
@@ -66,24 +76,63 @@ export function AddressManager({ isOpen, onClose, onSelectAddress }: AddressMana
   };
 
   const handleAddNew = () => {
+    setEditingAddress(null); // Reset editing address khi tạo mới
     setShowAddForm(true);
   };
 
   const handleSaveNewAddress = (address: ShippingInfo) => {
-    // Convert ShippingInfo to Address format
-    const newAddress: Address = {
-      id: Date.now(), // Simple ID generation
-      name: address.customerName,
-      phone: address.customerPhone,
-      address: address.shippingAddress,
-      city: address.city,
-      district: address.district,
-      ward: address.ward,
-      isDefault: false,
-      type: 'home'
-    };
+    if (editingAddress) {
+      // Cập nhật địa chỉ hiện có
+      const updatedAddress: Address = {
+        id: editingAddress.id, // Giữ nguyên ID
+        name: address.customerName,
+        phone: address.customerPhone,
+        address: address.shippingAddress,
+        city: address.city,
+        district: address.district || "",
+        ward: address.ward,
+        isDefault: editingAddress.isDefault, // Giữ nguyên trạng thái default
+        type: editingAddress.type // Giữ nguyên loại địa chỉ
+      };
+      
+      const updatedAddresses = addresses.map(addr => 
+        addr.id === editingAddress.id ? updatedAddress : addr
+      );
+      setAddresses(updatedAddresses);
+      
+      // Lưu vào localStorage
+      if (userProfile) {
+        localStorage.setItem(`addresses_${userProfile.id}`, JSON.stringify(updatedAddresses));
+      }
+      
+      setEditingAddress(null);
+    } else {
+      // Tạo địa chỉ mới
+      const newAddress: Address = {
+        id: Date.now(), // Simple ID generation
+        name: address.customerName,
+        phone: address.customerPhone,
+        address: address.shippingAddress,
+        city: address.city,
+        district: address.district || "",
+        ward: address.ward,
+        isDefault: true, // Địa chỉ đầu tiên được tạo sẽ là default
+        type: 'home'
+      };
+      
+      // Nếu đây là địa chỉ đầu tiên được tạo (thay thế địa chỉ tạm thời từ user profile)
+      const updatedAddresses = addresses.length === 1 && addresses[0].id === 1 
+        ? [newAddress] // Thay thế địa chỉ tạm thời
+        : [...addresses, newAddress]; // Thêm vào danh sách
+      
+      setAddresses(updatedAddresses);
+      
+      // Lưu vào localStorage
+      if (userProfile) {
+        localStorage.setItem(`addresses_${userProfile.id}`, JSON.stringify(updatedAddresses));
+      }
+    }
     
-    setAddresses(prev => [...prev, newAddress]);
     setShowAddForm(false);
     handleSelectAddress(address);
   };
@@ -91,7 +140,9 @@ export function AddressManager({ isOpen, onClose, onSelectAddress }: AddressMana
   const handleUpdateAddress = (addressId: number) => {
     const address = addresses.find(addr => addr.id === addressId);
     if (address) {
-      handleSelectAddress(address);
+      // Mở form chỉnh sửa với dữ liệu đã có
+      setShowAddForm(true);
+      setEditingAddress(address);
     }
   };
 
@@ -223,8 +274,12 @@ export function AddressManager({ isOpen, onClose, onSelectAddress }: AddressMana
       {/* Add Address Form Modal */}
       <AddAddressForm
         isOpen={showAddForm}
-        onClose={() => setShowAddForm(false)}
+        onClose={() => {
+          setShowAddForm(false);
+          setEditingAddress(null);
+        }}
         onSave={handleSaveNewAddress}
+        editingAddress={editingAddress}
       />
     </AnimatePresence>
   );

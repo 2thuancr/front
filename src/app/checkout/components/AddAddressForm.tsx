@@ -1,16 +1,28 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShippingInfo } from "@/types/order";
+
+interface Address {
+  id: number;
+  name: string;
+  phone: string;
+  address: string;
+  city: string;
+  ward: string;
+  isDefault: boolean;
+  type: 'home' | 'office';
+}
 
 interface AddAddressFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (address: ShippingInfo) => void;
+  editingAddress?: Address | null;
 }
 
-export function AddAddressForm({ isOpen, onClose, onSave }: AddAddressFormProps) {
+export function AddAddressForm({ isOpen, onClose, onSave, editingAddress }: AddAddressFormProps) {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -24,6 +36,32 @@ export function AddAddressForm({ isOpen, onClose, onSave }: AddAddressFormProps)
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  // Điền dữ liệu khi editingAddress thay đổi
+  useEffect(() => {
+    if (editingAddress) {
+      setFormData({
+        name: editingAddress.name,
+        phone: editingAddress.phone,
+        address: editingAddress.address,
+        city: editingAddress.city,
+        ward: editingAddress.ward,
+        type: editingAddress.type,
+        isDefault: editingAddress.isDefault
+      });
+    } else {
+      // Reset form khi không có editingAddress
+      setFormData({
+        name: "",
+        phone: "",
+        address: "",
+        city: "",
+        ward: "",
+        type: 'home',
+        isDefault: false
+      });
+    }
+  }, [editingAddress]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +110,7 @@ export function AddAddressForm({ isOpen, onClose, onSave }: AddAddressFormProps)
           {/* Header */}
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-900">
-              Địa chỉ mới (dùng thông tin trước sáp nhập)
+              {editingAddress ? "Chỉnh sửa địa chỉ" : "Thêm địa chỉ mới"}
             </h2>
           </div>
 
