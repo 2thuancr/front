@@ -29,7 +29,6 @@ export interface ShippingInfo {
   customerPhone: string;
   shippingAddress: string;
   city: string;
-  district: string;
   ward: string;
   notes?: string;
 }

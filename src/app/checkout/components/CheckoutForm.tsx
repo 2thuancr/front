@@ -28,7 +28,6 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
         customerPhone: userProfile.phone || "",
         shippingAddress: userProfile.address || "",
         city: userProfile.city || "",
-        district: "",
         ward: "",
         notes: ""
       };
@@ -161,7 +160,7 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Tỉnh/Thành phố *
@@ -236,20 +235,6 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
               <option value="Vĩnh Phúc">Vĩnh Phúc</option>
               <option value="Yên Bái">Yên Bái</option>
             </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Quận/Huyện *
-            </label>
-            <input
-              type="text"
-              value={formData.district}
-              onChange={(e) => handleInputChange("district", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Nhập quận/huyện"
-              required
-            />
           </div>
 
           <div>
