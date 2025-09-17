@@ -56,7 +56,6 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
         customerPhone: userProfile.phone || "",
         shippingAddress: userProfile.address || "",
         city: userProfile.city || "",
-        district: "",
         ward: "",
         notes: ""
       };
@@ -103,17 +102,6 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
         )}
       </div>
 
-      {/* Auto-fill notification */}
-      {userProfile && formData.customerName && formData.customerName === `${userProfile.firstName} ${userProfile.lastName}`.trim() && (
-        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-          <div className="flex items-center space-x-2">
-            <div className="text-green-500 text-sm">✅</div>
-            <p className="text-sm text-green-700">
-              Đã tự động điền thông tin từ hồ sơ của bạn. Bạn có thể chỉnh sửa nếu cần.
-            </p>
-          </div>
-        </div>
-      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -124,10 +112,9 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
             <input
               type="text"
               value={formData.customerName}
-              onChange={(e) => handleInputChange("customerName", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
               placeholder="Nhập họ và tên"
-              required
+              readOnly
             />
           </div>
 
@@ -138,10 +125,9 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
             <input
               type="tel"
               value={formData.customerPhone}
-              onChange={(e) => handleInputChange("customerPhone", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
               placeholder="Nhập số điện thoại"
-              required
+              readOnly
             />
           </div>
         </div>
@@ -153,10 +139,9 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
           <input
             type="text"
             value={formData.shippingAddress}
-            onChange={(e) => handleInputChange("shippingAddress", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
             placeholder="Số nhà, tên đường"
-            required
+            readOnly
           />
         </div>
 
@@ -167,9 +152,8 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
             </label>
             <select
               value={formData.city}
-              onChange={(e) => handleInputChange("city", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
+              disabled
             >
               <option value="">Chọn tỉnh/thành phố</option>
               <option value="TP. Hồ Chí Minh">TP. Hồ Chí Minh</option>
@@ -244,10 +228,9 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
             <input
               type="text"
               value={formData.ward}
-              onChange={(e) => handleInputChange("ward", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
               placeholder="Nhập phường/xã"
-              required
+              readOnly
             />
           </div>
         </div>

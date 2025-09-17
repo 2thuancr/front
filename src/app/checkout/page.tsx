@@ -97,7 +97,7 @@ export default function CheckoutPage() {
       // Validate shipping info
       if (!shippingInfo.customerName || !shippingInfo.customerPhone || 
           !shippingInfo.shippingAddress || !shippingInfo.city || 
-          !shippingInfo.district || !shippingInfo.ward) {
+          !shippingInfo.ward) {
         alert("Vui lòng điền đầy đủ thông tin giao hàng");
         return;
       }
