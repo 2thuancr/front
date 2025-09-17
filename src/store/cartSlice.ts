@@ -16,32 +16,49 @@ const initialState: CartState = {
 
 // 🛒 Lấy giỏ hàng theo userId
 export const fetchCart = createAsyncThunk("cart/fetchCart", async (userId: number) => {
-  const response = await cartApi.getCartByUser(userId);
-  console.log("🛒 API Cart Response:", response.data);
-  const apiData = response;
+  try {
+    const response = await cartApi.getCartByUser(userId);
+    console.log("🛒 API Cart Response:", response);
+    
+    // Kiểm tra response có tồn tại không
+    if (!response) {
+      throw new Error("No response from API");
+    }
 
-  // Chuẩn hóa dữ liệu từ API
-  const cart: Cart = {
-    cartId: apiData.cartId,
-    userId: apiData.userId,
-    cartItems: apiData.cartItems.map((ci: any): CartItem => ({
-      cartItemId: ci.cartItemId,
-      cartId: ci.cartId,
-      productId: ci.productId, // lấy từ cartItem
-      name: ci.product.productName,
-      price: Number(ci.product.price),
-      quantity: ci.quantity,
-      imageUrl: ci.product.imageUrl || undefined, // nếu API có thì lấy
-    })),
-    totalPrice: apiData.cartItems.reduce(
-      (sum: number, ci: any) => sum + Number(ci.product.price) * ci.quantity,
-      0
-    ),
-    createdAt: apiData.createdAt,
-    updatedAt: apiData.updatedAt,
-  };
+    const apiData = response.data || response;
+    console.log("🛒 API Data:", apiData);
 
-  return cart;
+    // Kiểm tra cartItems có tồn tại và là array không
+    const cartItems = apiData.cartItems || [];
+    console.log("🛒 Cart Items:", cartItems);
+
+    // Chuẩn hóa dữ liệu từ API
+    const cart: Cart = {
+      cartId: apiData.cartId || 0,
+      userId: apiData.userId || userId,
+      cartItems: Array.isArray(cartItems) ? cartItems.map((ci: any): CartItem => ({
+        cartItemId: ci.cartItemId || 0,
+        cartId: ci.cartId || apiData.cartId || 0,
+        productId: ci.productId || 0,
+        name: ci.product?.productName || ci.name || "Unknown Product",
+        price: Number(ci.product?.price || ci.price || 0),
+        quantity: ci.quantity || 0,
+        imageUrl: ci.product?.imageUrl || ci.imageUrl || undefined,
+      })) : [],
+      totalPrice: Array.isArray(cartItems) ? cartItems.reduce(
+        (sum: number, ci: any) => sum + Number(ci.product?.price || ci.price || 0) * (ci.quantity || 0),
+        0
+      ) : 0,
+      createdAt: apiData.createdAt,
+      updatedAt: apiData.updatedAt,
+    };
+
+    console.log("🛒 Processed Cart:", cart);
+    return cart;
+  } catch (error) {
+    console.error("❌ Error in fetchCart:", error);
+    throw error;
+  }
 });
 
 // ❌ Xóa item khỏi giỏ hàng
