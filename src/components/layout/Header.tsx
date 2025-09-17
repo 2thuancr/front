@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, User, Home, LogIn, UserPlus, Key, LogOut, Gift, ShoppingBag, Heart } from 'lucide-react';
+import { Menu, X, User, Home, LogIn, UserPlus, Key, LogOut, Gift, ShoppingBag, Heart, Package } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import Logo from '@/components/ui/Logo';
 
@@ -15,6 +15,7 @@ const Header: React.FC = () => {
     { name: 'Trang chủ', href: '/', icon: Home },
     { name: 'Sản phẩm', href: '/products', icon: Gift, showWhen: true },
     { name: 'Giỏ hàng', href: '/cart', icon: ShoppingBag, showWhen: true },
+    { name: 'Đơn hàng', href: '/orders', icon: Package, showWhen: isAuthenticated },
     { name: 'Đăng nhập', href: '/login', icon: LogIn, showWhen: !isAuthenticated },
     { name: 'Đăng ký', href: '/register', icon: UserPlus, showWhen: !isAuthenticated },
     { name: 'Quên mật khẩu', href: '/forgot-password', icon: Key, showWhen: !isAuthenticated },
