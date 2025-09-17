@@ -99,7 +99,17 @@ export const userAPI = {
 };
 
 export const productAPI = {
-  getLatestProducts: (limit: number = 8) =>
+  getAll: (params?: any) => api.get("/products", { params }),
+  getProductById: (id: number) => api.get(`/products/${id}`),
+  getFeatured: (limit?: number) => api.get("/products/featured", { params: { limit } }),
+  getLatest: (limit?: number) => api.get("/products/latest", { params: { limit } }),
+  getBestSelling: (limit?: number) => api.get("/products/best-selling", { params: { limit } }),
+  getMostViewed: (limit?: number) => api.get("/products/most-viewed", { params: { limit } }),
+  getTopDiscount: (limit?: number) => api.get("/products/top-discount", { params: { limit } }),
+  getHomepage: (params?: any) => api.get("/products/homepage", { params }),
+  getByCategory: (categoryId: number, limit?: number) =>
+    api.get(`/products/category/${categoryId}`, { params: { limit } }),
+getLatestProducts: (limit: number = 8) =>
     api.get(`/products/latest?limit=${limit}`),
   
   getBestsellerProducts: (limit: number = 8) =>
@@ -119,8 +129,7 @@ export const productAPI = {
   }) => api.get('/products', { params }),
   
   getProductById: (id: number) =>
-    api.get(`/products/${id}`),
-};
+    api.get(`/products/${id}`),};
 
 export default api;
 
