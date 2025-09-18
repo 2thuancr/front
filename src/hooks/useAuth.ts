@@ -108,6 +108,9 @@ export const useAuth = () => {
         }
         if (result.user) {
           localStorage.setItem('user', JSON.stringify(result.user));
+          if (result.user.id) {
+          localStorage.setItem('userId', JSON.stringify(result.user.id));
+        }
         }
         
         console.log('✅ Auth data saved to localStorage');

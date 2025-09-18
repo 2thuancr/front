@@ -42,14 +42,18 @@ const LoginForm: React.FC = () => {
     resolver: yupResolver(loginSchema),
   });
 
-  const onSubmit = async (data: LoginCredentials) => {
-    try {
-      await login(data);
-      router.push('/'); // Chuyển về trang chủ sau khi đăng nhập thành công
-    } catch (error) {
-      console.error('Login error:', error);
+const onSubmit = async (data: LoginCredentials) => {
+  try {
+    const result = await login(data);
+    if (result?.user?.id) {
+      console.log("✅ Đăng nhập thành công, userId:", result.user.id);
+      router.push('/'); // hoặc /profile, tùy bạn muốn
     }
-  };
+  } catch (error) {
+    console.error('Login error:', error);
+  }
+};
+
 
   return (
     <div className="w-full max-w-md mx-auto">

@@ -41,7 +41,6 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       handleUnauthorized();
     }
-
     return Promise.reject(error);
   }
 );
@@ -128,8 +127,122 @@ getLatestProducts: (limit: number = 8) =>
     search?: string;
   }) => api.get('/products', { params }),
   
-  getProductById: (id: number) =>
-    api.get(`/products/${id}`),};
+};
+
+export const cartApi = {
+  // CART
+  createCart: (userId: number) =>
+    api.post("/carts", { userId }).then((res) => res.data),
+
+  getAllCarts: (page = 1, limit = 10) =>
+    api.get(`/carts?page=${page}&limit=${limit}`).then((res) => res.data),
+
+  getCartByUser: (userId: number) =>
+    api.get(`/carts/user/${userId}`).then((res) => res.data),
+
+  getCartDetail: (cartId: number) =>
+    api.get(`/carts/${cartId}`).then((res) => res.data),
+
+  getCartSummary: (cartId: number) =>
+    api.get(`/carts/${cartId}/summary`).then((res) => res.data),
+
+  updateCart: (cartId: number, data: any) =>
+    api.put(`/carts/${cartId}`, data).then((res) => res.data),
+
+  clearCart: (cartId: number) =>
+    api.put(`/carts/${cartId}/clear`).then((res) => res.data),
+
+  deleteCart: (cartId: number) =>
+    api.delete(`/carts/${cartId}`).then((res) => res.data),
+
+  // CART-ITEMS
+  addToCart: (cartId: number, productId: number, quantity: number) =>
+    api
+      .post(`/cart-items`, { cartId, productId, quantity })
+      .then((res) => res.data),
+
+  getCartItems: (cartId: number) =>
+    api.get(`/cart-items/cart/${cartId}`).then((res) => res.data),
+
+  getCartItemDetail: (cartItemId: number) =>
+    api.get(`/cart-items/${cartItemId}`).then((res) => res.data),
+
+  updateCartItem: (cartItemId: number, data: any) =>
+    api.put(`/cart-items/${cartItemId}`, data).then((res) => res.data),
+
+  updateQuantity: (cartItemId: number, quantity: number) =>
+    api
+      .put(`/cart-items/${cartItemId}/quantity`, { quantity })
+      .then((res) => res.data),
+
+  removeFromCart: (cartItemId: number) =>
+    api.delete(`/cart-items/${cartItemId}`).then((res) => res.data),
+
+  removeByCartAndProduct: (cartId: number, productId: number) =>
+    api
+      .delete(`/cart-items/cart/${cartId}/product/${productId}`)
+      .then((res) => res.data),
+
+  clearCartItems: (cartId: number) =>
+    api.delete(`/cart-items/cart/${cartId}/clear`).then((res) => res.data),
+};
+
+// ORDER API
+export const orderApi = {
+  // Orders
+  createOrder: (data: any) =>
+    api.post("/orders", data).then((res) => res.data),
+
+  getOrdersByUser: (userId: number, page = 1, limit = 10) =>
+    api.get(`/orders/user/${userId}?page=${page}&limit=${limit}`).then((res) => res.data),
+
+  getOrderById: (orderId: number) =>
+    api.get(`/orders/${orderId}`).then((res) => res.data),
+
+  getOrderItems: (orderId: number) =>
+    api.get(`/orders/${orderId}/items`).then((res) => res.data),
+
+  updateOrderStatus: (orderId: number, data: any) =>
+    api.put(`/orders/${orderId}/status`, data).then((res) => res.data),
+
+  cancelOrder: (orderId: number) =>
+    api.put(`/orders/${orderId}/cancel`).then((res) => res.data),
+
+  // Order Payment
+  processPayment: (orderId: number, data: any) =>
+    api.post(`/orders/${orderId}/payment`, data).then((res) => res.data),
+
+  getPaymentStatus: (orderId: number) =>
+    api.get(`/orders/${orderId}/payment/status`).then((res) => res.data),
+};
+
+// PAYMENT API
+export const paymentApi = {
+  // Payment Methods
+  getPaymentMethods: () =>
+    api.get("/payment-methods").then((res) => res.data),
+
+  getPaymentMethodById: (id: number) =>
+    api.get(`/payment-methods/${id}`).then((res) => res.data),
+
+  // Payments
+  getPayments: (page = 1, limit = 10) =>
+    api.get(`/payments?page=${page}&limit=${limit}`).then((res) => res.data),
+
+  getPaymentById: (paymentId: number) =>
+    api.get(`/payments/${paymentId}`).then((res) => res.data),
+
+  getPaymentsByUser: (userId: number, page = 1, limit = 10) =>
+    api.get(`/payments/user/${userId}?page=${page}&limit=${limit}`).then((res) => res.data),
+
+  // Payment Statistics
+  getPaymentStats: (period?: string) =>
+    api.get(`/payments/stats${period ? `?period=${period}` : ''}`).then((res) => res.data),
+
+  // Webhook
+  handleWebhook: (gateway: string, data: any) =>
+    api.post(`/payments/webhook/${gateway}`, data).then((res) => res.data),
+};
 
 export default api;
 

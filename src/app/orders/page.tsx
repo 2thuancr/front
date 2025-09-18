@@ -3,15 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from 'primereact/card';
 import { Button } from 'primereact/button';
-import { motion } from 'framer-motion';
-import { Package, Clock, CheckCircle, XCircle, Eye, Truck, CreditCard } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Package, Clock, CheckCircle, XCircle, Truck, CreditCard } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import Link from 'next/link';
 
-// Config API base URL
+// API base URL
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
+// Trạng thái đơn hàng
 const statusConfig = {
   NEW: { label: 'Đơn hàng mới', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
   CONFIRMED: { label: 'Đã xác nhận', color: 'bg-blue-100 text-blue-800', icon: CheckCircle },
@@ -35,21 +37,17 @@ export default function OrdersPage() {
     } else {
       fetchOrders();
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user]);
 
-  // Gọi API lấy danh sách đơn
+  // Lấy danh sách đơn
   const fetchOrders = async () => {
-    if (!user) {
-    console.log("⚠️ User chưa load xong");
-    return;
-    }
-    console.log("🔑 User ID:", user.id);
+    if (!user) return;
     try {
       setLoading(true);
       const res = await axios.get(`${API_BASE}/orders/user/${user.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-      setOrders(res.data.orders);
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setOrders(res.data.orders || []);
     } catch (err) {
       console.error('Lỗi load orders', err);
     } finally {
@@ -57,41 +55,38 @@ export default function OrdersPage() {
     }
   };
 
-  // Gọi API hủy đơn
+  // Hủy đơn
   const cancelOrder = async (orderId: string) => {
     try {
       await axios.patch(`${API_BASE}/orders/${orderId}/cancel`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      fetchOrders(); // refresh danh sách
+      fetchOrders();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Không thể hủy đơn');
     }
   };
 
+  // Format
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
   const formatDate = (dateString: string) =>
     new Date(dateString).toLocaleDateString('vi-VN');
 
+  // Lọc đơn
   const filteredOrders =
-    selectedStatus === 'all' ? orders : orders.filter((order) => order.status === selectedStatus);
+    selectedStatus === 'all' ? orders : orders.filter((o) => o.status === selectedStatus);
 
-  const getStatusIcon = (status: string) => {
-    const config = statusConfig[status as keyof typeof statusConfig];
-    return config ? config.icon : Clock;
-  };
+  // Trạng thái
+  const getStatusIcon = (status: string) =>
+    statusConfig[status as keyof typeof statusConfig]?.icon || Clock;
 
-  const getStatusColor = (status: string) => {
-    const config = statusConfig[status as keyof typeof statusConfig];
-    return config ? config.color : 'bg-gray-100 text-gray-800';
-  };
+  const getStatusColor = (status: string) =>
+    statusConfig[status as keyof typeof statusConfig]?.color || 'bg-gray-100 text-gray-800';
 
-  const getStatusLabel = (status: string) => {
-    const config = statusConfig[status as keyof typeof statusConfig];
-    return config ? config.label : status;
-  };
+  const getStatusLabel = (status: string) =>
+    statusConfig[status as keyof typeof statusConfig]?.label || status;
 
   if (!isAuthenticated) {
     return (
@@ -104,7 +99,11 @@ export default function OrdersPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
       <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Đơn hàng của tôi</h1>
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Đơn hàng của tôi</h1>
+          <p className="text-gray-600">Theo dõi và quản lý các đơn hàng của bạn</p>
+        </div>
 
         {/* Filter Tabs */}
         <div className="bg-white rounded-lg shadow-sm p-4 mb-6 flex flex-wrap gap-2">
@@ -139,63 +138,114 @@ export default function OrdersPage() {
           ) : filteredOrders.length === 0 ? (
             <Card className="text-center py-12">Không có đơn hàng nào</Card>
           ) : (
-            filteredOrders.map((order, index) => (
-              <motion.div
-                key={order.orderId}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
-              >
-                <Card className="shadow-lg hover:shadow-xl">
-                  <div className="p-6">
-                    <div className="flex justify-between mb-4">
-                      <div className="flex items-center space-x-2">
-                        <Package className="w-5 h-5 text-gray-600" />
-                        <span className="font-semibold">#{order.orderId}</span>
-                        <span className="text-gray-500">•</span>
-                        <span>{formatDate(order.orderDate)}</span>
-                      </div>
-                      <div className={`flex items-center space-x-2 px-3 py-1 rounded-full ${getStatusColor(order.status)}`}>
-                        {React.createElement(getStatusIcon(order.status), { className: 'w-4 h-4' })}
-                        <span>{getStatusLabel(order.status)}</span>
-                      </div>
-                    </div>
+            <AnimatePresence>
+              {filteredOrders.map((order, index) => {
+                const orderTotal =
+                  order.totalAmount ??
+                  order.orderDetails?.reduce(
+                    (sum: number, d: any) => sum + d.unitPrice * d.quantity,
+                    0
+                  ) ??
+                  0;
 
-                    {/* Items */}
-                    <div className="space-y-2 mb-4">
-                      {order.orderDetails?.map((detail: any) => (
-                        <div key={detail.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                          <div className="flex items-center space-x-3">
-                            <img
-                              // src={detail.product?.images?.find((img: any) => img.isPrimary)?.imageUrl 
-                              //   || detail.product?.images?.[0]?.imageUrl 
-                              //   || 'https://picsum.photos/200'}
-                              src={'https://picsum.photos/200'}
-                              alt={detail.product?.name}
-                              className="w-12 h-12 object-cover rounded"
-                            />
-                            <span>{detail.product?.name} × {detail.quantity}</span>
+                return (
+                  <motion.div
+                    key={order.orderId}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                  >
+                    <Card className="shadow-lg hover:shadow-xl">
+                      <div className="p-6">
+                        {/* Order Header */}
+                        <div className="flex justify-between mb-4">
+                          <div className="flex items-center space-x-2">
+                            <Package className="w-5 h-5 text-gray-600" />
+                            <span className="font-semibold">#{order.orderId}</span>
+                            <span className="text-gray-500">•</span>
+                            <span>{formatDate(order.orderDate)}</span>
                           </div>
-                          <span>{formatPrice(detail.unitPrice * detail.quantity)}</span>
+                          <div className={`flex items-center space-x-2 px-3 py-1 rounded-full ${getStatusColor(order.status)}`}>
+                            {React.createElement(getStatusIcon(order.status), { className: 'w-4 h-4' })}
+                            <span>{getStatusLabel(order.status)}</span>
+                          </div>
                         </div>
-                      ))}
-                    </div>
 
-                    {/* Footer */}
-                    <div className="flex justify-between items-center">
-                      <p className="font-bold">Tổng: {formatPrice(order.totalAmount)}</p>
-                      {(order.status === 'NEW' || order.status === 'CONFIRMED' || order.status === 'PREPARING') && (
-                        <Button
-                          label="Hủy đơn"
-                          className="bg-red-500 text-white"
-                          onClick={() => cancelOrder(order.orderId)}
-                        />
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              </motion.div>
-            ))
+                        {/* Order Items */}
+                        <div className="space-y-2 mb-4">
+                          {order.orderDetails?.map((detail: any) => (
+                            <div key={detail.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                              <div className="flex items-center space-x-3">
+                                <img
+                                  src={
+                                    detail.product?.images?.[0]?.imageUrl ||
+                                    'https://picsum.photos/200'
+                                  }
+                                  alt={detail.product?.name}
+                                  className="w-12 h-12 object-cover rounded"
+                                />
+                                <span>
+                                  {detail.product?.name} × {detail.quantity}
+                                </span>
+                              </div>
+                              <span>{formatPrice(detail.unitPrice * detail.quantity)}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Summary */}
+                        <div className="border-t border-gray-200 pt-4 flex justify-between items-center">
+                          <div>
+                            <div className="flex items-center space-x-2 text-sm text-gray-600">
+                              <Truck className="w-4 h-4" />
+                              <span>{order.shippingAddress}</span>
+                            </div>
+                            <div className="flex items-center space-x-2 text-sm text-gray-600 mt-1">
+                              <CreditCard className="w-4 h-4" />
+                              <span>
+                                {order.paymentMethod === 'COD'
+                                  ? 'Thanh toán khi nhận hàng'
+                                  : order.paymentMethod}
+                              </span>
+                            </div>
+                          </div>
+                          <p className="text-lg font-bold text-gray-900">
+                            Tổng cộng: {formatPrice(orderTotal)}
+                          </p>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex justify-end mt-4 space-x-3">
+                          <Link
+                            href={`/orders/${order.orderId}`}
+                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                          >
+                            Xem chi tiết
+                          </Link>
+                          {(order.status === 'NEW' ||
+                            order.status === 'CONFIRMED' ||
+                            order.status === 'PREPARING') && (
+                            <Button
+                              label="Hủy đơn"
+                              className="bg-red-500 text-white"
+                              onClick={() => cancelOrder(order.orderId)}
+                            />
+                          )}
+                          {order.status === 'DELIVERED' && (
+                            <Button
+                              label="Đánh giá"
+                              className="bg-green-500 text-white"
+                              onClick={() => alert('Chức năng đánh giá')}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           )}
         </div>
       </div>

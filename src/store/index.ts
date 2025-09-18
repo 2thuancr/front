@@ -4,6 +4,8 @@ import storage from 'redux-persist/lib/storage';
 import { combineReducers } from '@reduxjs/toolkit';
 import authReducer from './authSlice';
 import userReducer from './userSlice';
+import cartReducer from './cartSlice';
+import orderReducer from './orderSlice';
 
 // Persist config - chỉ persist auth state
 const persistConfig = {
@@ -15,6 +17,8 @@ const persistConfig = {
 const rootReducer = combineReducers({
   auth: authReducer,
   user: userReducer,
+  cart: cartReducer,
+  order: orderReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
