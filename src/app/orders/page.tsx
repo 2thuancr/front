@@ -1,268 +1,253 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "@/store";
-import { fetchOrders, setCurrentPage } from "@/store/orderSlice";
-import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
-import { Order } from "@/types/order";
+import React, { useState, useEffect } from 'react';
+import { Card } from 'primereact/card';
+import { Button } from 'primereact/button';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Package, Clock, CheckCircle, XCircle, Truck, CreditCard } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useRouter } from 'next/navigation';
+import axios from 'axios';
+import Link from 'next/link';
+
+// API base URL
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+// Trạng thái đơn hàng
+const statusConfig = {
+  NEW: { label: 'Đơn hàng mới', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
+  CONFIRMED: { label: 'Đã xác nhận', color: 'bg-blue-100 text-blue-800', icon: CheckCircle },
+  PREPARING: { label: 'Shop đang chuẩn bị hàng', color: 'bg-purple-100 text-purple-800', icon: Package },
+  SHIPPING: { label: 'Đang giao hàng', color: 'bg-indigo-100 text-indigo-800', icon: Truck },
+  DELIVERED: { label: 'Đã giao hàng', color: 'bg-green-100 text-green-800', icon: CheckCircle },
+  CANCELED: { label: 'Đã hủy', color: 'bg-red-100 text-red-800', icon: XCircle },
+  CANCEL_REQUESTED: { label: 'Yêu cầu hủy', color: 'bg-orange-100 text-orange-800', icon: Clock },
+};
 
 export default function OrdersPage() {
-  const dispatch = useDispatch<AppDispatch>();
-  const { orders, ordersLoading, ordersError, currentPage, totalPages, totalOrders } = 
-    useSelector((state: RootState) => state.order);
-  const userId = useSelector((state: RootState) => state.user?.profile?.id);
+  const { isAuthenticated, user, token } = useAuth();
+  const router = useRouter();
+  const [orders, setOrders] = useState<any[]>([]);
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (userId) {
-      dispatch(fetchOrders({ userId, page: currentPage }));
+    if (!isAuthenticated) {
+      router.push('/login');
+    } else {
+      fetchOrders();
     }
-  }, [dispatch, userId, currentPage]);
+  }, [isAuthenticated, user]);
 
-  const handlePageChange = (page: number) => {
-    dispatch(setCurrentPage(page));
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'confirmed':
-        return 'bg-blue-100 text-blue-800';
-      case 'shipped':
-        return 'bg-purple-100 text-purple-800';
-      case 'delivered':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  // Lấy danh sách đơn
+  const fetchOrders = async () => {
+    if (!user) return;
+    try {
+      setLoading(true);
+      const res = await axios.get(`${API_BASE}/orders/user/${user.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setOrders(res.data.orders || []);
+    } catch (err) {
+      console.error('Lỗi load orders', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'Chờ xác nhận';
-      case 'confirmed':
-        return 'Đã xác nhận';
-      case 'shipped':
-        return 'Đang giao hàng';
-      case 'delivered':
-        return 'Đã giao hàng';
-      case 'cancelled':
-        return 'Đã hủy';
-      default:
-        return status;
+  // Hủy đơn
+  const cancelOrder = async (orderId: string) => {
+    try {
+      await axios.patch(`${API_BASE}/orders/${orderId}/cancel`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchOrders();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Không thể hủy đơn');
     }
   };
 
-  if (ordersLoading) {
+  // Format
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString('vi-VN');
+
+  // Lọc đơn
+  const filteredOrders =
+    selectedStatus === 'all' ? orders : orders.filter((o) => o.status === selectedStatus);
+
+  // Trạng thái
+  const getStatusIcon = (status: string) =>
+    statusConfig[status as keyof typeof statusConfig]?.icon || Clock;
+
+  const getStatusColor = (status: string) =>
+    statusConfig[status as keyof typeof statusConfig]?.color || 'bg-gray-100 text-gray-800';
+
+  const getStatusLabel = (status: string) =>
+    statusConfig[status as keyof typeof statusConfig]?.label || status;
+
+  if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 1 }}
-          className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full"
-        />
-      </div>
-    );
-  }
-
-  if (ordersError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center p-6 bg-red-50 rounded-xl shadow-lg"
-        >
-          <p className="text-red-600 text-lg font-medium">{ordersError}</p>
-          <button
-            onClick={() => userId && dispatch(fetchOrders({ userId }))}
-            className="mt-4 px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
-          >
-            Thử lại
-          </button>
-        </motion.div>
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-600">Đang chuyển hướng...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
+      <div className="container mx-auto py-8">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Đơn hàng của tôi
-          </h1>
-          <p className="text-gray-600">
-            Quản lý và theo dõi đơn hàng của bạn
-          </p>
-        </motion.div>
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Đơn hàng của tôi</h1>
+          <p className="text-gray-600">Theo dõi và quản lý các đơn hàng của bạn</p>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-6 flex flex-wrap gap-2">
+          <button
+            onClick={() => setSelectedStatus('all')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium ${
+              selectedStatus === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'
+            }`}
+          >
+            Tất cả ({orders.length})
+          </button>
+          {Object.entries(statusConfig).map(([status, config]) => {
+            const count = orders.filter((o) => o.status === status).length;
+            return (
+              <button
+                key={status}
+                onClick={() => setSelectedStatus(status)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                  selectedStatus === status ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'
+                }`}
+              >
+                {config.label} ({count})
+              </button>
+            );
+          })}
+        </div>
 
         {/* Orders List */}
-        {orders.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center py-12 bg-white rounded-xl shadow-sm"
-          >
-            <div className="text-6xl mb-4">📦</div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Chưa có đơn hàng nào
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Bạn chưa có đơn hàng nào. Hãy bắt đầu mua sắm ngay!
-            </p>
-            <Link
-              href="/products"
-              className="inline-block px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
-            >
-              Mua sắm ngay
-            </Link>
-          </motion.div>
-        ) : (
-          <div className="space-y-6">
+        <div className="space-y-6">
+          {loading ? (
+            <p>Đang tải đơn hàng...</p>
+          ) : filteredOrders.length === 0 ? (
+            <Card className="text-center py-12">Không có đơn hàng nào</Card>
+          ) : (
             <AnimatePresence>
-              {orders.map((order: Order) => (
-                <motion.div
-                  key={order.orderId}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="p-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          Đơn hàng #{order.orderNumber}
-                        </h3>
-                        <p className="text-sm text-gray-500">
-                          Đặt ngày {new Date(order.createdAt).toLocaleDateString('vi-VN')}
-                        </p>
-                      </div>
-                      <div className="mt-2 sm:mt-0">
-                        <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
-                          {getStatusText(order.status)}
-                        </span>
-                      </div>
-                    </div>
+              {filteredOrders.map((order, index) => {
+                const orderTotal =
+                  order.totalAmount ??
+                  order.orderDetails?.reduce(
+                    (sum: number, d: any) => sum + d.unitPrice * d.quantity,
+                    0
+                  ) ??
+                  0;
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      <div>
-                        <p className="text-sm text-gray-500">Tổng tiền</p>
-                        <p className="text-lg font-semibold text-gray-900">
-                          {order.totalAmount.toLocaleString()}₫
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Phương thức thanh toán</p>
-                        <p className="text-sm font-medium text-gray-900">
-                          {order.paymentMethod === 'COD' ? 'Thanh toán khi nhận hàng' : order.paymentMethod}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Số sản phẩm</p>
-                        <p className="text-sm font-medium text-gray-900">
-                          {order.orderItems.length} sản phẩm
-                        </p>
-                      </div>
-                    </div>
+                return (
+                  <motion.div
+                    key={order.orderId}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                  >
+                    <Card className="shadow-lg hover:shadow-xl">
+                      <div className="p-6">
+                        {/* Order Header */}
+                        <div className="flex justify-between mb-4">
+                          <div className="flex items-center space-x-2">
+                            <Package className="w-5 h-5 text-gray-600" />
+                            <span className="font-semibold">#{order.orderId}</span>
+                            <span className="text-gray-500">•</span>
+                            <span>{formatDate(order.orderDate)}</span>
+                          </div>
+                          <div className={`flex items-center space-x-2 px-3 py-1 rounded-full ${getStatusColor(order.status)}`}>
+                            {React.createElement(getStatusIcon(order.status), { className: 'w-4 h-4' })}
+                            <span>{getStatusLabel(order.status)}</span>
+                          </div>
+                        </div>
 
-                    {/* Order Items Preview */}
-                    <div className="mb-4">
-                      <p className="text-sm text-gray-500 mb-2">Sản phẩm:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {order.orderItems.slice(0, 3).map((item) => (
-                          <span
-                            key={item.orderItemId}
-                            className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-gray-100 text-gray-700"
+                        {/* Order Items */}
+                        <div className="space-y-2 mb-4">
+                          {order.orderDetails?.map((detail: any) => (
+                            <div key={detail.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                              <div className="flex items-center space-x-3">
+                                <img
+                                  src={
+                                    detail.product?.images?.[0]?.imageUrl ||
+                                    'https://picsum.photos/200'
+                                  }
+                                  alt={detail.product?.name}
+                                  className="w-12 h-12 object-cover rounded"
+                                />
+                                <span>
+                                  {detail.product?.name} × {detail.quantity}
+                                </span>
+                              </div>
+                              <span>{formatPrice(detail.unitPrice * detail.quantity)}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Summary */}
+                        <div className="border-t border-gray-200 pt-4 flex justify-between items-center">
+                          <div>
+                            <div className="flex items-center space-x-2 text-sm text-gray-600">
+                              <Truck className="w-4 h-4" />
+                              <span>{order.shippingAddress}</span>
+                            </div>
+                            <div className="flex items-center space-x-2 text-sm text-gray-600 mt-1">
+                              <CreditCard className="w-4 h-4" />
+                              <span>
+                                {order.paymentMethod === 'COD'
+                                  ? 'Thanh toán khi nhận hàng'
+                                  : order.paymentMethod}
+                              </span>
+                            </div>
+                          </div>
+                          <p className="text-lg font-bold text-gray-900">
+                            Tổng cộng: {formatPrice(orderTotal)}
+                          </p>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex justify-end mt-4 space-x-3">
+                          <Link
+                            href={`/orders/${order.orderId}`}
+                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
                           >
-                            {item.productName} x{item.quantity}
-                          </span>
-                        ))}
-                        {order.orderItems.length > 3 && (
-                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-gray-100 text-gray-700">
-                            +{order.orderItems.length - 3} sản phẩm khác
-                          </span>
-                        )}
+                            Xem chi tiết
+                          </Link>
+                          {(order.status === 'NEW' ||
+                            order.status === 'CONFIRMED' ||
+                            order.status === 'PREPARING') && (
+                            <Button
+                              label="Hủy đơn"
+                              className="bg-red-500 text-white"
+                              onClick={() => cancelOrder(order.orderId)}
+                            />
+                          )}
+                          {order.status === 'DELIVERED' && (
+                            <Button
+                              label="Đánh giá"
+                              className="bg-green-500 text-white"
+                              onClick={() => alert('Chức năng đánh giá')}
+                            />
+                          )}
+                        </div>
                       </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <Link
-                        href={`/orders/${order.orderId}`}
-                        className="flex-1 sm:flex-none px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-center"
-                      >
-                        Xem chi tiết
-                      </Link>
-                      {order.status === 'pending' && (
-                        <button className="flex-1 sm:flex-none px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition">
-                          Hủy đơn hàng
-                        </button>
-                      )}
-                      {order.status === 'delivered' && (
-                        <button className="flex-1 sm:flex-none px-4 py-2 border border-green-300 text-green-600 rounded-lg hover:bg-green-50 transition">
-                          Đánh giá
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+                    </Card>
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
-          </div>
-        )}
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-8 flex justify-center"
-          >
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Trước
-              </button>
-              
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  onClick={() => handlePageChange(page)}
-                  className={`px-3 py-2 rounded-lg ${
-                    currentPage === page
-                      ? 'bg-blue-500 text-white'
-                      : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-              
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Sau
-              </button>
-            </div>
-          </motion.div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
