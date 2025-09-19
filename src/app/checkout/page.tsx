@@ -58,11 +58,16 @@ export default function CheckoutPage() {
     }
   }, [dispatch, userId]);
 
-  // Redirect if no cart or empty cart
+  // Redirect if no cart or empty cart (only after loading is complete)
   useEffect(() => {
-    if (!cartLoading && (!cart || cart.cartItems.length === 0)) {
-      router.push("/cart");
-    }
+    // Thêm delay nhỏ để đảm bảo cart đã load xong
+    const timer = setTimeout(() => {
+      if (!cartLoading && cart && cart.cartItems.length === 0) {
+        router.push("/cart");
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [cart, cartLoading, router]);
 
   // Reset checkout state when component unmounts
@@ -97,7 +102,7 @@ export default function CheckoutPage() {
       // Validate shipping info
       if (!shippingInfo.customerName || !shippingInfo.customerPhone || 
           !shippingInfo.shippingAddress || !shippingInfo.city || 
-          !shippingInfo.district || !shippingInfo.ward) {
+          !shippingInfo.ward) {
         alert("Vui lòng điền đầy đủ thông tin giao hàng");
         return;
       }

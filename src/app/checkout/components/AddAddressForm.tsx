@@ -1,22 +1,33 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShippingInfo } from "@/types/order";
+
+interface Address {
+  id: number;
+  name: string;
+  phone: string;
+  address: string;
+  city: string;
+  ward: string;
+  isDefault: boolean;
+  type: 'home' | 'office';
+}
 
 interface AddAddressFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (address: ShippingInfo) => void;
+  editingAddress?: Address | null;
 }
 
-export function AddAddressForm({ isOpen, onClose, onSave }: AddAddressFormProps) {
+export function AddAddressForm({ isOpen, onClose, onSave, editingAddress }: AddAddressFormProps) {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     address: "",
     city: "",
-    district: "",
     ward: "",
     type: 'home' as 'home' | 'office',
     isDefault: false
@@ -26,6 +37,32 @@ export function AddAddressForm({ isOpen, onClose, onSave }: AddAddressFormProps)
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Điền dữ liệu khi editingAddress thay đổi
+  useEffect(() => {
+    if (editingAddress) {
+      setFormData({
+        name: editingAddress.name,
+        phone: editingAddress.phone,
+        address: editingAddress.address,
+        city: editingAddress.city,
+        ward: editingAddress.ward,
+        type: editingAddress.type,
+        isDefault: editingAddress.isDefault
+      });
+    } else {
+      // Reset form khi không có editingAddress
+      setFormData({
+        name: "",
+        phone: "",
+        address: "",
+        city: "",
+        ward: "",
+        type: 'home',
+        isDefault: false
+      });
+    }
+  }, [editingAddress]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -34,7 +71,6 @@ export function AddAddressForm({ isOpen, onClose, onSave }: AddAddressFormProps)
       customerPhone: formData.phone,
       shippingAddress: formData.address,
       city: formData.city,
-      district: formData.district,
       ward: formData.ward,
       notes: ""
     };
@@ -74,7 +110,7 @@ export function AddAddressForm({ isOpen, onClose, onSave }: AddAddressFormProps)
           {/* Header */}
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-900">
-              Địa chỉ mới (dùng thông tin trước sáp nhập)
+              {editingAddress ? "Chỉnh sửa địa chỉ" : "Thêm địa chỉ mới"}
             </h2>
           </div>
 
@@ -111,24 +147,33 @@ export function AddAddressForm({ isOpen, onClose, onSave }: AddAddressFormProps)
                 </div>
               </div>
 
-              {/* Location Dropdown */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tỉnh/Thành phố, Quận/Huyện, Phường/Xã *
-                </label>
-                <div className="relative">
+              {/* Location Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tỉnh/Thành phố *
+                  </label>
                   <input
                     type="text"
-                    value={`${formData.city}, ${formData.district}, ${formData.ward}`}
+                    value={formData.city}
+                    onChange={(e) => handleInputChange('city', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Chọn tỉnh/thành phố, quận/huyện, phường/xã"
-                    readOnly
+                    placeholder="Tỉnh/Thành phố"
+                    required
                   />
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Phường/Xã *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.ward}
+                    onChange={(e) => handleInputChange('ward', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Phường/Xã"
+                    required
+                  />
                 </div>
               </div>
 

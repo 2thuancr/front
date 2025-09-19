@@ -20,15 +20,40 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
   const [showAddressManager, setShowAddressManager] = useState(false);
   const [showAddAddressForm, setShowAddAddressForm] = useState(false);
 
-  // Auto-fill form with user profile data
+  // Auto-fill form with saved address or user profile data
   useEffect(() => {
     if (userProfile && !shippingInfo.customerName) {
+      // Kiểm tra xem có địa chỉ đã lưu không
+      const savedAddresses = localStorage.getItem(`addresses_${userProfile.id}`);
+      
+      if (savedAddresses) {
+        // Có địa chỉ đã lưu, ưu tiên dùng địa chỉ đó
+        const addresses = JSON.parse(savedAddresses);
+        const defaultAddress = addresses.find((addr: any) => addr.isDefault) || addresses[0];
+        
+        if (defaultAddress) {
+          const autoFilledData: ShippingInfo = {
+            customerName: defaultAddress.name,
+            customerPhone: defaultAddress.phone,
+            shippingAddress: defaultAddress.address,
+            city: defaultAddress.city,
+            ward: defaultAddress.ward,
+            notes: ""
+          };
+          
+          setFormData(autoFilledData);
+          onShippingInfoChange(autoFilledData);
+          console.log("✅ Auto-filled form with saved address:", autoFilledData);
+          return;
+        }
+      }
+      
+      // Không có địa chỉ đã lưu, dùng user profile
       const autoFilledData: ShippingInfo = {
         customerName: `${userProfile.firstName} ${userProfile.lastName}`.trim(),
         customerPhone: userProfile.phone || "",
         shippingAddress: userProfile.address || "",
         city: userProfile.city || "",
-        district: "",
         ward: "",
         notes: ""
       };
@@ -57,7 +82,6 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
         customerPhone: userProfile.phone || "",
         shippingAddress: userProfile.address || "",
         city: userProfile.city || "",
-        district: "",
         ward: "",
         notes: ""
       };
@@ -104,17 +128,6 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
         )}
       </div>
 
-      {/* Auto-fill notification */}
-      {userProfile && formData.customerName && formData.customerName === `${userProfile.firstName} ${userProfile.lastName}`.trim() && (
-        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-          <div className="flex items-center space-x-2">
-            <div className="text-green-500 text-sm">✅</div>
-            <p className="text-sm text-green-700">
-              Đã tự động điền thông tin từ hồ sơ của bạn. Bạn có thể chỉnh sửa nếu cần.
-            </p>
-          </div>
-        </div>
-      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -124,11 +137,10 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
             </label>
             <input
               type="text"
-              value={formData.customerName}
-              onChange={(e) => handleInputChange("customerName", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={formData.customerName || ""}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
               placeholder="Nhập họ và tên"
-              required
+              readOnly
             />
           </div>
 
@@ -138,11 +150,10 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
             </label>
             <input
               type="tel"
-              value={formData.customerPhone}
-              onChange={(e) => handleInputChange("customerPhone", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={formData.customerPhone || ""}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
               placeholder="Nhập số điện thoại"
-              required
+              readOnly
             />
           </div>
         </div>
@@ -153,24 +164,22 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
           </label>
           <input
             type="text"
-            value={formData.shippingAddress}
-            onChange={(e) => handleInputChange("shippingAddress", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            value={formData.shippingAddress || ""}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
             placeholder="Số nhà, tên đường"
-            required
+            readOnly
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Tỉnh/Thành phố *
             </label>
             <select
-              value={formData.city}
-              onChange={(e) => handleInputChange("city", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
+              value={formData.city || ""}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
+              disabled
             >
               <option value="">Chọn tỉnh/thành phố</option>
               <option value="TP. Hồ Chí Minh">TP. Hồ Chí Minh</option>
@@ -240,29 +249,14 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Quận/Huyện *
-            </label>
-            <input
-              type="text"
-              value={formData.district}
-              onChange={(e) => handleInputChange("district", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Nhập quận/huyện"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
               Phường/Xã *
             </label>
             <input
               type="text"
-              value={formData.ward}
-              onChange={(e) => handleInputChange("ward", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={formData.ward || ""}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
               placeholder="Nhập phường/xã"
-              required
+              readOnly
             />
           </div>
         </div>
