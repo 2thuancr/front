@@ -244,5 +244,101 @@ export const paymentApi = {
     api.post(`/payments/webhook/${gateway}`, data).then((res) => res.data),
 };
 
+// WISHLIST API
+export const wishlistApi = {
+  // Wishlist Management
+  addToWishlist: (productId: number) =>
+    api.post('/wishlist', { productId }).then((res) => res.data),
+
+  getWishlist: () =>
+    api.get('/wishlist').then((res) => res.data),
+
+  getUserWishlist: (userId: number) =>
+    api.get(`/wishlist/user/${userId}`).then((res) => res.data),
+
+  getProductWishlist: (productId: number) =>
+    api.get(`/wishlist/product/${productId}`).then((res) => res.data),
+
+  getWishlistCount: (productId: number) =>
+    api.get(`/wishlist/product/${productId}/count`).then((res) => res.data),
+
+  getUserWishlistCount: (userId: number) =>
+    api.get(`/wishlist/user/${userId}/count`).then((res) => res.data),
+
+  getMostWishlisted: (limit?: number) =>
+    api.get('/wishlist/most-wishlisted', { params: { limit } }).then((res) => res.data),
+
+  checkInWishlist: (productId: number) =>
+    api.get(`/wishlist/check/${productId}`).then((res) => res.data),
+
+  removeFromWishlist: (wishlistId: number) =>
+    api.delete(`/wishlist/${wishlistId}`).then((res) => res.data),
+
+  removeProductFromWishlist: (productId: number) =>
+    api.delete(`/wishlist/product/${productId}`).then((res) => res.data),
+};
+
+// PRODUCT STATS API
+export const productStatsApi = {
+  getProductStats: (productId: number) =>
+    api.get(`/products/${productId}/stats`).then((res) => res.data),
+
+  getSimilarProducts: (productId: number, limit: number = 6) =>
+    api.get(`/products/${productId}/similar`, { params: { limit } }).then((res) => res.data),
+
+  getMostViewed: (limit?: number) =>
+    api.get('/products/most-viewed', { params: { limit } }).then((res) => res.data),
+
+  getProductViewCount: (productId: number) =>
+    api.get(`/product-views/product/${productId}/count`).then((res) => res.data),
+
+  getUserViewHistory: (userId: number) =>
+    api.get(`/product-views/user/${userId}`).then((res) => res.data),
+
+  trackProductView: (productId: number) =>
+    api.post('/product-views', { productId }).then((res) => res.data),
+};
+
+// PRODUCT REVIEWS API
+export const reviewApi = {
+  // Get reviews for a product
+  getProductReviews: (productId: number, page: number = 1, limit: number = 10) =>
+    api.get(`/product-reviews/product/${productId}`, { 
+      params: { page, limit } 
+    }).then((res) => res.data),
+
+  // Get rating stats for a product
+  getProductRatingStats: (productId: number) =>
+    api.get(`/product-reviews/product/${productId}/rating-stats`).then((res) => res.data),
+
+  // Create a new review
+  createReview: (data: {
+    productId: number;
+    userId: number;
+    rating: number;
+    comment?: string;
+  }) => api.post('/product-reviews', data).then((res) => res.data),
+
+  // Update a review
+  updateReview: (reviewId: number, data: {
+    rating?: number;
+    comment?: string;
+  }) => api.put(`/product-reviews/${reviewId}`, data).then((res) => res.data),
+
+  // Delete a review
+  deleteReview: (reviewId: number) =>
+    api.delete(`/product-reviews/${reviewId}`).then((res) => res.data),
+
+  // Get user's reviews
+  getUserReviews: (userId: number, page: number = 1, limit: number = 10) =>
+    api.get(`/product-reviews`, { 
+      params: { userId, page, limit } 
+    }).then((res) => res.data),
+
+  // Get user's review for a specific product
+  getUserReviewForProduct: (userId: number, productId: number) =>
+    api.get(`/product-reviews/user/${userId}/product/${productId}`).then((res) => res.data),
+};
+
 export default api;
 

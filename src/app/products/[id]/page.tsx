@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { productAPI, cartApi } from '@/lib/api';
+import { productAPI, cartApi, productStatsApi } from '@/lib/api';
 import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
@@ -11,10 +11,12 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
+import { WishlistButton, ProductStats, SimilarProducts, ProductReviews } from '@/components/ui';
+import { Product } from '@/types/api';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
-  const [product, setProduct] = useState<any | null>(null);
+  const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [cartId, setCartId] = useState<number | null>(null);
@@ -34,6 +36,15 @@ export default function ProductDetailPage() {
 
         console.log("✅ Dữ liệu sản phẩm:", productData);
         setProduct(productData);
+
+        // Track product view
+        if (userId) {
+          try {
+            await productStatsApi.trackProductView(numericId);
+          } catch (error) {
+            console.error("Error tracking product view:", error);
+          }
+        }
       } catch (error) {
         console.error("❌ Lỗi khi load chi tiết sản phẩm:", error);
       } finally {
@@ -129,7 +140,11 @@ export default function ProductDetailPage() {
 
         {/* Thông tin sản phẩm */}
         <div>
-          <h1 className="text-3xl font-bold mb-4">{product.productName}</h1>
+          <div className="flex items-start justify-between mb-4">
+            <h1 className="text-3xl font-bold">{product.productName}</h1>
+            <WishlistButton productId={product.productId} size="lg" />
+          </div>
+          
           <p className="text-gray-500 text-sm mb-2">
             Danh mục:{" "}
             <span className="font-medium text-black">
@@ -140,6 +155,11 @@ export default function ProductDetailPage() {
           <p className="text-red-600 text-3xl font-bold mb-4">
             {Number(product.price).toLocaleString()}₫
           </p>
+
+          {/* Product Stats */}
+          <div className="mb-6">
+            <ProductStats productId={product.productId} compact={true} />
+          </div>
 
           <p className="mb-6 text-gray-700 leading-relaxed">{product.description}</p>
 
@@ -175,6 +195,16 @@ export default function ProductDetailPage() {
             {adding ? "Đang thêm..." : "Thêm vào giỏ hàng"}
           </button>
         </div>
+      </div>
+
+      {/* Similar Products */}
+      <div className="mt-16">
+        <SimilarProducts productId={product.productId} />
+      </div>
+
+      {/* Product Reviews */}
+      <div className="mt-16">
+        <ProductReviews productId={product.productId} />
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import authReducer from './authSlice';
 import userReducer from './userSlice';
 import cartReducer from './cartSlice';
 import orderReducer from './orderSlice';
+import wishlistReducer from './wishlistSlice';
 
 // Persist config - chỉ persist auth state
 const persistConfig = {
@@ -19,6 +20,7 @@ const rootReducer = combineReducers({
   user: userReducer,
   cart: cartReducer,
   order: orderReducer,
+  wishlist: wishlistReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
