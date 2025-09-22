@@ -7,16 +7,19 @@ import { CartItem } from "@/types/order";
 
 interface OrderSummaryProps {
   cart: Cart;
+  discountAmount?: number;
+  voucherCode?: string | null;
 }
 
-export function OrderSummary({ cart }: OrderSummaryProps) {
+export function OrderSummary({ cart, discountAmount = 0, voucherCode }: OrderSummaryProps) {
   const subtotal = cart.cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
 
   const shippingFee = 30000; // Fixed shipping fee
-  const total = subtotal + shippingFee;
+  const discount = Math.max(0, Math.min(discountAmount, subtotal));
+  const total = Math.max(0, subtotal - discount) + shippingFee;
 
   return (
     <motion.div
@@ -69,6 +72,14 @@ export function OrderSummary({ cart }: OrderSummaryProps) {
           <span className="text-gray-600">Tạm tính:</span>
           <span className="text-gray-900">{subtotal.toLocaleString()}₫</span>
         </div>
+        {discount > 0 && (
+          <div className="flex justify-between text-sm text-green-700">
+            <span>
+              Giảm giá{voucherCode ? ` (${voucherCode})` : ""}:
+            </span>
+            <span>-{discount.toLocaleString()}₫</span>
+          </div>
+        )}
         
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">Phí vận chuyển:</span>

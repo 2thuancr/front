@@ -17,7 +17,7 @@ import { CheckoutForm } from "./components/CheckoutForm";
 import { OrderSummary } from "./components/OrderSummary";
 import { PaymentMethodSelector } from "./components/PaymentMethodSelector";
 import { CheckoutSuccess } from "./components/CheckoutSuccess";
-import { CartItem, ShippingInfo } from "@/types/order";
+import { ShippingInfo } from "@/types/order";
 
 export default function CheckoutPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -39,12 +39,13 @@ export default function CheckoutPage() {
   // Local state
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<number | null>(null);
+  const [voucherCode, setVoucherCode] = useState<string | null>(null);
+  const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     customerName: "",
     customerPhone: "",
     shippingAddress: "",
     city: "",
-    district: "",
     ward: "",
     notes: ""
   });
@@ -123,6 +124,19 @@ export default function CheckoutPage() {
     }
   };
 
+  // Simple voucher validation (client-side placeholder)
+  const applyVoucher = () => {
+    if (!voucherCode) return;
+    // Demo rules: CODE10 => 10% off; CODE50K => 50,000₫ off; max to subtotal
+    const code = voucherCode.trim().toUpperCase();
+    const subtotal = cart?.cartItems.reduce((s, i) => s + i.price * i.quantity, 0) || 0;
+    let discount = 0;
+    if (code === 'CODE10') discount = Math.round(subtotal * 0.1);
+    else if (code === 'CODE50K') discount = 50000;
+    else discount = 0;
+    setDiscountAmount(Math.max(0, Math.min(discount, subtotal)));
+  };
+
   const handlePlaceOrder = async () => {
     if (!cart || !userId || !selectedPaymentMethod) return;
 
@@ -131,7 +145,7 @@ export default function CheckoutPage() {
         cartId: cart.cartId,
         shippingInfo,
         paymentMethodId: selectedPaymentMethod,
-        notes: shippingInfo.notes
+        notes: shippingInfo.notes ?? ""
       };
 
       const result = await dispatch(createOrder(checkoutData)).unwrap();
@@ -298,15 +312,45 @@ export default function CheckoutPage() {
                           {shippingInfo.customerName} - {shippingInfo.customerPhone}
                         </p>
                         <p className="text-gray-600">
-                          {shippingInfo.shippingAddress}, {shippingInfo.ward}, {shippingInfo.district}, {shippingInfo.city}
+                          {shippingInfo.shippingAddress}, {shippingInfo.ward}, {shippingInfo.city}
                         </p>
                       </div>
 
                       <div>
                         <h3 className="font-medium text-gray-900 mb-2">Phương thức thanh toán:</h3>
                         <p className="text-gray-600">
-                          {paymentMethods.find(pm => pm.paymentMethodId === selectedPaymentMethod)?.name}
+                          {(() => {
+                            const pm = paymentMethods.find(pm => pm.id === selectedPaymentMethod);
+                            if (!pm) return null;
+                            const code = (pm.code || '').toString().toUpperCase();
+                            const name = (pm.name || '').toString().toUpperCase();
+                            const isCOD = code === 'COD' || name === 'COD' || code.includes('CASH_ON_DELIVERY');
+                            return isCOD ? 'Thanh toán khi nhận hàng' : (pm.name || '');
+                          })()}
                         </p>
+                      </div>
+
+                      <div>
+                        <h3 className="font-medium text-gray-900 mb-2">Voucher:</h3>
+                        <div className="flex space-x-2">
+                          <input
+                            type="text"
+                            value={voucherCode || ''}
+                            onChange={(e) => setVoucherCode(e.target.value)}
+                            placeholder="Nhập mã (ví dụ: CODE10, CODE50K)"
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                          <button
+                            onClick={applyVoucher}
+                            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
+                            type="button"
+                          >
+                            Áp dụng
+                          </button>
+                        </div>
+                        {discountAmount > 0 && (
+                          <p className="mt-2 text-sm text-green-600">Đã áp dụng giảm {discountAmount.toLocaleString()}₫</p>
+                        )}
                       </div>
                     </div>
 
@@ -333,7 +377,7 @@ export default function CheckoutPage() {
 
           {/* Order Summary Sidebar */}
           <div className="lg:col-span-1">
-            <OrderSummary cart={cart} />
+            <OrderSummary cart={cart} discountAmount={discountAmount} voucherCode={voucherCode} />
           </div>
         </div>
       </div>
