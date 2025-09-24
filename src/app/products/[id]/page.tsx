@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { productAPI, cartApi, productStatsApi } from '@/lib/api';
+import { viewTracker } from '@/lib/viewTracker';
 import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
@@ -41,13 +42,13 @@ export default function ProductDetailPage() {
         console.log("✅ Dữ liệu sản phẩm:", productData);
         setProduct(productData);
 
-        // Track product view (only once per product load)
+        // Track product view using viewTracker with caching
         if (userId && !hasTrackedView) {
           try {
-            console.log("📊 Tracking product view for ID:", numericId);
-            await productStatsApi.trackProductView(numericId);
-            setHasTrackedView(true);
-            console.log("✅ Product view tracked successfully");
+            const result = await viewTracker.trackView(numericId, productStatsApi.trackProductView);
+            if (result.tracked) {
+              setHasTrackedView(true);
+            }
           } catch (error) {
             console.error("❌ Error tracking product view:", error);
           }

@@ -296,7 +296,7 @@ export const productStatsApi = {
     api.get(`/product-views/user/${userId}`).then((res) => res.data),
 
   trackProductView: (productId: number) =>
-    api.post('/product-views', { productId }).then((res) => res.data),
+    api.post(`/product-views/track/${productId}`).then((res) => res.data),
 };
 
 // PRODUCT REVIEWS API
