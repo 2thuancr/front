@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Heart } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/store';
-import { addToWishlist, removeFromWishlist, checkInWishlist, toggleWishlist } from '@/store/wishlistSlice';
+import { addToWishlist, removeFromWishlist, checkInWishlist, toggleWishlist, fetchWishlist } from '@/store/wishlistSlice';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
@@ -25,10 +25,18 @@ const WishlistButton: React.FC<WishlistButtonProps> = ({
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { isAuthenticated } = useAuth();
-  const { checkedItems, loading } = useSelector((state: RootState) => state.wishlist);
+  const { checkedItems, loading, items } = useSelector((state: RootState) => state.wishlist);
   
   const [isLoading, setIsLoading] = useState(false);
   const isInWishlist = checkedItems[productId] || false;
+
+  // Initialize wishlist state when component mounts
+  useEffect(() => {
+    if (isAuthenticated && items.length === 0 && !loading) {
+      console.log('🔄 Initializing wishlist state from WishlistButton...');
+      dispatch(fetchWishlist());
+    }
+  }, [dispatch, isAuthenticated, items.length, loading]);
 
   // Check wishlist status on mount and when authentication changes
   useEffect(() => {

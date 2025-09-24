@@ -141,10 +141,27 @@ const wishlistSlice = createSlice({
       })
       .addCase(fetchWishlist.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload;
+        
+        // Handle different response formats
+        let wishlistItems = [];
+        if (action.payload.wishlists && Array.isArray(action.payload.wishlists)) {
+          // Format: { wishlists: [...], total: 2, page: "1", limit: "10" }
+          wishlistItems = action.payload.wishlists;
+        } else if (Array.isArray(action.payload)) {
+          // Format: [...] (direct array)
+          wishlistItems = action.payload;
+        } else if (action.payload.data && Array.isArray(action.payload.data)) {
+          // Format: { data: [...] }
+          wishlistItems = action.payload.data;
+        }
+        
+        state.items = wishlistItems;
+        
         // Update checked items cache
-        action.payload.forEach((item: WishlistItem) => {
-          state.checkedItems[item.productId] = true;
+        wishlistItems.forEach((item: WishlistItem) => {
+          if (item.productId) {
+            state.checkedItems[item.productId] = true;
+          }
         });
       })
       .addCase(fetchWishlist.rejected, (state, action) => {
