@@ -21,10 +21,14 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [cartId, setCartId] = useState<number | null>(null);
   const [adding, setAdding] = useState(false);
+  const [hasTrackedView, setHasTrackedView] = useState(false);
   const userId = useSelector((state: RootState) => state.user?.profile?.id);
 
   // 🔹 Load sản phẩm + giỏ hàng
    useEffect(() => {
+    // Reset tracking state when product ID changes
+    setHasTrackedView(false);
+    
     async function fetchProduct() {
       try {
         if (!id) return;
@@ -37,12 +41,15 @@ export default function ProductDetailPage() {
         console.log("✅ Dữ liệu sản phẩm:", productData);
         setProduct(productData);
 
-        // Track product view
-        if (userId) {
+        // Track product view (only once per product load)
+        if (userId && !hasTrackedView) {
           try {
+            console.log("📊 Tracking product view for ID:", numericId);
             await productStatsApi.trackProductView(numericId);
+            setHasTrackedView(true);
+            console.log("✅ Product view tracked successfully");
           } catch (error) {
-            console.error("Error tracking product view:", error);
+            console.error("❌ Error tracking product view:", error);
           }
         }
       } catch (error) {
