@@ -91,9 +91,9 @@ const router = useRouter();
 
             {/* Action buttons */}
             <div className="flex items-center space-x-2">
-              <button className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+              <Link href="/wishlist" className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                 <Heart className="h-5 w-5" />
-              </button>
+              </Link>
               <button onClick= {goToCart } className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                 <ShoppingCart className="h-5 w-5" />
               </button>

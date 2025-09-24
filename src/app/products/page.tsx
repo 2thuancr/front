@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { productAPI } from '@/lib/api';
 import Link from 'next/link';
+import { WishlistButton } from '@/components/ui';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
@@ -79,11 +80,9 @@ export default function ProductsPage() {
             <div
               key={product.productId}
               ref={isLast ? lastProductRef : null}
+              className="group border rounded-2xl shadow hover:shadow-lg overflow-hidden transition relative"
             >
-              <Link
-                href={`/products/${product.productId}`}
-                className="group border rounded-2xl shadow hover:shadow-lg overflow-hidden transition"
-              >
+              <Link href={`/products/${product.productId}`}>
                 <div className="relative">
                   <img
                     src={product.images?.[0]?.imageUrl || '/no-image.png'}
@@ -96,20 +95,33 @@ export default function ProductsPage() {
                     </span>
                   )}
                 </div>
-                <div className="p-4">
+              </Link>
+              
+              {/* Wishlist Button */}
+              <div className="absolute top-2 right-2">
+                <WishlistButton 
+                  productId={product.productId} 
+                  size="sm" 
+                  variant="ghost"
+                  className="bg-white/80 backdrop-blur-sm"
+                />
+              </div>
+
+              <div className="p-4">
+                <Link href={`/products/${product.productId}`}>
                   <h2 className="text-lg font-semibold line-clamp-2 mb-2 group-hover:text-blue-600">
                     {product.productName}
                   </h2>
-                  <p className="text-red-500 font-bold text-xl mb-1">
-                    {Number(product.price).toLocaleString()}₫
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {product.stockQuantity > 0
-                      ? `Còn ${product.stockQuantity} sản phẩm`
-                      : 'Hết hàng'}
-                  </p>
-                </div>
-              </Link>
+                </Link>
+                <p className="text-red-500 font-bold text-xl mb-1">
+                  {Number(product.price).toLocaleString()}₫
+                </p>
+                <p className="text-sm text-gray-500">
+                  {product.stockQuantity > 0
+                    ? `Còn ${product.stockQuantity} sản phẩm`
+                    : 'Hết hàng'}
+                </p>
+              </div>
             </div>
           );
         })}

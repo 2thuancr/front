@@ -4,6 +4,7 @@ import './globals.css';
 import { Providers } from '@/store/provider';
 import Navigation from '@/components/layout/Navigation';
 import Footer from '@/components/layout/Footer';
+import { ViewTrackingProvider } from '@/components/providers/ViewTrackingProvider';
 import { APP_CONFIG } from '@/lib/constants';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -51,11 +52,13 @@ export default function RootLayout({
       </head>
       <body className={inter.className} suppressHydrationWarning={true}>
         <Providers>
-          <Navigation />
-          <main>
-            {children}
-          </main>
-          <Footer />
+          <ViewTrackingProvider>
+            <Navigation />
+            <main>
+              {children}
+            </main>
+            <Footer />
+          </ViewTrackingProvider>
         </Providers>
       </body>
     </html>

@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { productAPI, cartApi } from '@/lib/api';
+import { productAPI, cartApi, productStatsApi } from '@/lib/api';
+import { viewTracker } from '@/lib/viewTracker';
 import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
@@ -11,18 +12,26 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
+import { WishlistButton, ProductStats, SimilarProducts, ProductReviews } from '@/components/ui';
+import { Product } from '@/types/api';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
-  const [product, setProduct] = useState<any | null>(null);
+  const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [cartId, setCartId] = useState<number | null>(null);
   const [adding, setAdding] = useState(false);
+  const [hasTrackedView, setHasTrackedView] = useState(false);
+  const hasTrackedRef = useRef(false);
   const userId = useSelector((state: RootState) => state.user?.profile?.id);
 
   // 🔹 Load sản phẩm + giỏ hàng
-   useEffect(() => {
+  useEffect(() => {
+    // Reset tracking state when product ID changes
+    setHasTrackedView(false);
+    hasTrackedRef.current = false;
+    
     async function fetchProduct() {
       try {
         if (!id) return;
@@ -42,27 +51,50 @@ export default function ProductDetailPage() {
     }
 
     async function fetchCart() {
-    if (!userId) {
-      console.warn("⚠️ Chưa có userId trong localStorage");
-      return;
+      if (!userId) {
+        console.warn("⚠️ Chưa có userId trong localStorage");
+        return;
+      }
+
+      try {
+        console.log("🛒 Lấy giỏ hàng cho user:", userId);
+        const cart = await cartApi.getCartByUser(userId);
+
+        console.log("✅ Dữ liệu giỏ hàng:", cart);
+
+        // sửa cart.id → cart.cartId
+        setCartId(cart.cartId);
+      } catch (error) {
+        console.error("❌ Lỗi khi lấy giỏ hàng:", error);
+      }
     }
-
-    try {
-      console.log("🛒 Lấy giỏ hàng cho user:", userId);
-      const cart = await cartApi.getCartByUser(userId);
-
-      console.log("✅ Dữ liệu giỏ hàng:", cart);
-
-      // sửa cart.id → cart.cartId
-      setCartId(cart.cartId);
-    } catch (error) {
-      console.error("❌ Lỗi khi lấy giỏ hàng:", error);
-    }
-  }
-
 
     fetchProduct();
     fetchCart();
+  }, [id, userId]);
+
+  // 🔹 Track product view separately to avoid double calls
+  useEffect(() => {
+    const trackView = async () => {
+      if (!id || !userId || hasTrackedRef.current) return;
+      
+      const numericId = Number(id);
+      try {
+        console.log("📊 Tracking product view for ID:", numericId);
+        const result = await viewTracker.trackView(numericId, productStatsApi.trackProductView);
+        if (result.tracked) {
+          hasTrackedRef.current = true;
+          setHasTrackedView(true);
+          console.log("✅ Product view tracked successfully");
+        } else {
+          console.log("ℹ️ Product view not tracked:", result.message);
+        }
+      } catch (error) {
+        console.error("❌ Error tracking product view:", error);
+      }
+    };
+
+    trackView();
   }, [id, userId]);
 
   // 🔹 Xử lý thêm vào giỏ hàng
@@ -129,7 +161,11 @@ export default function ProductDetailPage() {
 
         {/* Thông tin sản phẩm */}
         <div>
-          <h1 className="text-3xl font-bold mb-4">{product.productName}</h1>
+          <div className="flex items-start justify-between mb-4">
+            <h1 className="text-3xl font-bold">{product.productName}</h1>
+            <WishlistButton productId={product.productId} size="lg" />
+          </div>
+          
           <p className="text-gray-500 text-sm mb-2">
             Danh mục:{" "}
             <span className="font-medium text-black">
@@ -140,6 +176,11 @@ export default function ProductDetailPage() {
           <p className="text-red-600 text-3xl font-bold mb-4">
             {Number(product.price).toLocaleString()}₫
           </p>
+
+          {/* Product Stats */}
+          <div className="mb-6">
+            <ProductStats productId={product.productId} compact={true} />
+          </div>
 
           <p className="mb-6 text-gray-700 leading-relaxed">{product.description}</p>
 
@@ -175,6 +216,16 @@ export default function ProductDetailPage() {
             {adding ? "Đang thêm..." : "Thêm vào giỏ hàng"}
           </button>
         </div>
+      </div>
+
+      {/* Similar Products */}
+      <div className="mt-16">
+        <SimilarProducts productId={product.productId} />
+      </div>
+
+      {/* Product Reviews */}
+      <div className="mt-16">
+        <ProductReviews productId={product.productId} />
       </div>
     </div>
   );

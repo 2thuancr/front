@@ -77,3 +77,115 @@ export interface LegacyProduct {
   updatedAt: string;
 }
 
+// Wishlist interfaces
+export interface WishlistItem {
+  wishlistId: number;
+  userId: number;
+  productId: number;
+  createdAt: string;
+  product?: Product;
+}
+
+export interface WishlistResponse {
+  success: boolean;
+  data: WishlistItem[];
+  message?: string;
+}
+
+export interface WishlistCheckResponse {
+  success: boolean;
+  data: {
+    isInWishlist: boolean;
+    wishlistId?: number;
+  };
+  message?: string;
+}
+
+// Product Stats interfaces
+export interface ProductStats {
+  productId: number;
+  totalViews: number;
+  totalReviews: number;
+  totalPurchases: number;
+  totalWishlists: number;
+  averageRating: number;
+  product: Product;
+}
+
+export interface ProductStatsResponse {
+  success: boolean;
+  data: ProductStats;
+  message?: string;
+}
+
+// Product View interfaces
+export interface ProductView {
+  viewId: number;
+  userId: number;
+  productId: number;
+  viewedAt: string;
+  product?: Product;
+}
+
+export interface ProductViewResponse {
+  success: boolean;
+  data: ProductView[];
+  message?: string;
+}
+
+// Similar Products interface
+export interface SimilarProductsResponse {
+  success: boolean;
+  data: Product[];
+  message?: string;
+}
+
+// Product Review interfaces
+export interface ProductReview {
+  reviewId: number;
+  productId: number;
+  userId: number;
+  rating: number;
+  comment?: string;
+  createdAt: string;
+  updatedAt: string;
+  user?: {
+    userId: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    avatarUrl?: string;
+  };
+}
+
+export interface ProductReviewResponse {
+  success: boolean;
+  data: ProductReview[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  message?: string;
+}
+
+export interface RatingStats {
+  productId: number;
+  averageRating: number;
+  totalReviews: number;
+  ratingDistribution: {
+    5: number;
+    4: number;
+    3: number;
+    2: number;
+    1: number;
+  };
+}
+
+export interface RatingStatsResponse {
+  success: boolean;
+  data: RatingStats;
+  message?: string;
+}
+
