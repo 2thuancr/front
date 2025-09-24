@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useDispatch, useSelector } from 'react-redux';
@@ -14,13 +14,22 @@ import { cn } from '@/lib/utils';
 const WishlistPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { isAuthenticated, user } = useAuth();
-  const { items: wishlistItems, loading, error } = useSelector((state: RootState) => state.wishlist);
+  const { items: wishlistItems, loading, error, checkedItems } = useSelector((state: RootState) => state.wishlist);
+  const [lastCheckedItems, setLastCheckedItems] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     if (isAuthenticated && user) {
       dispatch(fetchWishlist());
     }
   }, [dispatch, isAuthenticated, user]);
+
+  // Refresh wishlist when checkedItems change (from other pages)
+  useEffect(() => {
+    if (isAuthenticated && user && Object.keys(checkedItems).length > 0) {
+      // Only refresh if we're on the wishlist page and there are changes
+      dispatch(fetchWishlist());
+    }
+  }, [dispatch, isAuthenticated, user, checkedItems]);
 
   const handleRemoveFromWishlist = async (productId: number) => {
     try {

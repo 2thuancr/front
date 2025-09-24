@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Eye, Star, ShoppingBag, Heart, Users } from 'lucide-react';
-import { productStatsApi } from '@/lib/api';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
+import { productStatsApi, wishlistApi } from '@/lib/api';
 import { ProductStats } from '@/types/api';
 
 interface ProductStatsProps {
@@ -21,14 +23,28 @@ const ProductStatsComponent: React.FC<ProductStatsProps> = ({
   const [stats, setStats] = useState<ProductStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [wishlistCount, setWishlistCount] = useState<number>(0);
+  
+  // Get wishlist state to track changes
+  const { checkedItems } = useSelector((state: RootState) => state.wishlist);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await productStatsApi.getProductStats(productId);
-        setStats(response.data || response);
+        
+        // Fetch both product stats and wishlist count
+        const [statsResponse, wishlistResponse] = await Promise.all([
+          productStatsApi.getProductStats(productId),
+          wishlistApi.getProductWishlist(productId)
+        ]);
+        
+        const statsData = statsResponse.data || statsResponse;
+        const wishlistData = wishlistResponse.data || wishlistResponse;
+        
+        setStats(statsData);
+        setWishlistCount(wishlistData.total || 0);
       } catch (err: any) {
         console.error('Error fetching product stats:', err);
         setError(err.message || 'Failed to load stats');
@@ -41,6 +57,25 @@ const ProductStatsComponent: React.FC<ProductStatsProps> = ({
       fetchStats();
     }
   }, [productId]);
+
+  // Refresh wishlist count when wishlist state changes
+  useEffect(() => {
+    if (checkedItems[productId] !== undefined) {
+      const refreshWishlistCount = async () => {
+        try {
+          const response = await wishlistApi.getProductWishlist(productId);
+          const wishlistData = response.data || response;
+          setWishlistCount(wishlistData.total || 0);
+        } catch (err) {
+          console.error('Error refreshing wishlist count:', err);
+        }
+      };
+      
+      // Add a small delay to ensure database is updated
+      const timer = setTimeout(refreshWishlistCount, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [checkedItems, productId]);
 
   if (loading) {
     return (
@@ -92,7 +127,7 @@ const ProductStatsComponent: React.FC<ProductStatsProps> = ({
     },
     {
       icon: Heart,
-      value: stats.totalWishlists,
+      value: wishlistCount,
       label: 'Yêu thích',
       color: 'text-red-600',
     },

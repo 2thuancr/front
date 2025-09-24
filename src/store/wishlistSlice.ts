@@ -34,8 +34,17 @@ export const addToWishlist = createAsyncThunk(
   async (productId: number, { rejectWithValue }) => {
     try {
       const response = await wishlistApi.addToWishlist(productId);
-      return { productId, wishlistItem: response.data || response };
+      return { productId, wishlistItem: response.data || response, alreadyExists: false };
     } catch (error: any) {
+      // Handle 409 Conflict - item already exists in wishlist
+      if (error.response?.status === 409) {
+        // Treat 409 as success since item is already in wishlist
+        return { 
+          productId, 
+          wishlistItem: null, 
+          alreadyExists: true 
+        };
+      }
       return rejectWithValue(error.response?.data?.message || 'Failed to add to wishlist');
     }
   }
@@ -61,6 +70,36 @@ export const checkInWishlist = createAsyncThunk(
       return { productId, isInWishlist: response.data?.isInWishlist || false };
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to check wishlist status');
+    }
+  }
+);
+
+export const toggleWishlist = createAsyncThunk(
+  'wishlist/toggleWishlist',
+  async (productId: number, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as { wishlist: WishlistState };
+      const isInWishlist = state.wishlist.checkedItems[productId] || false;
+      
+      if (isInWishlist) {
+        // Remove from wishlist
+        await wishlistApi.removeProductFromWishlist(productId);
+        return { productId, action: 'removed' };
+      } else {
+        // Add to wishlist
+        try {
+          const response = await wishlistApi.addToWishlist(productId);
+          return { productId, action: 'added', wishlistItem: response.data || response };
+        } catch (error: any) {
+          // Handle 409 Conflict - item already exists
+          if (error.response?.status === 409) {
+            return { productId, action: 'already_exists' };
+          }
+          throw error;
+        }
+      }
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to toggle wishlist');
     }
   }
 );
@@ -119,14 +158,20 @@ const wishlistSlice = createSlice({
         state.error = null;
       })
       .addCase(addToWishlist.fulfilled, (state, action) => {
-        const { productId, wishlistItem } = action.payload;
-        // Add to items if not already present
-        const existingIndex = state.items.findIndex(item => item.productId === productId);
-        if (existingIndex === -1) {
-          state.items.push(wishlistItem);
+        const { productId, wishlistItem, alreadyExists } = action.payload;
+        
+        if (alreadyExists) {
+          // Item already exists in wishlist, just update the cache
+          state.checkedItems[productId] = true;
+        } else {
+          // Add to items if not already present
+          const existingIndex = state.items.findIndex(item => item.productId === productId);
+          if (existingIndex === -1 && wishlistItem) {
+            state.items.push(wishlistItem);
+          }
+          // Update checked items cache
+          state.checkedItems[productId] = true;
         }
-        // Update checked items cache
-        state.checkedItems[productId] = true;
       })
       .addCase(addToWishlist.rejected, (state, action) => {
         state.error = action.payload as string;
@@ -154,8 +199,42 @@ const wishlistSlice = createSlice({
         const { productId, isInWishlist } = action.payload;
         state.checkedItems[productId] = isInWishlist;
       });
+
+    // Toggle Wishlist
+    builder
+      .addCase(toggleWishlist.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(toggleWishlist.fulfilled, (state, action) => {
+        const { productId, action: actionType, wishlistItem } = action.payload;
+        
+        if (actionType === 'removed') {
+          // Remove from items
+          state.items = state.items.filter(item => item.productId !== productId);
+          // Update checked items cache
+          state.checkedItems[productId] = false;
+        } else if (actionType === 'added') {
+          // Add to items if not already present
+          const existingIndex = state.items.findIndex(item => item.productId === productId);
+          if (existingIndex === -1 && wishlistItem) {
+            state.items.push(wishlistItem);
+          }
+          // Update checked items cache
+          state.checkedItems[productId] = true;
+        } else if (actionType === 'already_exists') {
+          // Item already exists, just update cache
+          state.checkedItems[productId] = true;
+        }
+      })
+      .addCase(toggleWishlist.rejected, (state, action) => {
+        state.error = action.payload as string;
+      });
   },
 });
 
 export const { clearError, clearWishlist, updateCheckedItem } = wishlistSlice.actions;
+
+// Helper action to sync wishlist status for a specific product
+export const syncWishlistStatus = (productId: number, isInWishlist: boolean) => 
+  updateCheckedItem({ productId, isInWishlist });
 export default wishlistSlice.reducer;

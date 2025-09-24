@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Heart } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/store';
-import { addToWishlist, removeFromWishlist, checkInWishlist } from '@/store/wishlistSlice';
+import { addToWishlist, removeFromWishlist, checkInWishlist, toggleWishlist } from '@/store/wishlistSlice';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
@@ -30,10 +30,16 @@ const WishlistButton: React.FC<WishlistButtonProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const isInWishlist = checkedItems[productId] || false;
 
-  // Check wishlist status on mount
+  // Check wishlist status on mount and when authentication changes
   useEffect(() => {
-    if (isAuthenticated && checkedItems[productId] === undefined) {
-      dispatch(checkInWishlist(productId));
+    if (isAuthenticated) {
+      // If we don't have the status for this product, check it
+      if (checkedItems[productId] === undefined) {
+        dispatch(checkInWishlist(productId));
+      }
+    } else {
+      // If not authenticated, clear the status
+      setIsLoading(false);
     }
   }, [dispatch, isAuthenticated, productId, checkedItems]);
 
@@ -51,12 +57,8 @@ const WishlistButton: React.FC<WishlistButtonProps> = ({
 
     setIsLoading(true);
     try {
-      if (isInWishlist) {
-        await dispatch(removeFromWishlist(productId)).unwrap();
-      } else {
-        await dispatch(addToWishlist(productId)).unwrap();
-      }
-    } catch (error) {
+      await dispatch(toggleWishlist(productId)).unwrap();
+    } catch (error: any) {
       console.error('Error toggling wishlist:', error);
     } finally {
       setIsLoading(false);
