@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { productAPI, cartApi, productStatsApi } from '@/lib/api';
 import { viewTracker } from '@/lib/viewTracker';
@@ -23,12 +23,14 @@ export default function ProductDetailPage() {
   const [cartId, setCartId] = useState<number | null>(null);
   const [adding, setAdding] = useState(false);
   const [hasTrackedView, setHasTrackedView] = useState(false);
+  const hasTrackedRef = useRef(false);
   const userId = useSelector((state: RootState) => state.user?.profile?.id);
 
   // 🔹 Load sản phẩm + giỏ hàng
-   useEffect(() => {
+  useEffect(() => {
     // Reset tracking state when product ID changes
     setHasTrackedView(false);
+    hasTrackedRef.current = false;
     
     async function fetchProduct() {
       try {
@@ -41,18 +43,6 @@ export default function ProductDetailPage() {
 
         console.log("✅ Dữ liệu sản phẩm:", productData);
         setProduct(productData);
-
-        // Track product view using viewTracker with caching
-        if (userId && !hasTrackedView) {
-          try {
-            const result = await viewTracker.trackView(numericId, productStatsApi.trackProductView);
-            if (result.tracked) {
-              setHasTrackedView(true);
-            }
-          } catch (error) {
-            console.error("❌ Error tracking product view:", error);
-          }
-        }
       } catch (error) {
         console.error("❌ Lỗi khi load chi tiết sản phẩm:", error);
       } finally {
@@ -61,27 +51,50 @@ export default function ProductDetailPage() {
     }
 
     async function fetchCart() {
-    if (!userId) {
-      console.warn("⚠️ Chưa có userId trong localStorage");
-      return;
+      if (!userId) {
+        console.warn("⚠️ Chưa có userId trong localStorage");
+        return;
+      }
+
+      try {
+        console.log("🛒 Lấy giỏ hàng cho user:", userId);
+        const cart = await cartApi.getCartByUser(userId);
+
+        console.log("✅ Dữ liệu giỏ hàng:", cart);
+
+        // sửa cart.id → cart.cartId
+        setCartId(cart.cartId);
+      } catch (error) {
+        console.error("❌ Lỗi khi lấy giỏ hàng:", error);
+      }
     }
-
-    try {
-      console.log("🛒 Lấy giỏ hàng cho user:", userId);
-      const cart = await cartApi.getCartByUser(userId);
-
-      console.log("✅ Dữ liệu giỏ hàng:", cart);
-
-      // sửa cart.id → cart.cartId
-      setCartId(cart.cartId);
-    } catch (error) {
-      console.error("❌ Lỗi khi lấy giỏ hàng:", error);
-    }
-  }
-
 
     fetchProduct();
     fetchCart();
+  }, [id, userId]);
+
+  // 🔹 Track product view separately to avoid double calls
+  useEffect(() => {
+    const trackView = async () => {
+      if (!id || !userId || hasTrackedRef.current) return;
+      
+      const numericId = Number(id);
+      try {
+        console.log("📊 Tracking product view for ID:", numericId);
+        const result = await viewTracker.trackView(numericId, productStatsApi.trackProductView);
+        if (result.tracked) {
+          hasTrackedRef.current = true;
+          setHasTrackedView(true);
+          console.log("✅ Product view tracked successfully");
+        } else {
+          console.log("ℹ️ Product view not tracked:", result.message);
+        }
+      } catch (error) {
+        console.error("❌ Error tracking product view:", error);
+      }
+    };
+
+    trackView();
   }, [id, userId]);
 
   // 🔹 Xử lý thêm vào giỏ hàng

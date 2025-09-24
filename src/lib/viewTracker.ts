@@ -16,6 +16,8 @@ class ViewTracker {
   private cache: TrackingCache = {};
   private readonly CACHE_KEY = 'product_view_cache';
   private readonly CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+  private apiCallCount: number = 0; // Debug counter
+  private pendingCalls: Set<number> = new Set(); // Prevent concurrent calls
 
   constructor() {
     this.loadCache();
@@ -112,9 +114,22 @@ class ViewTracker {
       };
     }
 
+    // Check if already pending
+    if (this.pendingCalls.has(productId)) {
+      console.log(`📊 Product ${productId} tracking already in progress`);
+      return {
+        tracked: false,
+        message: 'Tracking already in progress'
+      };
+    }
+
+    // Mark as pending
+    this.pendingCalls.add(productId);
+
     try {
       // Call API
-      console.log(`📊 Tracking view for product ${productId}...`);
+      this.apiCallCount++;
+      console.log(`📊 Tracking view for product ${productId}... (API call #${this.apiCallCount})`);
       const result = await apiCall(productId);
       
       // If successfully tracked, update cache
@@ -132,6 +147,9 @@ class ViewTracker {
         tracked: false,
         message: 'Failed to track view'
       };
+    } finally {
+      // Remove from pending
+      this.pendingCalls.delete(productId);
     }
   }
 
