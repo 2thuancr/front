@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Product } from '@/types/api';
-import { productStatsApi } from '@/lib/api';
+import { productAPI } from '@/lib/api';
 import WishlistButton from './WishlistButton';
 import { cn } from '@/lib/utils';
 
@@ -30,8 +30,35 @@ const SimilarProducts: React.FC<SimilarProductsProps> = ({
       try {
         setLoading(true);
         setError(null);
-        const response = await productStatsApi.getSimilarProducts(productId, limit);
-        setProducts(response.data || response);
+        
+        // First, get the current product to know its category
+        const currentProductResponse = await productAPI.getProductById(productId);
+        const currentProduct = currentProductResponse.data || currentProductResponse;
+        
+        if (!currentProduct || !currentProduct.categoryId) {
+          setError('Unable to get product category');
+          return;
+        }
+        
+        // Get products from the same category
+        const categoryProductsResponse = await productAPI.getByCategory(currentProduct.categoryId, limit + 1);
+        let categoryProducts = categoryProductsResponse.data || categoryProductsResponse;
+        
+        // Handle different response formats
+        if (categoryProducts.wishlists && Array.isArray(categoryProducts.wishlists)) {
+          categoryProducts = categoryProducts.wishlists;
+        } else if (categoryProducts.data && Array.isArray(categoryProducts.data)) {
+          categoryProducts = categoryProducts.data;
+        } else if (!Array.isArray(categoryProducts)) {
+          categoryProducts = [];
+        }
+        
+        // Filter out the current product and limit results
+        const similarProducts = categoryProducts
+          .filter((product: Product) => product.productId !== productId)
+          .slice(0, limit);
+        
+        setProducts(similarProducts);
       } catch (err: any) {
         console.error('Error fetching similar products:', err);
         setError(err.message || 'Failed to load similar products');
