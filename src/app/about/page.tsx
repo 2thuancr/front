@@ -59,28 +59,22 @@ const values = [
 
 const team = [
   {
-    name: 'Nguyễn Văn A',
-    position: 'Giám đốc điều hành',
-    image: '/images/hcmute-logo.png',
-    description: 'Có hơn 15 năm kinh nghiệm trong lĩnh vực thời trang và giáo dục.'
+    name: 'Vi Quốc Thuận',
+    position: 'Thành viên đội ngũ',
+    image: '/images/Thuan.jpg',
+    description: 'MSSV: 22110006 - Thành viên tích cực trong dự án phát triển HCMUTE Gift Shop.'
   },
   {
-    name: 'Trần Thị B',
-    position: 'Trưởng phòng thiết kế',
-    image: '/images/hcmute-logo.png',
-    description: 'Chuyên gia thiết kế với nhiều giải thưởng quốc tế.'
+    name: 'Dương Nguyễn Hoài Bảo',
+    position: 'Thành viên đội ngũ',
+    image: '/images/HoaiBao.jpg',
+    description: 'MSSV: 22110283 - Đóng góp quan trọng trong việc xây dựng và phát triển hệ thống.'
   },
   {
-    name: 'Lê Văn C',
-    position: 'Trưởng phòng kinh doanh',
-    image: '/images/hcmute-logo.png',
-    description: 'Có kinh nghiệm 10 năm trong lĩnh vực bán lẻ và marketing.'
-  },
-  {
-    name: 'Phạm Thị D',
-    position: 'Trưởng phòng sản xuất',
-    image: '/images/hcmute-logo.png',
-    description: 'Chuyên gia về quản lý chất lượng và quy trình sản xuất.'
+    name: 'Vương Lập Quế',
+    position: 'Thành viên đội ngũ',
+    image: '/images/Que.jpg',
+    description: 'MSSV: Cập nhật sau - Thành viên năng động của đội ngũ phát triển.'
   }
 ];
 
@@ -308,7 +302,7 @@ export default function AboutPage() {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {team.map((member, index) => (
               <motion.div
                 key={index}
@@ -362,7 +356,7 @@ export default function AboutPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-800">Địa chỉ</h3>
-                  <p className="text-gray-600">1 Võ Văn Ngân, Linh Chiểu, Thủ Đức, TP.HCM</p>
+                  <p className="text-gray-600">Số 1 Võ Văn Ngân, Phường Thủ Đức, TP.HCM</p>
                 </div>
               </div>
               
