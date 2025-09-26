@@ -292,8 +292,10 @@ export const productStatsApi = {
   getProductViewCount: (productId: number) =>
     api.get(`/product-views/product/${productId}/count`).then((res) => res.data),
 
-  getUserViewHistory: (userId: number) =>
-    api.get(`/product-views/user/${userId}`).then((res) => res.data),
+  getUserViewHistory: (userId: number, page: number = 1, limit: number = 10) =>
+    api.get(`/product-views/user/${userId}`, { 
+      params: { page, limit } 
+    }).then((res) => res.data),
 
   trackProductView: (productId: number) =>
     api.post(`/product-views/track/${productId}`).then((res) => res.data),
