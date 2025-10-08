@@ -11,7 +11,6 @@ export interface UserProfile {
   avatar?: string;
   dateOfBirth?: string;
   gender?: 'male' | 'female' | 'other';
-  role?: 'admin' | 'user';
   isVerified?: boolean;
   isEmailVerified?: boolean;
   createdAt: string;

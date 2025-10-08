@@ -1,6 +1,13 @@
 import { UserProfile } from './user';
 
-export interface User extends UserProfile {}
+export enum UserRole {
+  USER = 'user'
+}
+
+export interface User extends UserProfile {
+  role: UserRole;
+  isActive: boolean;
+}
 
 export interface LoginCredentials {
   username: string;

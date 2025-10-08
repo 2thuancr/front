@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useAuth } from '@/hooks/useAuth';
-import { LoginCredentials } from '@/types/auth';
+import { LoginCredentials, UserRole } from '@/types/auth';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
 import { Password } from 'primereact/password';
@@ -47,7 +47,11 @@ const onSubmit = async (data: LoginCredentials) => {
     const result = await login(data);
     if (result?.user?.id) {
       console.log("✅ Đăng nhập thành công, userId:", result.user.id);
-      router.push('/'); // hoặc /profile, tùy bạn muốn
+      console.log("🔍 User role:", result.user.role);
+      
+      // Redirect to home for all users
+      console.log("👤 User logged in, redirecting to home");
+      router.push('/');
     }
   } catch (error) {
     console.error('Login error:', error);

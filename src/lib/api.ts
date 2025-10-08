@@ -95,6 +95,22 @@ export const userAPI = {
         'Content-Type': 'multipart/form-data',
       },
     }),
+
+  // Admin APIs
+  getAllUsers: (params?: any) => api.get('/users/getAll', { params }),
+  
+  createUser: (data: any) => api.post('/users/create', data),
+  
+  updateUser: (userId: number, data: any) =>
+    api.post(`/users/update/${userId}`, data),
+  
+  updateUserRole: (userId: number, role: string) =>
+    api.post(`/users/update-role/${userId}`, { role }),
+  
+  toggleUserActive: (userId: number) =>
+    api.post(`/users/toggle-active/${userId}`),
+  
+  getUsersStats: () => api.get('/users/stats'),
 };
 
 export const productAPI = {
@@ -341,6 +357,7 @@ export const reviewApi = {
   getUserReviewForProduct: (userId: number, productId: number) =>
     api.get(`/product-reviews/user/${userId}/product/${productId}`).then((res) => res.data),
 };
+
 
 export default api;
 

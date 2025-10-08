@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { AuthState, LoginCredentials, RegisterCredentials, User, VerifyOTPData } from '@/types/auth';
+import { AuthState, LoginCredentials, RegisterCredentials, User, VerifyOTPData, UserRole, hasRole, hasAnyRole } from '@/types/auth';
 import { authAPI } from '@/lib/api';
 import { clearAuthData } from '@/lib/auth';
 

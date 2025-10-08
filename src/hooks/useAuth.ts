@@ -11,7 +11,7 @@ import {
   resendOTP,
 } from '@/store/authSlice';
 import { fetchUserProfile } from '@/store/userSlice';
-import { LoginCredentials, RegisterCredentials, VerifyOTPData } from '@/types/auth';
+import { LoginCredentials, RegisterCredentials, VerifyOTPData, UserRole, hasRole, hasAnyRole } from '@/types/auth';
 import { isTokenValid } from '@/lib/auth';
 import { useEffect } from 'react';
 
@@ -204,10 +204,14 @@ export const useAuth = () => {
     dispatch(clearError());
   };
 
+  // Role checking functions
+  const checkRole = (role: UserRole) => hasRole(user, role);
+  const checkAnyRole = (roles: UserRole[]) => hasAnyRole(user, roles);
+
   return {
     user,
     token,
-    isAuthenticated: actualIsAuthenticated, // Use actualIsAuthenticated instead
+    isAuthenticated: actualIsAuthenticated,
     isLoading,
     error,
     login,
@@ -216,6 +220,9 @@ export const useAuth = () => {
     verifyOTPCode,
     resendOTPCode,
     clearAuthError,
+    // Role checking functions
+    hasRole: checkRole,
+    hasAnyRole: checkAnyRole,
   };
 };
 
