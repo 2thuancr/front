@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useDispatch, useSelector } from 'react-redux';
@@ -14,28 +14,21 @@ import { cn } from '@/lib/utils';
 const WishlistPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { isAuthenticated, user } = useAuth();
-  const { items: wishlistItems, loading, error, checkedItems } = useSelector((state: RootState) => state.wishlist);
-  const [lastCheckedItems, setLastCheckedItems] = useState<Record<number, boolean>>({});
+  const { items: wishlistItems, loading, error } = useSelector((state: RootState) => state.wishlist);
+  const hasFetched = useRef(false);
 
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user && !hasFetched.current) {
+      hasFetched.current = true;
       dispatch(fetchWishlist());
     }
   }, [dispatch, isAuthenticated, user]);
-
-  // Refresh wishlist when checkedItems change (from other pages)
-  useEffect(() => {
-    if (isAuthenticated && user && Object.keys(checkedItems).length > 0) {
-      // Only refresh if we're on the wishlist page and there are changes
-      dispatch(fetchWishlist());
-    }
-  }, [dispatch, isAuthenticated, user, checkedItems]);
 
   const handleRemoveFromWishlist = async (productId: number) => {
     try {
       await dispatch(removeFromWishlist(productId)).unwrap();
     } catch (error) {
-      console.error('Error removing from wishlist:', error);
+      // Error handled by Redux
     }
   };
 
@@ -51,15 +44,15 @@ const WishlistPage: React.FC = () => {
     if (!product || !product.images || !Array.isArray(product.images)) {
       return '/images/placeholder.svg';
     }
-    
+
     const primaryImage = product.images.find((img: any) => img.isPrimary);
     const imageUrl = primaryImage?.imageUrl || product.images[0]?.imageUrl;
-    
+
     // Fallback to placeholder if no image
     if (!imageUrl) {
       return '/images/placeholder.svg';
     }
-    
+
     return imageUrl;
   };
 
@@ -172,73 +165,65 @@ const WishlistPage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {wishlistItems.map((item: WishlistItem) => {
-            // Debug logging
-            console.log('Wishlist item:', item);
-            console.log('Product:', item.product);
-            console.log('Product images:', item.product?.images);
-            
-            return (
-              <div key={item.wishlistId} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+          {wishlistItems.map((item: WishlistItem) => (
+            <div key={item.wishlistId} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+              <Link href={`/products/${item.productId}`}>
+                <div className="relative aspect-square overflow-hidden rounded-t-lg">
+                  <Image
+                    src={getProductImage(item.product)}
+                    alt={item.product?.productName || 'Product'}
+                    fill
+                    className="object-cover hover:scale-105 transition-transform duration-200"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                  />
+                </div>
+              </Link>
+              
+              <div className="p-4">
                 <Link href={`/products/${item.productId}`}>
-                  <div className="relative aspect-square overflow-hidden rounded-t-lg">
-                    <Image
-                      src={getProductImage(item.product)}
-                      alt={item.product?.productName || 'Product'}
-                      fill
-                      className="object-cover hover:scale-105 transition-transform duration-200"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                    />
-                  </div>
+                  <h3 className="font-medium text-gray-900 text-sm line-clamp-2 mb-2 hover:text-blue-600">
+                    {item.product?.productName || 'Unknown Product'}
+                  </h3>
                 </Link>
                 
-                <div className="p-4">
-                  <Link href={`/products/${item.productId}`}>
-                    <h3 className="font-medium text-gray-900 text-sm line-clamp-2 mb-2 hover:text-blue-600">
-                      {item.product?.productName || 'Unknown Product'}
-                    </h3>
-                  </Link>
-                  
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="text-sm font-bold text-blue-600">
-                      {item.product?.price ? formatPrice(item.product.price) : 'N/A'}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-sm font-bold text-blue-600">
+                    {item.product?.price ? formatPrice(item.product.price) : 'N/A'}
+                  </div>
+                  {item.product?.discountPercent && Number(item.product.discountPercent) > 0 && (
+                    <div className="text-xs text-red-500 bg-red-50 px-2 py-1 rounded">
+                      -{item.product.discountPercent}%
                     </div>
-                    {item.product?.discountPercent && Number(item.product.discountPercent) > 0 && (
-                      <div className="text-xs text-red-500 bg-red-50 px-2 py-1 rounded">
-                        -{item.product.discountPercent}%
-                      </div>
-                    )}
-                  </div>
+                  )}
+                </div>
 
-                  <div className="text-xs text-gray-500 mb-4">
-                    {item.product?.category?.categoryName || 'Uncategorized'}
-                  </div>
+                <div className="text-xs text-gray-500 mb-4">
+                  {item.product?.category?.categoryName || 'Uncategorized'}
+                </div>
 
-                  <div className="flex items-center justify-between">
-                    <button
-                      onClick={() => handleRemoveFromWishlist(item.productId)}
-                      className="flex items-center space-x-1 text-red-600 hover:text-red-700 text-sm font-medium"
-                    >
-                      <Heart className="w-4 h-4 fill-current" />
-                      <span>Xóa</span>
-                    </button>
-                    
-                    <Link
-                      href={`/products/${item.productId}`}
-                      className="flex items-center space-x-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
-                    >
-                      <Eye className="w-4 h-4" />
-                      <span>Xem</span>
-                    </Link>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={() => handleRemoveFromWishlist(item.productId)}
+                    className="flex items-center space-x-1 text-red-600 hover:text-red-700 text-sm font-medium"
+                  >
+                    <Heart className="w-4 h-4 fill-current" />
+                    <span>Xóa</span>
+                  </button>
+                  
+                  <Link
+                    href={`/products/${item.productId}`}
+                    className="flex items-center space-x-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  >
+                    <Eye className="w-4 h-4" />
+                    <span>Xem</span>
+                  </Link>
                 </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
 };
-
 export default WishlistPage;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Heart } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/store';
@@ -25,31 +25,19 @@ const WishlistButton: React.FC<WishlistButtonProps> = ({
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { isAuthenticated } = useAuth();
-  const { checkedItems, loading, items } = useSelector((state: RootState) => state.wishlist);
+  const { checkedItems } = useSelector((state: RootState) => state.wishlist);
   
   const [isLoading, setIsLoading] = useState(false);
   const isInWishlist = checkedItems[productId] || false;
+  const hasChecked = useRef(false);
 
-  // Initialize wishlist state when component mounts
+  // Check wishlist status only once on mount if authenticated
   useEffect(() => {
-    if (isAuthenticated && items.length === 0 && !loading) {
-      console.log('🔄 Initializing wishlist state from WishlistButton...');
-      dispatch(fetchWishlist());
+    if (isAuthenticated && !hasChecked.current && checkedItems[productId] === undefined) {
+      hasChecked.current = true;
+      dispatch(checkInWishlist(productId));
     }
-  }, [dispatch, isAuthenticated, items.length, loading]);
-
-  // Check wishlist status on mount and when authentication changes
-  useEffect(() => {
-    if (isAuthenticated) {
-      // If we don't have the status for this product, check it
-      if (checkedItems[productId] === undefined) {
-        dispatch(checkInWishlist(productId));
-      }
-    } else {
-      // If not authenticated, clear the status
-      setIsLoading(false);
-    }
-  }, [dispatch, isAuthenticated, productId, checkedItems]);
+  }, [dispatch, isAuthenticated, productId]);
 
   const handleToggleWishlist = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -67,7 +55,7 @@ const WishlistButton: React.FC<WishlistButtonProps> = ({
     try {
       await dispatch(toggleWishlist(productId)).unwrap();
     } catch (error: any) {
-      console.error('Error toggling wishlist:', error);
+      // Error handled by Redux
     } finally {
       setIsLoading(false);
     }
@@ -100,7 +88,7 @@ const WishlistButton: React.FC<WishlistButtonProps> = ({
   return (
     <button
       onClick={handleToggleWishlist}
-      disabled={isLoading || loading}
+      disabled={isLoading}
       className={cn(
         'inline-flex items-center justify-center rounded-lg transition-colors duration-200',
         'focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2',

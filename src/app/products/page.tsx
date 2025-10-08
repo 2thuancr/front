@@ -9,7 +9,6 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [limit] = useState(6);
-  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
 
@@ -32,31 +31,30 @@ export default function ProductsPage() {
   );
 
   useEffect(() => {
-  const fetchProducts = async () => {
-    setLoading(true);
-    try {
-      const res = await productAPI.getAllProducts({ page, limit });
-      const newProducts = res.data.products || [];
+    const fetchProducts = async () => {
+      setLoading(true);
+      try {
+        const res = await productAPI.getAllProducts({ page, limit });
+        const newProducts = res.data.products || [];
 
-      setProducts(prev => {
-        const allProducts = [...prev, ...newProducts];
-        const uniqueProducts = Array.from(
-          new Map(allProducts.map(p => [p.productId, p])).values()
-        );
-        setTotal(uniqueProducts.length);
-        return uniqueProducts;
-      });
+        setProducts(prev => {
+          const allProducts = [...prev, ...newProducts];
+          const uniqueProducts = Array.from(
+            new Map(allProducts.map(p => [p.productId, p])).values()
+          );
+          return uniqueProducts;
+        });
 
-      setHasMore(newProducts.length > 0);
-    } catch (error) {
-      console.error("Lỗi khi load danh sách sản phẩm:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+        setHasMore(newProducts.length > 0);
+      } catch (error) {
+        // Error handled
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchProducts();
-}, [page, limit]);
+    fetchProducts();
+  }, [page, limit]);
 
 
   if (!loading && products.length === 0) {
@@ -130,9 +128,9 @@ export default function ProductsPage() {
       {loading && (
         <div className="text-center py-6 text-gray-500">Đang tải...</div>
       )}
-      {!hasMore && (
+      {!hasMore && products.length > 0 && (
         <div className="text-center py-6 text-gray-400">
-          Bạn đã xem hết sản phẩm ({total})
+          Bạn đã xem hết sản phẩm ({products.length})
         </div>
       )}
     </div>

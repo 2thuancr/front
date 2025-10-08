@@ -56,3 +56,14 @@ export interface VerifyOTPData {
   otp: string;
 }
 
+// Role checking utility functions
+export const hasRole = (user: User | null, role: UserRole): boolean => {
+  if (!user) return false;
+  return user.role === role;
+};
+
+export const hasAnyRole = (user: User | null, roles: UserRole[]): boolean => {
+  if (!user) return false;
+  return roles.includes(user.role);
+};
+

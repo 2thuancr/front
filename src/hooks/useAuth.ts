@@ -11,9 +11,9 @@ import {
   resendOTP,
 } from '@/store/authSlice';
 import { fetchUserProfile } from '@/store/userSlice';
-import { LoginCredentials, RegisterCredentials, VerifyOTPData, UserRole, hasRole, hasAnyRole } from '@/types/auth';
+import { LoginCredentials, RegisterCredentials, VerifyOTPData, UserRole, hasRole, hasAnyRole, User } from '@/types/auth';
 import { isTokenValid } from '@/lib/auth';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export const useAuth = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -26,16 +26,21 @@ export const useAuth = () => {
   );
 
   // Use userProfile from userSlice if available, otherwise fallback to authUser
-  const user = userProfile || authUser;
+  // Cast to User type since we need role and isActive for role checking
+  const user = (userProfile || authUser) as User | null;
 
   // Check if we have a token in localStorage as fallback
   const localStorageToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const actualIsAuthenticated = isAuthenticated || !!localStorageToken;
 
+  // Ref to prevent multiple profile fetches
+  const didFetchProfile = useRef(false);
+  const isCheckingAuth = useRef(false);
+
   // Auto-fetch user profile if authenticated but no user data
   useEffect(() => {
     const fetchUserIfNeeded = async () => {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && !isCheckingAuth.current) {
         const token = localStorage.getItem('token');
         
         // Check if token is valid before making API calls
@@ -49,47 +54,35 @@ export const useAuth = () => {
           return;
         }
 
-        // If we have valid token but no user data, fetch user profile
-        if (token && !user && actualIsAuthenticated && isTokenValid()) {
-          console.log('🔄 Auto-fetching user profile...');
+        // If we have valid token but no user data, fetch user profile (only once)
+        if (token && !user && !didFetchProfile.current && isTokenValid()) {
+          isCheckingAuth.current = true;
+          didFetchProfile.current = true;
           try {
             await dispatch(fetchUserProfile()).unwrap();
-            console.log('✅ User profile fetched successfully');
           } catch (error: any) {
-            console.error('❌ Failed to fetch user profile:', error);
-            
             // If 401 Unauthorized, token is invalid/expired
             if (error?.response?.status === 401) {
-              console.log('🔒 Token expired or invalid, clearing auth data...');
               localStorage.removeItem('token');
               localStorage.removeItem('refresh_token');
               localStorage.removeItem('user');
               dispatch(logoutUser());
-              
-              // Redirect to login page
               router.push('/login');
-            } else {
-              // For other errors, just log but don't clear token
-              console.log('⚠️ Non-auth error, keeping token');
             }
+          } finally {
+            isCheckingAuth.current = false;
           }
         }
       }
     };
 
     fetchUserIfNeeded();
-  }, [dispatch, user, actualIsAuthenticated]);
+  }, [dispatch, router, user]);
 
-  console.log('🔐 useAuth hook:', { 
-    authUser,
-    userProfile,
-    user, // Final user object
-    token, 
-    isAuthenticated, 
-    actualIsAuthenticated,
-    isLoading, 
-    error 
-  });
+  // Only log in development and limit frequency
+  if (process.env.NODE_ENV === 'development') {
+    // Reduced logging to avoid console spam
+  }
 
   const login = async (credentials: LoginCredentials) => {
     try {

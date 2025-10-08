@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/store';
 import { fetchWishlist } from '@/store/wishlistSlice';
@@ -11,14 +11,15 @@ export const useWishlistInit = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { isAuthenticated } = useAuth();
   const { items, loading } = useSelector((state: RootState) => state.wishlist);
+  const hasFetched = useRef(false);
 
   useEffect(() => {
-    // Only fetch if user is authenticated and we don't have wishlist data yet
-    if (isAuthenticated && items.length === 0 && !loading) {
-      console.log('🔄 Initializing wishlist state...');
+    // Only fetch once if user is authenticated and we don't have wishlist data yet
+    if (isAuthenticated && items.length === 0 && !loading && !hasFetched.current) {
+      hasFetched.current = true;
       dispatch(fetchWishlist());
     }
-  }, [dispatch, isAuthenticated]); // Only depend on auth state
+  }, [dispatch, isAuthenticated, items.length, loading])
 
   return {
     isInitializing: loading && items.length === 0,
