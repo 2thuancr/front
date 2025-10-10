@@ -145,8 +145,13 @@ export default function ContactPage() {
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'>
       {/* Hero Section */}
-      <div className='relative bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 py-20'>
-        <div className='absolute inset-0 bg-black/20'></div>
+      <div className='relative py-20' style={{
+        backgroundImage: 'url(/images/banner-hcmute.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'bottom',
+        backgroundRepeat: 'no-repeat'
+      }}>
+        <div className='absolute inset-0 bg-black/40'></div>
         <div className='relative container mx-auto px-4 text-center text-white'>
           <motion.div
             initial={{ opacity: 0, y: 30 }}
