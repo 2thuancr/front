@@ -253,8 +253,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
           {/* Quick Actions */}
           {showQuickActions && (
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-              <div className="flex flex-col space-y-4">
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-start justify-start opacity-0 group-hover:opacity-100">
+              <div className="flex flex-col space-y-4 mt-4 ml-4">
                 {/* Shopping Cart Button */}
                 <motion.div
                   whileHover={{ scale: 1.1 }}
