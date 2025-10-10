@@ -8,6 +8,7 @@ import {
   removeFromCart,
   updateQuantity,
 } from "@/store/cartSlice";
+import { isCartEndpointAvailable } from "@/lib/api";
 import Link from "next/link";
 import { CartItem } from "@/types/cart";
 import { motion, AnimatePresence } from "framer-motion";
@@ -54,12 +55,26 @@ export default function CartPage() {
           className="text-center p-6 bg-red-50 rounded-xl shadow-lg"
         >
           <p className="text-red-600 text-lg font-medium">{error}</p>
-          <button
-            onClick={() => userId && dispatch(fetchCart(userId))}
-            className="mt-4 px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
-          >
-            Thử lại
-          </button>
+          {error === 'Cart endpoint not available' ? (
+            <div className="mt-4">
+              <p className="text-gray-600 text-sm mb-4">
+                Tính năng giỏ hàng tạm thời không khả dụng. Vui lòng thử lại sau.
+              </p>
+              <Link
+                href="/products"
+                className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+              >
+                Tiếp tục mua sắm
+              </Link>
+            </div>
+          ) : (
+            <button
+              onClick={() => userId && isCartEndpointAvailable('carts/user') && dispatch(fetchCart(userId))}
+              className="mt-4 px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+            >
+              Thử lại
+            </button>
+          )}
         </motion.div>
       </div>
     );

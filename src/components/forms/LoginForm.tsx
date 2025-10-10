@@ -44,7 +44,10 @@ const LoginForm: React.FC = () => {
 
 const onSubmit = async (data: LoginCredentials) => {
   try {
+    console.log("🚀 Login attempt with:", data);
     const result = await login(data);
+    console.log("✅ Login result:", result);
+    
     if (result?.user?.id) {
       console.log("✅ Đăng nhập thành công, userId:", result.user.id);
       console.log("🔍 User role:", result.user.role);
@@ -52,9 +55,21 @@ const onSubmit = async (data: LoginCredentials) => {
       // Redirect to home for all users
       console.log("👤 User logged in, redirecting to home");
       router.push('/');
+    } else {
+      console.warn("⚠️ Login successful but no user data received");
     }
-  } catch (error) {
-    console.error('Login error:', error);
+  } catch (error: any) {
+    console.error('❌ Login error:', error);
+    
+    // Log more details about the error
+    if (error.response) {
+      console.error('❌ Login API Error Details:', {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+        url: error.config?.url
+      });
+    }
   }
 };
 

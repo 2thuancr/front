@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { Cart, CartItem } from "../types/cart";
-import { cartApi } from "@/lib/api";
+import { cartApi, isCartEndpointAvailable } from "@/lib/api";
 
 interface CartState {
   data: Cart | null;
@@ -17,6 +17,8 @@ const initialState: CartState = {
 // 🛒 Lấy giỏ hàng theo userId
 export const fetchCart = createAsyncThunk("cart/fetchCart", async (userId: number) => {
   try {
+    // Note: We'll try the API call first, and only skip if it fails
+
     const response = await cartApi.getCartByUser(userId);
     console.log("🛒 API Cart Response:", response);
     

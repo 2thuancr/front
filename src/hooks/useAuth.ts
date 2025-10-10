@@ -112,7 +112,8 @@ export const useAuth = () => {
           user: localStorage.getItem('user')
         });
         
-        router.push('/profile');
+        // Don't redirect here, let the LoginForm handle redirect
+        console.log('🔍 Login successful, not redirecting from useAuth');
       } else {
         console.error('❌ No token found in login result:', result);
       }
