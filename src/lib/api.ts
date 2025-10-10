@@ -230,6 +230,28 @@ export const adminCategoryAPI = {
   getCategoryStats: () => api.get('/admin/categories/stats'),
 };
 
+// Admin Order Management API
+export const adminOrderAPI = {
+  getAllOrders: (page: number = 1, limit: number = 10) => 
+    api.get('/orders', { 
+      params: { 
+        page,
+        limit
+      } 
+    }),
+  
+  getOrderById: (orderId: number) => 
+    api.get(`/orders/${orderId}`),
+  
+  updateOrderStatus: (orderId: number, status: string) =>
+    api.patch(`/orders/${orderId}/status`, { status }),
+  
+  updatePaymentStatus: (orderId: number, paymentStatus: string) =>
+    api.patch(`/orders/${orderId}/payment-status`, { paymentStatus }),
+  
+  getOrderStats: () => api.get('/admin/orders/stats'),
+};
+
 export const productAPI = {
   getAll: (params?: any) => api.get("/products", { params }),
   getProductById: (id: number) => api.get(`/products/${id}`),
@@ -451,36 +473,56 @@ export const paymentApi = {
 
 // WISHLIST API
 export const wishlistApi = {
-  // Wishlist Management
-  addToWishlist: (productId: number) =>
-    api.post('/wishlist', { productId }).then((res) => res.data),
+  // Wishlist Management - Temporarily disabled until backend API is ready
+  addToWishlist: (productId: number) => {
+    console.warn('⚠️ Wishlist API not implemented yet');
+    return Promise.resolve({ success: true, message: 'Wishlist feature coming soon' });
+  },
 
-  getWishlist: () =>
-    api.get('/wishlist').then((res) => res.data),
+  getWishlist: () => {
+    console.warn('⚠️ Wishlist API not implemented yet');
+    return Promise.resolve({ wishlist: [] });
+  },
 
-  getUserWishlist: (userId: number) =>
-    api.get(`/wishlist/user/${userId}`).then((res) => res.data),
+  getUserWishlist: (userId: number) => {
+    console.warn('⚠️ Wishlist API not implemented yet');
+    return Promise.resolve({ wishlist: [] });
+  },
 
-  getProductWishlist: (productId: number) =>
-    api.get(`/wishlist/product/${productId}`).then((res) => res.data),
+  getProductWishlist: (productId: number) => {
+    console.warn('⚠️ Wishlist API not implemented yet');
+    return Promise.resolve({ wishlist: [] });
+  },
 
-  getWishlistCount: (productId: number) =>
-    api.get(`/wishlist/product/${productId}/count`).then((res) => res.data),
+  getWishlistCount: (productId: number) => {
+    console.warn('⚠️ Wishlist API not implemented yet');
+    return Promise.resolve({ count: 0 });
+  },
 
-  getUserWishlistCount: (userId: number) =>
-    api.get(`/wishlist/user/${userId}/count`).then((res) => res.data),
+  getUserWishlistCount: (userId: number) => {
+    console.warn('⚠️ Wishlist API not implemented yet');
+    return Promise.resolve({ count: 0 });
+  },
 
-  getMostWishlisted: (limit?: number) =>
-    api.get('/wishlist/most-wishlisted', { params: { limit } }).then((res) => res.data),
+  getMostWishlisted: (limit?: number) => {
+    console.warn('⚠️ Wishlist API not implemented yet');
+    return Promise.resolve({ products: [] });
+  },
 
-  checkInWishlist: (productId: number) =>
-    api.get(`/wishlist/check/${productId}`).then((res) => res.data),
+  checkInWishlist: (productId: number) => {
+    console.warn('⚠️ Wishlist API not implemented yet');
+    return Promise.resolve({ exists: false });
+  },
 
-  removeFromWishlist: (wishlistId: number) =>
-    api.delete(`/wishlist/${wishlistId}`).then((res) => res.data),
+  removeFromWishlist: (wishlistId: number) => {
+    console.warn('⚠️ Wishlist API not implemented yet');
+    return Promise.resolve({ success: true });
+  },
 
-  removeProductFromWishlist: (productId: number) =>
-    api.delete(`/wishlist/product/${productId}`).then((res) => res.data),
+  removeProductFromWishlist: (productId: number) => {
+    console.warn('⚠️ Wishlist API not implemented yet');
+    return Promise.resolve({ success: true });
+  },
 };
 
 // PRODUCT STATS API

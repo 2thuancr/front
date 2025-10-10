@@ -19,6 +19,7 @@ import {
 import { useToastSuccess, useToastError } from '@/components/ui/Toast';
 import { adminCategoryAPI } from '@/lib/api';
 import { Category, CategoriesResponse } from '@/types/api';
+import CategoryForm from '@/components/admin/CategoryForm';
 
 
 export default function AdminCategories() {
@@ -30,6 +31,7 @@ export default function AdminCategories() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [limit] = useState(10);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   
   const toastSuccess = useToastSuccess();
   const toastError = useToastError();
@@ -85,6 +87,11 @@ export default function AdminCategories() {
     setCurrentPage(page);
   };
 
+  const handleFormSuccess = () => {
+    // Refresh the categories list after successful creation
+    fetchCategories(currentPage);
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('vi-VN', {
       year: 'numeric',
@@ -115,7 +122,10 @@ export default function AdminCategories() {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             <span>Làm mới</span>
           </button>
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2">
+          <button 
+            onClick={() => setIsFormOpen(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+          >
             <Plus className="w-4 h-4" />
             <span>Thêm danh mục</span>
           </button>
@@ -389,6 +399,13 @@ export default function AdminCategories() {
           )}
         </div>
       )}
+
+      {/* Category Form Modal */}
+      <CategoryForm
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSuccess={handleFormSuccess}
+      />
     </div>
   );
 }

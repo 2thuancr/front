@@ -220,3 +220,49 @@ export interface CategoriesResponse {
   limit: string;
 }
 
+// Order interfaces
+export interface OrderDetail {
+  orderDetailId: number;
+  orderId: number;
+  productId: number;
+  quantity: number;
+  unitPrice: string;
+  product: Product;
+}
+
+export interface Order {
+  orderId: number;
+  userId: number;
+  vendorId: number | null;
+  orderDate: string;
+  totalAmount: string;
+  status: 'NEW' | 'CONFIRMED' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED';
+  paymentMethod: 'COD' | 'BANK_TRANSFER' | 'CREDIT_CARD';
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  shippingAddress: string | null;
+  notes: string | null;
+  user: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    gender: 'male' | 'female' | 'other' | null;
+    dateOfBirth: string | null;
+    isVerified: boolean;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+  };
+  orderDetails: OrderDetail[];
+}
+
+export interface OrdersResponse {
+  orders: Order[];
+  total: number;
+  page: number;
+  limit: number;
+}
+

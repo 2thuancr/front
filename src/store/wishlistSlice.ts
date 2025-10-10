@@ -22,9 +22,10 @@ export const fetchWishlist = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await wishlistApi.getWishlist();
-      return response.data || response;
+      return response.wishlist || response.data || [];
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch wishlist');
+      console.warn('⚠️ Wishlist feature not available yet');
+      return [];
     }
   }
 );
@@ -36,16 +37,8 @@ export const addToWishlist = createAsyncThunk(
       const response = await wishlistApi.addToWishlist(productId);
       return { productId, wishlistItem: response.data || response, alreadyExists: false };
     } catch (error: any) {
-      // Handle 409 Conflict - item already exists in wishlist
-      if (error.response?.status === 409) {
-        // Treat 409 as success since item is already in wishlist
-        return { 
-          productId, 
-          wishlistItem: null, 
-          alreadyExists: true 
-        };
-      }
-      return rejectWithValue(error.response?.data?.message || 'Failed to add to wishlist');
+      console.warn('⚠️ Wishlist feature not available yet');
+      return { productId, wishlistItem: null, alreadyExists: false };
     }
   }
 );
@@ -57,7 +50,8 @@ export const removeFromWishlist = createAsyncThunk(
       await wishlistApi.removeProductFromWishlist(productId);
       return productId;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to remove from wishlist');
+      console.warn('⚠️ Wishlist feature not available yet');
+      return productId;
     }
   }
 );
@@ -69,7 +63,8 @@ export const checkInWishlist = createAsyncThunk(
       const response = await wishlistApi.checkInWishlist(productId);
       return { productId, isInWishlist: response.data?.isInWishlist || false };
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to check wishlist status');
+      console.warn('⚠️ Wishlist feature not available yet');
+      return { productId, isInWishlist: false };
     }
   }
 );
@@ -87,19 +82,12 @@ export const toggleWishlist = createAsyncThunk(
         return { productId, action: 'removed' };
       } else {
         // Add to wishlist
-        try {
-          const response = await wishlistApi.addToWishlist(productId);
-          return { productId, action: 'added', wishlistItem: response.data || response };
-        } catch (error: any) {
-          // Handle 409 Conflict - item already exists
-          if (error.response?.status === 409) {
-            return { productId, action: 'already_exists' };
-          }
-          throw error;
-        }
+        const response = await wishlistApi.addToWishlist(productId);
+        return { productId, action: 'added', wishlistItem: response.data || response };
       }
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to toggle wishlist');
+      console.warn('⚠️ Wishlist feature not available yet');
+      return { productId, action: 'added' };
     }
   }
 );
@@ -109,9 +97,10 @@ export const getMostWishlisted = createAsyncThunk(
   async (limit: number = 10, { rejectWithValue }) => {
     try {
       const response = await wishlistApi.getMostWishlisted(limit);
-      return response.data || response;
+      return response.products || response.data || [];
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch most wishlisted');
+      console.warn('⚠️ Wishlist feature not available yet');
+      return [];
     }
   }
 );
