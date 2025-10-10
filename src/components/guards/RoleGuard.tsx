@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole, AdminRole, getUserType, isAdmin, isVendor, isStaff, isCustomer } from '@/types/auth';
 
@@ -18,20 +19,41 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
   fallback 
 }) => {
   const { user, userType, hasAnyRole } = useAuth();
+  const router = useRouter();
+  
+  useEffect(() => {
+    // Redirect to login if no user
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    // Check user type if specified
+    if (allowedUserTypes.length > 0 && (!userType || !allowedUserTypes.includes(userType))) {
+      router.push('/login');
+      return;
+    }
+
+    // Check roles if specified
+    if (allowedRoles.length > 0 && !hasAnyRole(allowedRoles)) {
+      router.push('/login');
+      return;
+    }
+  }, [user, userType, hasAnyRole, allowedUserTypes, allowedRoles, router]);
   
   // Check if user exists
   if (!user) {
-    return fallback || <AccessDenied />;
+    return null; // Don't render anything while redirecting
   }
 
   // Check user type if specified
   if (allowedUserTypes.length > 0 && (!userType || !allowedUserTypes.includes(userType))) {
-    return fallback || <AccessDenied />;
+    return null; // Don't render anything while redirecting
   }
 
   // Check roles if specified
   if (allowedRoles.length > 0 && !hasAnyRole(allowedRoles)) {
-    return fallback || <AccessDenied />;
+    return null; // Don't render anything while redirecting
   }
   
   return <>{children}</>;
