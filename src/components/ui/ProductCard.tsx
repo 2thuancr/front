@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Card } from 'primereact/card';
@@ -17,6 +17,10 @@ import {
 import { LegacyProduct } from '@/types/product';
 import { useToastSuccess, useToastError } from './Toast';
 import { useUserId } from '@/hooks/useUserId';
+import { cartApi } from '@/lib/api';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState, AppDispatch } from '@/store';
+import { toggleWishlist, checkInWishlist } from '@/store/wishlistSlice';
 
 interface ProductCardProps {
   product: LegacyProduct;
@@ -35,11 +39,63 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onToggleWishlist,
   className = ''
 }) => {
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [cartId, setCartId] = useState<number | null>(null);
   const userId = useUserId();
   const toastSuccess = useToastSuccess();
   const toastError = useToastError();
+  
+  const dispatch = useDispatch<AppDispatch>();
+  const { checkedItems } = useSelector((state: RootState) => state.wishlist);
+  const isWishlisted = checkedItems[product.id] || false;
+
+  // Kiểm tra trạng thái wishlist khi component mount
+  useEffect(() => {
+    if (userId && product.id && checkedItems[product.id] === undefined) {
+      console.log("🔍 Checking wishlist status for product:", product.id);
+      dispatch(checkInWishlist(product.id));
+    }
+  }, [dispatch, userId, product.id, checkedItems]);
+
+  // Lấy cartId khi userId thay đổi
+  useEffect(() => {
+    const fetchCart = async () => {
+      if (!userId || userId <= 0) {
+        setCartId(null);
+        return;
+      }
+
+      try {
+        console.log("🛒 Lấy giỏ hàng cho user:", userId);
+        const cart = await cartApi.getCartByUser(userId);
+        console.log("✅ Dữ liệu giỏ hàng:", cart);
+
+        if (cart && cart.cartId) {
+          setCartId(cart.cartId);
+        } else {
+          console.warn("⚠️ Cart data is invalid:", cart);
+        }
+      } catch (error: any) {
+        console.error("❌ Lỗi khi lấy giỏ hàng:", error);
+        
+        // Thử tạo giỏ hàng mới nếu không tìm thấy
+        if (error.response?.status === 404) {
+          console.log("🛒 Cart not found, attempting to create new cart for user:", userId);
+          try {
+            const newCart = await cartApi.createCart(userId);
+            console.log("✅ Created new cart:", newCart);
+            if (newCart && newCart.cartId) {
+              setCartId(newCart.cartId);
+            }
+          } catch (createError: any) {
+            console.error("❌ Failed to create cart:", createError);
+          }
+        }
+      }
+    };
+
+    fetchCart();
+  }, [userId]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -50,40 +106,56 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   const handleAddToCart = async () => {
-    if (!userId) {
-      toastError("Cần đăng nhập", "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
-      return;
-    }
+    console.log("🔥 handleAddToCart được gọi từ ProductCard!", { product, onAddToCart });
 
     setIsAddingToCart(true);
     try {
       if (onAddToCart) {
+        console.log("🔄 Gọi onAddToCart callback");
         await onAddToCart(product.id);
       } else {
-        // Default behavior - you can implement cart API call here
+        console.log("🔄 Không có onAddToCart callback, sử dụng logic mặc định");
+        // Fallback logic nếu không có callback
         toastSuccess("Thành công!", "Đã thêm sản phẩm vào giỏ hàng");
       }
-    } catch (error) {
-      toastError("Thất bại", "Không thể thêm sản phẩm vào giỏ hàng");
+    } catch (error: any) {
+      console.error("❌ Lỗi khi thêm giỏ hàng:", error);
+      const errorMessage = error.message || "Thêm giỏ hàng thất bại";
+      toastError("Thất bại", errorMessage);
     } finally {
       setIsAddingToCart(false);
     }
   };
 
-  const handleToggleWishlist = () => {
-    if (!userId) {
+  const handleToggleWishlist = async () => {
+    console.log("🔥 handleToggleWishlist được gọi!", { productId: product.id, isWishlisted, userId });
+
+    if (!userId || userId <= 0) {
       toastError("Cần đăng nhập", "Vui lòng đăng nhập để sử dụng tính năng yêu thích");
       return;
     }
 
-    setIsWishlisted(!isWishlisted);
-    if (onToggleWishlist) {
-      onToggleWishlist(product.id);
-    } else {
-      toastSuccess(
-        isWishlisted ? "Đã bỏ yêu thích" : "Đã thêm yêu thích",
-        isWishlisted ? "Sản phẩm đã được bỏ khỏi danh sách yêu thích" : "Sản phẩm đã được thêm vào danh sách yêu thích"
-      );
+    try {
+      if (onToggleWishlist) {
+        console.log("🔄 Gọi onToggleWishlist callback");
+        await onToggleWishlist(product.id);
+      } else {
+        console.log("🔄 Gọi Redux toggleWishlist");
+        const result = await dispatch(toggleWishlist(product.id)).unwrap();
+        console.log("✅ Toggle wishlist result:", result);
+        
+        if (result.action === 'added') {
+          toastSuccess("Thành công!", "Đã thêm sản phẩm vào danh sách yêu thích");
+        } else if (result.action === 'removed') {
+          toastSuccess("Thành công!", "Đã bỏ sản phẩm khỏi danh sách yêu thích");
+        } else if (result.action === 'already_exists') {
+          toastSuccess("Thông báo", "Sản phẩm đã có trong danh sách yêu thích");
+        }
+      }
+    } catch (error: any) {
+      console.error("❌ Lỗi khi toggle wishlist:", error);
+      const errorMessage = error.message || "Thao tác yêu thích thất bại";
+      toastError("Thất bại", errorMessage);
     }
   };
 

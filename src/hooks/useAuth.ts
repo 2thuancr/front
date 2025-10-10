@@ -40,17 +40,28 @@ export const useAuth = () => {
   // Auto-fetch user profile if authenticated but no user data
   useEffect(() => {
     const fetchUserIfNeeded = async () => {
+      // Add delay to prevent interference with login redirect
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       if (typeof window !== 'undefined' && !isCheckingAuth.current) {
         const token = localStorage.getItem('token');
         
         // Check if token is valid before making API calls
         if (token && !isTokenValid()) {
           console.log('🔒 Token is expired or invalid, clearing auth data...');
-          localStorage.removeItem('token');
-          localStorage.removeItem('refresh_token');
-          localStorage.removeItem('user');
-          dispatch(logoutUser());
-          router.push('/login');
+          console.log('🔍 useAuth: Current path:', window.location.pathname);
+          
+          // Don't redirect if we're already on login page
+          if (window.location.pathname !== '/login') {
+            console.log('🔄 useAuth: Redirecting to login');
+            localStorage.removeItem('token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user');
+            dispatch(logoutUser());
+            router.push('/login');
+          } else {
+            console.log('🔍 useAuth: Already on login page, not redirecting');
+          }
           return;
         }
 
@@ -59,13 +70,17 @@ export const useAuth = () => {
           isCheckingAuth.current = true;
           didFetchProfile.current = true;
           console.log('🔄 Auto-fetching user profile...');
+          console.log('🔍 useAuth: Current path during profile fetch:', window.location.pathname);
+          
           try {
             await dispatch(fetchUserProfile()).unwrap();
             console.log('✅ User profile fetched successfully');
+            console.log('🔍 useAuth: Current path after profile fetch:', window.location.pathname);
           } catch (error: any) {
             console.error('❌ Failed to fetch user profile:', error);
             // If 401 Unauthorized, token is invalid/expired
             if (error?.response?.status === 401) {
+              console.log('🔒 useAuth: Token expired, redirecting to login');
               localStorage.removeItem('token');
               localStorage.removeItem('refresh_token');
               localStorage.removeItem('user');
@@ -80,7 +95,7 @@ export const useAuth = () => {
     };
 
     fetchUserIfNeeded();
-  }, [dispatch, router, user]);
+  }, [dispatch, router, userProfile]); // Removed 'user' from dependencies
 
   // Only log in development and limit frequency
   if (process.env.NODE_ENV === 'development') {
@@ -115,8 +130,11 @@ export const useAuth = () => {
           user: localStorage.getItem('user')
         });
         
-        // Don't redirect here, let the LoginForm handle redirect
-        console.log('🔍 Login successful, not redirecting from useAuth');
+        console.log('✅ Auth data saved to localStorage');
+        console.log('🔍 localStorage check:', {
+          token: localStorage.getItem('token'),
+          user: localStorage.getItem('user')
+        });
       } else {
         console.error('❌ No token found in login result:', result);
       }

@@ -14,7 +14,15 @@ const Navigation: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
   const { isAuthenticated, user } = useAuth();
-const router = useRouter();
+  const router = useRouter();
+  
+  // Debug log
+  console.log('🔍 Navigation: Current state:', {
+    pathname,
+    isAuthenticated,
+    user: user?.firstName + ' ' + user?.lastName,
+    currentPath: window.location.pathname
+  });
   const navigation = [
     { name: 'Trang chủ', href: '/' },
     { name: 'Sản phẩm', href: '/products' },

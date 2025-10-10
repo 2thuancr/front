@@ -19,7 +19,9 @@ export const handleUnauthorized = () => {
 
 export const isTokenValid = () => {
   const token = localStorage.getItem('token');
-  if (!token) return false;
+  if (!token) {
+    return false;
+  }
   
   try {
     // Decode JWT token to check expiration

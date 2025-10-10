@@ -18,30 +18,54 @@ export const AuthInitializer: React.FC = () => {
 
   useEffect(() => {
     const initializeAuth = async () => {
+      console.log('🔄 AuthInitializer: Starting initialization...');
+      console.log('🔍 AuthInitializer: Current state:', {
+        didInitialize: didInitialize.current,
+        userProfileLoading,
+        currentPath: window.location.pathname
+      });
+      
       // Only run once and when not already loading
       if (didInitialize.current || userProfileLoading) {
+        console.log('🔍 AuthInitializer: Skipping - already initialized or loading');
         return;
       }
 
       // Check if we have a token but no user profile
       const token = localStorage.getItem('token');
+      console.log('🔍 AuthInitializer: Token check:', {
+        tokenExists: !!token,
+        hasUserProfile: !!userProfile,
+        isTokenValid: token ? isTokenValid() : false
+      });
+      
       if (token && !userProfile && isTokenValid()) {
         console.log('🔄 AuthInitializer: Auto-fetching user profile...');
+        console.log('🔍 AuthInitializer: Current path before profile fetch:', window.location.pathname);
         didInitialize.current = true;
         
         try {
           await dispatch(fetchUserProfile()).unwrap();
           console.log('✅ AuthInitializer: User profile fetched successfully');
+          console.log('🔍 AuthInitializer: Current path after profile fetch:', window.location.pathname);
         } catch (error: any) {
           console.error('❌ AuthInitializer: Failed to fetch user profile:', error);
           
           // If 401 Unauthorized, token is invalid/expired
           if (error?.response?.status === 401) {
             console.log('🔒 AuthInitializer: Token expired, clearing auth data...');
-            localStorage.removeItem('token');
-            localStorage.removeItem('refresh_token');
-            localStorage.removeItem('user');
-            localStorage.removeItem('userId');
+            console.log('🔍 AuthInitializer: Current path:', window.location.pathname);
+            
+            // Don't clear auth data if we're on login page
+            if (window.location.pathname !== '/login') {
+              console.log('🔄 AuthInitializer: Clearing auth data');
+              localStorage.removeItem('token');
+              localStorage.removeItem('refresh_token');
+              localStorage.removeItem('user');
+              localStorage.removeItem('userId');
+            } else {
+              console.log('🔍 AuthInitializer: On login page, not clearing auth data');
+            }
           }
         }
       } else if (token && userProfile) {
@@ -53,8 +77,12 @@ export const AuthInitializer: React.FC = () => {
       }
     };
 
-    initializeAuth();
-  }, [dispatch, userProfile, userProfileLoading]);
+    // Add delay to prevent interference with login redirect
+    setTimeout(() => {
+      console.log('🔄 AuthInitializer: Starting after delay');
+      initializeAuth();
+    }, 200);
+  }, [dispatch]); // Removed userProfile and userProfileLoading from dependencies
 
   // This component doesn't render anything
   return null;

@@ -2,24 +2,28 @@ import { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/store';
 import { fetchWishlist } from '@/store/wishlistSlice';
-import { useAuth } from './useAuth';
+import { isTokenValid } from '@/lib/auth';
 
 /**
  * Simple hook to initialize wishlist state when app loads
  */
 export const useWishlistInit = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { isAuthenticated } = useAuth();
   const { items, loading } = useSelector((state: RootState) => state.wishlist);
   const hasFetched = useRef(false);
 
   useEffect(() => {
-    // Only fetch once if user is authenticated and we don't have wishlist data yet
-    if (isAuthenticated && items.length === 0 && !loading && !hasFetched.current) {
+    // Check authentication directly from localStorage to avoid circular dependency
+    const token = localStorage.getItem('token');
+    const isAuthenticated = token && isTokenValid();
+    
+    // Fetch wishlist when user is authenticated and we haven't fetched yet
+    if (isAuthenticated && !hasFetched.current) {
       hasFetched.current = true;
+      console.log("🔄 Initializing wishlist state...");
       dispatch(fetchWishlist());
     }
-  }, [dispatch, isAuthenticated, items.length, loading])
+  }, [dispatch])
 
   return {
     isInitializing: loading && items.length === 0,

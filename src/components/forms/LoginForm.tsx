@@ -48,15 +48,43 @@ const onSubmit = async (data: LoginCredentials) => {
     const result = await login(data);
     console.log("✅ Login result:", result);
     
-    if (result?.user?.id) {
+    if (result?.access_token && result?.user) {
       console.log("✅ Đăng nhập thành công, userId:", result.user.id);
-      console.log("🔍 User role:", result.user.role);
       
-      // Redirect to home for all users
-      console.log("👤 User logged in, redirecting to home");
-      router.push('/');
+      // Redirect to home page
+      console.log("🔄 Redirecting from /login to http://localhost:3000");
+      console.log("🔍 Current URL before redirect:", window.location.href);
+      console.log("🔍 Current path before redirect:", window.location.pathname);
+      
+      setTimeout(() => {
+        console.log("🔄 Executing redirect to home page");
+        console.log("🔍 About to call window.location.href = '/'");
+        
+        try {
+          window.location.href = '/';
+          console.log("✅ window.location.href = '/' called successfully");
+          
+          // Check if redirect worked
+          setTimeout(() => {
+            console.log("🔍 URL after redirect attempt:", window.location.href);
+            console.log("🔍 Path after redirect attempt:", window.location.pathname);
+            
+            if (window.location.pathname === '/login') {
+              console.log("❌ Still on login page, redirect failed!");
+              console.log("🔄 Trying router.push as backup");
+              router.push('/');
+            } else {
+              console.log("✅ Redirect successful!");
+            }
+          }, 500);
+        } catch (error) {
+          console.error("❌ Redirect error:", error);
+          console.log("🔄 Trying router.push as backup");
+          router.push('/');
+        }
+      }, 100);
     } else {
-      console.warn("⚠️ Login successful but no user data received");
+      console.warn("⚠️ Login successful but no user data or token received");
     }
   } catch (error: any) {
     console.error('❌ Login error:', error);

@@ -8,11 +8,12 @@ import cartReducer from './cartSlice';
 import orderReducer from './orderSlice';
 import wishlistReducer from './wishlistSlice';
 
-// Persist config - chỉ persist auth state
+// Persist config - persist auth và wishlist state
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: ['auth'], // Chỉ lưu auth reducer
+  whitelist: ['auth', 'wishlist'], // Lưu auth và wishlist reducer
+  version: process.env.NODE_ENV === 'development' ? Date.now() : 1, // Reset khi restart trong dev mode
 };
 
 const rootReducer = combineReducers({

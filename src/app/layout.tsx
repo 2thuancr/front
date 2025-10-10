@@ -6,6 +6,7 @@ import Navigation from '@/components/layout/Navigation';
 import Footer from '@/components/layout/Footer';
 import { ViewTrackingProvider } from '@/components/providers/ViewTrackingProvider';
 import { AuthInitializer } from '@/components/providers/AuthInitializer';
+import { WishlistInitializer } from '@/components/providers/WishlistInitializer';
 import { ToastProvider } from '@/components/ui/Toast';
 import { APP_CONFIG } from '@/lib/constants';
 
@@ -59,6 +60,7 @@ export default function RootLayout({
       <body className={inter.className} suppressHydrationWarning={true}>
         <Providers>
           <AuthInitializer />
+          <WishlistInitializer />
           <ToastProvider>
             <ViewTrackingProvider>
               <Navigation />

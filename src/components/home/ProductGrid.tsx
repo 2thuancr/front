@@ -5,10 +5,15 @@ import { TrendingUp, Eye as EyeIcon, Percent, Clock } from 'lucide-react';
 import { Dropdown } from 'primereact/dropdown';
 import { Button } from 'primereact/button';
 import { motion } from 'framer-motion';
-import { productAPI } from '@/lib/api';
+import { productAPI, cartApi } from '@/lib/api';
 import { Product, LegacyProduct } from '@/types/api';
 import { ProductCard } from '@/components/ui';
 import Link from 'next/link';
+import { useToastSuccess, useToastError } from '@/components/ui/Toast';
+import { useUserId } from '@/hooks/useUserId';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '@/store';
+import { toggleWishlist } from '@/store/wishlistSlice';
 
 type ProductType = 'latest' | 'bestseller' | 'most-viewed' | 'highest-discount';
 
@@ -20,6 +25,12 @@ const ProductGrid: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedType, setSelectedType] = useState<ProductType>('latest');
   const [productCount, setProductCount] = useState(8);
+  const [cartId, setCartId] = useState<number | null>(null);
+  
+  const userId = useUserId();
+  const toastSuccess = useToastSuccess();
+  const toastError = useToastError();
+  const dispatch = useDispatch<AppDispatch>();
 
   const productTypes = [
     {
@@ -65,6 +76,46 @@ const ProductGrid: React.FC = () => {
       icon: Clock
     };
   };
+
+  // Lấy cartId khi userId thay đổi
+  useEffect(() => {
+    const fetchCart = async () => {
+      if (!userId || userId <= 0) {
+        setCartId(null);
+        return;
+      }
+
+      try {
+        console.log("🛒 Lấy giỏ hàng cho user:", userId);
+        const cart = await cartApi.getCartByUser(userId);
+        console.log("✅ Dữ liệu giỏ hàng:", cart);
+
+        if (cart && cart.cartId) {
+          setCartId(cart.cartId);
+        } else {
+          console.warn("⚠️ Cart data is invalid:", cart);
+        }
+      } catch (error: any) {
+        console.error("❌ Lỗi khi lấy giỏ hàng:", error);
+        
+        // Thử tạo giỏ hàng mới nếu không tìm thấy
+        if (error.response?.status === 404) {
+          console.log("🛒 Cart not found, attempting to create new cart for user:", userId);
+          try {
+            const newCart = await cartApi.createCart(userId);
+            console.log("✅ Created new cart:", newCart);
+            if (newCart && newCart.cartId) {
+              setCartId(newCart.cartId);
+            }
+          } catch (createError: any) {
+            console.error("❌ Failed to create cart:", createError);
+          }
+        }
+      }
+    };
+
+    fetchCart();
+  }, [userId]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -159,12 +210,77 @@ const ProductGrid: React.FC = () => {
   };
 
   const handleAddToCart = async (productId: number) => {
-    // Implement add to cart logic here
-    console.log('Adding product to cart:', productId);
+    console.log("🔥 handleAddToCart được gọi từ ProductGrid!", { productId, cartId, userId });
+
+    if (!userId || userId <= 0) {
+      console.log("❌ Không có userId:", userId);
+      toastError("Lỗi đăng nhập", "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
+      return;
+    }
+    if (!cartId) {
+      console.log("❌ Không có cartId:", cartId);
+      toastError("Lỗi giỏ hàng", "Không tìm thấy giỏ hàng. Vui lòng đăng nhập để sử dụng giỏ hàng.");
+      return;
+    }
+
+    try {
+      console.log("🔄 Gọi API cartApi.addToCart");
+      const res = await cartApi.addToCart(cartId, productId, 1);
+      console.log("✅ API addToCart response:", res);
+      toastSuccess("Thành công!", "Đã thêm sản phẩm vào giỏ hàng");
+    } catch (error: any) {
+      console.error("❌ Lỗi khi thêm giỏ hàng:", error);
+      
+      // Log detailed error information
+      if (error.response) {
+        console.error("❌ AddToCart API Error Details:", {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          url: error.config?.url,
+          requestData: { cartId, productId, quantity: 1 }
+        });
+        
+        // Handle specific error cases
+        if (error.response.status === 400) {
+          console.warn("⚠️ Add to cart endpoint may not exist or requires different parameters");
+        } else if (error.response.status === 401) {
+          console.warn("⚠️ User not authenticated for cart operations");
+        } else if (error.response.status === 404) {
+          console.warn("⚠️ Cart or product not found");
+        }
+      }
+      
+      const errorMessage = error.response?.data?.message || error.message || "Thêm giỏ hàng thất bại";
+      toastError("Thất bại", errorMessage);
+    }
   };
 
-  const handleToggleWishlist = (productId: number) => {
-    toggleWishlist(productId);
+  const handleToggleWishlist = async (productId: number) => {
+    console.log("🔥 handleToggleWishlist được gọi từ ProductGrid!", { productId, userId });
+
+    if (!userId || userId <= 0) {
+      toastError("Cần đăng nhập", "Vui lòng đăng nhập để sử dụng tính năng yêu thích");
+      return;
+    }
+
+    try {
+      console.log("🔄 Gọi Redux toggleWishlist");
+      const result = await dispatch(toggleWishlist(productId)).unwrap();
+      console.log("✅ Toggle wishlist result:", result);
+      
+      if (result.action === 'added') {
+        toastSuccess("Thành công!", "Đã thêm sản phẩm vào danh sách yêu thích");
+      } else if (result.action === 'removed') {
+        toastSuccess("Thành công!", "Đã bỏ sản phẩm khỏi danh sách yêu thích");
+      } else if (result.action === 'already_exists') {
+        toastSuccess("Thông báo", "Sản phẩm đã có trong danh sách yêu thích");
+      }
+    } catch (error: any) {
+      console.error("❌ Lỗi khi toggle wishlist:", error);
+      const errorMessage = error.message || "Thao tác yêu thích thất bại";
+      toastError("Thất bại", errorMessage);
+    }
   };
 
   if (loading) {
