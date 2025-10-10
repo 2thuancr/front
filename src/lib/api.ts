@@ -37,9 +37,17 @@ api.interceptors.response.use(
   async (error) => {
     console.error('❌ API Error:', error.response?.status, error.config?.url, error.response?.data);
     
-    // Handle 401 Unauthorized
+    // Handle 401 Unauthorized - but not for login/register endpoints
     if (error.response?.status === 401) {
-      handleUnauthorized();
+      const url = error.config?.url || '';
+      
+      // Don't handle unauthorized for auth endpoints (login, register, etc.)
+      if (!url.includes('/auth/login') && !url.includes('/auth/register') && !url.includes('/auth/forgot-password')) {
+        console.log('🔒 401 Unauthorized on non-auth endpoint, clearing auth data');
+        handleUnauthorized();
+      } else {
+        console.log('🔒 401 on auth endpoint, not clearing auth data');
+      }
     }
     return Promise.reject(error);
   }
@@ -95,6 +103,22 @@ export const userAPI = {
         'Content-Type': 'multipart/form-data',
       },
     }),
+
+  // Admin APIs
+  getAllUsers: (params?: any) => api.get('/users/getAll', { params }),
+  
+  createUser: (data: any) => api.post('/users/create', data),
+  
+  updateUser: (userId: number, data: any) =>
+    api.post(`/users/update/${userId}`, data),
+  
+  updateUserRole: (userId: number, role: string) =>
+    api.post(`/users/update-role/${userId}`, { role }),
+  
+  toggleUserActive: (userId: number) =>
+    api.post(`/users/toggle-active/${userId}`),
+  
+  getUsersStats: () => api.get('/users/stats'),
 };
 
 export const productAPI = {
@@ -129,16 +153,88 @@ getLatestProducts: (limit: number = 8) =>
   
 };
 
+// Track failed cart endpoints
+const failedCartEndpoints = new Set<string>();
+
+// Utility function to reset failed endpoints
+export const resetFailedCartEndpoints = () => {
+  failedCartEndpoints.clear();
+  console.log('🔄 Failed cart endpoints reset');
+};
+
+// Utility function to check if cart endpoints are available
+export const isCartEndpointAvailable = (endpoint: 'carts' | 'carts/user') => {
+  return !failedCartEndpoints.has(endpoint);
+};
+
+// Utility function to reset cart endpoints (useful for testing or when backend is fixed)
+export const resetCartEndpoints = () => {
+  failedCartEndpoints.clear();
+  console.log('🔄 Cart endpoints reset - will try API calls again');
+};
+
 export const cartApi = {
   // CART
-  createCart: (userId: number) =>
-    api.post("/carts", { userId }).then((res) => res.data),
+  createCart: (userId: number) => {
+    if (!userId || userId <= 0) {
+      console.warn(`⚠️ Invalid userId for createCart: ${userId}`);
+      return Promise.reject(new Error(`Invalid userId: ${userId}`));
+    }
+    
+    // Check if endpoint has failed before
+    if (failedCartEndpoints.has('carts')) {
+      console.log(`📊 Cart creation skipped - endpoint known to fail`);
+      return Promise.reject(new Error('Cart endpoint not available'));
+    }
+    
+    console.log(`📡 Calling createCart API for userId: ${userId}`);
+    return api.post("/carts", { userId }).then((res) => {
+      console.log(`✅ createCart API response:`, res.data);
+      return res.data;
+    }).catch((error) => {
+      console.error(`❌ createCart API error:`, error);
+      
+      // Mark endpoint as failed for specific error codes
+      if (error.response?.status === 400 || error.response?.status === 404) {
+        failedCartEndpoints.add('carts');
+        console.warn(`⚠️ Cart endpoint marked as failed due to ${error.response.status} error`);
+      }
+      
+      throw error;
+    });
+  },
 
   getAllCarts: (page = 1, limit = 10) =>
     api.get(`/carts?page=${page}&limit=${limit}`).then((res) => res.data),
 
-  getCartByUser: (userId: number) =>
-    api.get(`/carts/user/${userId}`).then((res) => res.data),
+  getCartByUser: (userId: number) => {
+    if (!userId || userId <= 0) {
+      console.warn(`⚠️ Invalid userId for getCartByUser: ${userId}`);
+      return Promise.reject(new Error(`Invalid userId: ${userId}`));
+    }
+    
+    // Check if endpoint has failed before
+    if (failedCartEndpoints.has('carts/user')) {
+      console.log(`📊 Cart fetch skipped - endpoint known to fail`);
+      return Promise.reject(new Error('Cart endpoint not available'));
+    }
+    
+    console.log(`📡 Calling getCartByUser API for userId: ${userId}`);
+    return api.get(`/carts/user/${userId}`).then((res) => {
+      console.log(`✅ getCartByUser API response:`, res.data);
+      return res.data;
+    }).catch((error) => {
+      console.error(`❌ getCartByUser API error:`, error);
+      
+      // Mark endpoint as failed for specific error codes
+      if (error.response?.status === 400 || error.response?.status === 404) {
+        failedCartEndpoints.add('carts/user');
+        console.warn(`⚠️ Cart user endpoint marked as failed due to ${error.response.status} error`);
+      }
+      
+      throw error;
+    });
+  },
 
   getCartDetail: (cartId: number) =>
     api.get(`/carts/${cartId}`).then((res) => res.data),
@@ -292,8 +388,10 @@ export const productStatsApi = {
   getProductViewCount: (productId: number) =>
     api.get(`/product-views/product/${productId}/count`).then((res) => res.data),
 
-  getUserViewHistory: (userId: number) =>
-    api.get(`/product-views/user/${userId}`).then((res) => res.data),
+  getUserViewHistory: (userId: number, page: number = 1, limit: number = 10) =>
+    api.get(`/product-views/user/${userId}`, { 
+      params: { page, limit } 
+    }).then((res) => res.data),
 
   trackProductView: (productId: number) =>
     api.post(`/product-views/track/${productId}`).then((res) => res.data),
@@ -339,6 +437,7 @@ export const reviewApi = {
   getUserReviewForProduct: (userId: number, productId: number) =>
     api.get(`/product-reviews/user/${userId}/product/${productId}`).then((res) => res.data),
 };
+
 
 export default api;
 

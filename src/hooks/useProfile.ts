@@ -10,19 +10,11 @@ export const useProfile = () => {
     (state: RootState) => state.user
   );
 
-  console.log('useProfile hook render:', { profile, isLoading, error });
-
   const fetchProfile = useCallback(async () => {
     try {
-      console.log('🚀 Fetching profile...');
-      const token = localStorage.getItem('token');
-      console.log('🔑 Token:', token ? 'exists' : 'not found');
-      
       const response = await dispatch(fetchUserProfile()).unwrap();
-      console.log('✅ Profile response:', response);
       return response;
     } catch (error) {
-      console.error('❌ Fetch profile error:', error);
       throw error;
     }
   }, [dispatch]);
@@ -32,7 +24,6 @@ export const useProfile = () => {
       await dispatch(updateUserProfile(data)).unwrap();
       return true;
     } catch (error) {
-      console.error('Update profile error:', error);
       throw error;
     }
   };

@@ -251,6 +251,31 @@ const wishlistSlice = createSlice({
 
 export const { clearError, clearWishlist, updateCheckedItem } = wishlistSlice.actions;
 
+// Helper function to reset wishlist localStorage
+export const resetWishlistStorage = () => {
+  if (typeof window !== 'undefined') {
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith('persist:root')) {
+        try {
+          const data = JSON.parse(localStorage.getItem(key) || '{}');
+          if (data.wishlist) {
+            data.wishlist = {
+              items: [],
+              loading: false,
+              error: null,
+              checkedItems: {},
+            };
+            localStorage.setItem(key, JSON.stringify(data));
+          }
+        } catch (error) {
+          console.error('Error resetting wishlist storage:', error);
+        }
+      }
+    });
+  }
+};
+
 // Helper action to sync wishlist status for a specific product
 export const syncWishlistStatus = (productId: number, isInWishlist: boolean) => 
   updateCheckedItem({ productId, isInWishlist });

@@ -11,9 +11,9 @@ import {
   resendOTP,
 } from '@/store/authSlice';
 import { fetchUserProfile } from '@/store/userSlice';
-import { LoginCredentials, RegisterCredentials, VerifyOTPData } from '@/types/auth';
+import { LoginCredentials, RegisterCredentials, VerifyOTPData, UserRole, hasRole, hasAnyRole, User } from '@/types/auth';
 import { isTokenValid } from '@/lib/auth';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export const useAuth = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -26,70 +26,81 @@ export const useAuth = () => {
   );
 
   // Use userProfile from userSlice if available, otherwise fallback to authUser
-  const user = userProfile || authUser;
+  // Cast to User type since we need role and isActive for role checking
+  const user = (userProfile || authUser) as User | null;
 
   // Check if we have a token in localStorage as fallback
   const localStorageToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const actualIsAuthenticated = isAuthenticated || !!localStorageToken;
 
+  // Ref to prevent multiple profile fetches
+  const didFetchProfile = useRef(false);
+  const isCheckingAuth = useRef(false);
+
   // Auto-fetch user profile if authenticated but no user data
   useEffect(() => {
     const fetchUserIfNeeded = async () => {
-      if (typeof window !== 'undefined') {
+      // Add delay to prevent interference with login redirect
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      if (typeof window !== 'undefined' && !isCheckingAuth.current) {
         const token = localStorage.getItem('token');
         
         // Check if token is valid before making API calls
         if (token && !isTokenValid()) {
           console.log('🔒 Token is expired or invalid, clearing auth data...');
-          localStorage.removeItem('token');
-          localStorage.removeItem('refresh_token');
-          localStorage.removeItem('user');
-          dispatch(logoutUser());
-          router.push('/login');
+          console.log('🔍 useAuth: Current path:', window.location.pathname);
+          
+          // Don't redirect if we're already on login page
+          if (window.location.pathname !== '/login') {
+            console.log('🔄 useAuth: Redirecting to login');
+            localStorage.removeItem('token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user');
+            dispatch(logoutUser());
+            router.push('/login');
+          } else {
+            console.log('🔍 useAuth: Already on login page, not redirecting');
+          }
           return;
         }
 
-        // If we have valid token but no user data, fetch user profile
-        if (token && !user && actualIsAuthenticated && isTokenValid()) {
+        // If we have valid token but no userProfile data, fetch user profile (only once)
+        if (token && !userProfile && !didFetchProfile.current && isTokenValid()) {
+          isCheckingAuth.current = true;
+          didFetchProfile.current = true;
           console.log('🔄 Auto-fetching user profile...');
+          console.log('🔍 useAuth: Current path during profile fetch:', window.location.pathname);
+          
           try {
             await dispatch(fetchUserProfile()).unwrap();
             console.log('✅ User profile fetched successfully');
+            console.log('🔍 useAuth: Current path after profile fetch:', window.location.pathname);
           } catch (error: any) {
             console.error('❌ Failed to fetch user profile:', error);
-            
             // If 401 Unauthorized, token is invalid/expired
             if (error?.response?.status === 401) {
-              console.log('🔒 Token expired or invalid, clearing auth data...');
+              console.log('🔒 useAuth: Token expired, redirecting to login');
               localStorage.removeItem('token');
               localStorage.removeItem('refresh_token');
               localStorage.removeItem('user');
               dispatch(logoutUser());
-              
-              // Redirect to login page
               router.push('/login');
-            } else {
-              // For other errors, just log but don't clear token
-              console.log('⚠️ Non-auth error, keeping token');
             }
+          } finally {
+            isCheckingAuth.current = false;
           }
         }
       }
     };
 
     fetchUserIfNeeded();
-  }, [dispatch, user, actualIsAuthenticated]);
+  }, [dispatch, router, userProfile]); // Removed 'user' from dependencies
 
-  console.log('🔐 useAuth hook:', { 
-    authUser,
-    userProfile,
-    user, // Final user object
-    token, 
-    isAuthenticated, 
-    actualIsAuthenticated,
-    isLoading, 
-    error 
-  });
+  // Only log in development and limit frequency
+  if (process.env.NODE_ENV === 'development') {
+    // Reduced logging to avoid console spam
+  }
 
   const login = async (credentials: LoginCredentials) => {
     try {
@@ -119,7 +130,11 @@ export const useAuth = () => {
           user: localStorage.getItem('user')
         });
         
-        router.push('/profile');
+        console.log('✅ Auth data saved to localStorage');
+        console.log('🔍 localStorage check:', {
+          token: localStorage.getItem('token'),
+          user: localStorage.getItem('user')
+        });
       } else {
         console.error('❌ No token found in login result:', result);
       }
@@ -204,10 +219,14 @@ export const useAuth = () => {
     dispatch(clearError());
   };
 
+  // Role checking functions
+  const checkRole = (role: UserRole) => hasRole(user, role);
+  const checkAnyRole = (roles: UserRole[]) => hasAnyRole(user, roles);
+
   return {
     user,
     token,
-    isAuthenticated: actualIsAuthenticated, // Use actualIsAuthenticated instead
+    isAuthenticated: actualIsAuthenticated,
     isLoading,
     error,
     login,
@@ -216,6 +235,9 @@ export const useAuth = () => {
     verifyOTPCode,
     resendOTPCode,
     clearAuthError,
+    // Role checking functions
+    hasRole: checkRole,
+    hasAnyRole: checkAnyRole,
   };
 };
 

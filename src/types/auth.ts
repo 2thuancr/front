@@ -1,6 +1,13 @@
 import { UserProfile } from './user';
 
-export interface User extends UserProfile {}
+export enum UserRole {
+  USER = 'user'
+}
+
+export interface User extends UserProfile {
+  role: UserRole;
+  isActive: boolean;
+}
 
 export interface LoginCredentials {
   username: string;
@@ -48,4 +55,15 @@ export interface VerifyOTPData {
   email: string;
   otp: string;
 }
+
+// Role checking utility functions
+export const hasRole = (user: User | null, role: UserRole): boolean => {
+  if (!user) return false;
+  return user.role === role;
+};
+
+export const hasAnyRole = (user: User | null, roles: UserRole[]): boolean => {
+  if (!user) return false;
+  return roles.includes(user.role);
+};
 

@@ -219,7 +219,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
                   <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-3 py-2 rounded-full">
                     <Shield className="w-4 h-4 text-white" />
                     <span className="text-sm text-white font-medium">
-                      {profile?.role === 'admin' ? 'Quản trị viên' : 'Người dùng'}
+                      Người dùng
                     </span>
                   </div>
                   {profile?.isEmailVerified && (
@@ -586,7 +586,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
                   >
                     <span className="text-sm font-medium text-gray-600">Vai trò</span>
                     <p className="text-lg font-semibold text-gray-900 mt-1">
-                      {profile?.role === 'admin' ? 'Quản trị viên' : 'Người dùng'}
+                      Người dùng
                     </p>
                   </motion.div>
                   <motion.div 

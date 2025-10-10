@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
-import { productStatsApi } from '@/lib/api';
+import { productStatsApi, productAPI } from '@/lib/api';
 import { Eye, Clock, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -15,18 +15,30 @@ interface ProductView {
   viewedAt: string;
   product?: {
     productId: number;
+    categoryId: number;
     productName: string;
+    description?: string;
     price: string;
     discountPercent?: string;
-    category: {
+    stockQuantity: number;
+    createdAt: string;
+    updatedAt: string;
+    category?: {
       categoryName: string;
     };
-    images: Array<{
+    images?: Array<{
       imageId: number;
       imageUrl: string;
-      isPrimary: boolean;
+      isPrimary: boolean | number;
     }>;
   };
+}
+
+interface ViewedProductsResponse {
+  views: ProductView[];
+  total: number;
+  page: string;
+  limit: string;
 }
 
 const ViewedProductsPage: React.FC = () => {
@@ -34,10 +46,41 @@ const ViewedProductsPage: React.FC = () => {
   const [viewedProducts, setViewedProducts] = useState<ProductView[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [limit] = useState(10);
+
+  // Debug user data
+  console.log('🔍 ViewedProductsPage - User data:', { 
+    isAuthenticated, 
+    user, 
+    userId: user?.id,
+    localStorageUserId: typeof window !== 'undefined' ? localStorage.getItem('userId') : null
+  });
 
   useEffect(() => {
     const fetchViewedProducts = async () => {
-      if (!isAuthenticated || !user?.userId) {
+      // Get userId from user object or localStorage
+      let userId = user?.id;
+      
+      if (!userId && typeof window !== 'undefined') {
+        // Try to get from localStorage userId
+        const storedUserId = localStorage.getItem('userId');
+        if (storedUserId) {
+          userId = JSON.parse(storedUserId);
+        } else {
+          // Try to get from user object in localStorage
+          const storedUser = localStorage.getItem('user');
+          if (storedUser) {
+            const parsedUser = JSON.parse(storedUser);
+            userId = parsedUser.id;
+          }
+        }
+      }
+      
+      if (!isAuthenticated || !userId) {
+        console.log('⚠️ No user ID found:', { isAuthenticated, userId, user });
         setLoading(false);
         return;
       }
@@ -45,8 +88,44 @@ const ViewedProductsPage: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await productStatsApi.getUserViewHistory(user.userId);
-        setViewedProducts(response.data || response);
+        console.log('🔍 Fetching viewed products for user ID:', userId);
+        const response: ViewedProductsResponse = await productStatsApi.getUserViewHistory(userId, currentPage, limit);
+        
+        console.log('Viewed products response:', response);
+        
+        // Debug each product to see its structure
+        if (response.views && response.views.length > 0) {
+          console.log('First product structure:', response.views[0]);
+          console.log('Product images:', response.views[0].product);
+        }
+        
+        // Fetch detailed product info including images for each product
+        const viewsWithImages = await Promise.all(
+          (response.views || []).map(async (view: ProductView) => {
+            try {
+              console.log(`🔍 Fetching detailed info for product ${view.productId}`);
+              const productDetail = await productAPI.getProductById(view.productId);
+              const detailedProduct = productDetail.data?.product || productDetail.data;
+              
+              return {
+                ...view,
+                product: {
+                  ...view.product,
+                  ...detailedProduct, // Merge detailed product info including images
+                }
+              };
+            } catch (error) {
+              console.error(`❌ Failed to fetch product ${view.productId}:`, error);
+              return view; // Return original view if fetch fails
+            }
+          })
+        );
+        
+        console.log('✅ Views with images:', viewsWithImages);
+        
+        setViewedProducts(viewsWithImages);
+        setTotalItems(response.total || 0);
+        setTotalPages(Math.ceil((response.total || 0) / limit));
       } catch (err: any) {
         console.error('Error fetching viewed products:', err);
         setError(err.message || 'Failed to load viewed products');
@@ -56,7 +135,7 @@ const ViewedProductsPage: React.FC = () => {
     };
 
     fetchViewedProducts();
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, currentPage, limit]);
 
   const formatPrice = (price: string): string => {
     return new Intl.NumberFormat('vi-VN', {
@@ -81,14 +160,53 @@ const ViewedProductsPage: React.FC = () => {
   };
 
   const getProductImage = (product: any): string => {
-    if (!product || !product.images || !Array.isArray(product.images)) {
+    console.log('🖼️ getProductImage called with:', product);
+    
+    if (!product) {
+      console.log('❌ No product provided');
       return '/images/placeholder.svg';
     }
     
-    const primaryImage = product.images.find((img: any) => img.isPrimary);
+    // Check if product has images array
+    if (!product.images || !Array.isArray(product.images)) {
+      console.log('❌ No images array found in product:', product);
+      
+      // Fallback: Use default images based on product name or category
+      const productName = product.productName?.toLowerCase() || '';
+      if (productName.includes('iphone')) {
+        return '/images/ao-thun-hcmute.jpg'; // iPhone placeholder
+      } else if (productName.includes('samsung')) {
+        return '/images/ba-lo-hcmute.jpg'; // Samsung placeholder
+      } else if (productName.includes('macbook')) {
+        return '/images/hcmute-logo.png'; // MacBook placeholder
+      } else if (productName.includes('ipad')) {
+        return '/images/ao-thun-hcmute.jpg'; // iPad placeholder
+      } else if (productName.includes('tv') || productName.includes('qled')) {
+        return '/images/ba-lo-hcmute.jpg'; // TV placeholder
+      } else if (productName.includes('charger') || productName.includes('magsafe')) {
+        return '/images/hcmute-logo.png'; // Charger placeholder
+      } else if (productName.includes('sony') || productName.includes('headphone')) {
+        return '/images/ao-thun-hcmute.jpg'; // Headphone placeholder
+      }
+      
+      return '/images/placeholder.svg';
+    }
+    
+    console.log('✅ Images array found:', product.images);
+    
+    // Handle both boolean and number types for isPrimary
+    const primaryImage = product.images.find((img: any) => 
+      Boolean(img.isPrimary) || img.isPrimary === 1
+    );
+    
+    console.log('🔍 Primary image found:', primaryImage);
+    
     const imageUrl = primaryImage?.imageUrl || product.images[0]?.imageUrl;
     
+    console.log('🖼️ Final image URL:', imageUrl);
+    
     if (!imageUrl) {
+      console.log('❌ No image URL found, using placeholder');
       return '/images/placeholder.svg';
     }
     
@@ -199,7 +317,7 @@ const ViewedProductsPage: React.FC = () => {
             Sản phẩm đã xem
           </h1>
           <p className="mt-2 text-gray-600">
-            {viewedProducts.length} sản phẩm trong lịch sử xem của bạn
+            {totalItems} sản phẩm trong lịch sử xem của bạn
           </p>
         </div>
 
@@ -262,6 +380,43 @@ const ViewedProductsPage: React.FC = () => {
             </div>
           ))}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-8 flex justify-center">
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Trước
+              </button>
+              
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-3 py-2 text-sm font-medium rounded-md ${
+                    currentPage === page
+                      ? 'text-white bg-blue-600 border border-blue-600'
+                      : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+              
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Sau
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

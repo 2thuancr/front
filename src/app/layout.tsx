@@ -1,10 +1,13 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/store/provider';
 import Navigation from '@/components/layout/Navigation';
 import Footer from '@/components/layout/Footer';
 import { ViewTrackingProvider } from '@/components/providers/ViewTrackingProvider';
+import { AuthInitializer } from '@/components/providers/AuthInitializer';
+import { WishlistInitializer } from '@/components/providers/WishlistInitializer';
+import { ToastProvider } from '@/components/ui/Toast';
 import { APP_CONFIG } from '@/lib/constants';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -12,7 +15,6 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: APP_CONFIG.NAME,
   description: APP_CONFIG.DESCRIPTION,
-  viewport: 'width=device-width, initial-scale=1',
   authors: [{ name: APP_CONFIG.AUTHOR }],
   keywords: ['HCMUTE', 'Gift Shop', 'University', 'Merchandise'],
   openGraph: {
@@ -26,6 +28,11 @@ export const metadata: Metadata = {
     title: APP_CONFIG.NAME,
     description: APP_CONFIG.DESCRIPTION,
   },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -52,13 +59,17 @@ export default function RootLayout({
       </head>
       <body className={inter.className} suppressHydrationWarning={true}>
         <Providers>
-          <ViewTrackingProvider>
-            <Navigation />
-            <main>
-              {children}
-            </main>
-            <Footer />
-          </ViewTrackingProvider>
+          <AuthInitializer />
+          <WishlistInitializer />
+          <ToastProvider>
+            <ViewTrackingProvider>
+              <Navigation />
+              <main>
+                {children}
+              </main>
+              <Footer />
+            </ViewTrackingProvider>
+          </ToastProvider>
         </Providers>
       </body>
     </html>

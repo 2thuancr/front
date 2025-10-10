@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { productAPI, cartApi, productStatsApi } from '@/lib/api';
+import { productAPI, cartApi, productStatsApi, isCartEndpointAvailable } from '@/lib/api';
 import { viewTracker } from '@/lib/viewTracker';
 import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -14,6 +14,9 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { WishlistButton, ProductStats, SimilarProducts, ProductReviews } from '@/components/ui';
 import { Product } from '@/types/api';
+import CartDebug from '@/components/debug/CartDebug';
+import { useToastSuccess, useToastError } from '@/components/ui/Toast';
+import { useUserId } from '@/hooks/useUserId';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -24,7 +27,11 @@ export default function ProductDetailPage() {
   const [adding, setAdding] = useState(false);
   const [hasTrackedView, setHasTrackedView] = useState(false);
   const hasTrackedRef = useRef(false);
-  const userId = useSelector((state: RootState) => state.user?.profile?.id);
+  const userId = useUserId();
+  
+  // Toast hooks
+  const toastSuccess = useToastSuccess();
+  const toastError = useToastError();
 
   // 🔹 Load sản phẩm + giỏ hàng
   useEffect(() => {
@@ -51,10 +58,12 @@ export default function ProductDetailPage() {
     }
 
     async function fetchCart() {
-      if (!userId) {
-        console.warn("⚠️ Chưa có userId trong localStorage");
+      if (!userId || userId <= 0) {
+        console.warn("⚠️ Invalid userId:", userId);
         return;
       }
+
+      // Note: We'll try the API call first, and only skip if it fails
 
       try {
         console.log("🛒 Lấy giỏ hàng cho user:", userId);
@@ -63,9 +72,51 @@ export default function ProductDetailPage() {
         console.log("✅ Dữ liệu giỏ hàng:", cart);
 
         // sửa cart.id → cart.cartId
-        setCartId(cart.cartId);
-      } catch (error) {
+        if (cart && cart.cartId) {
+          setCartId(cart.cartId);
+        } else {
+          console.warn("⚠️ Cart data is invalid:", cart);
+        }
+      } catch (error: any) {
         console.error("❌ Lỗi khi lấy giỏ hàng:", error);
+        
+        // Log detailed error information
+        if (error.response) {
+          console.error("❌ Cart API Error Details:", {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            data: error.response.data,
+            url: error.config?.url,
+            userId: userId
+          });
+          
+          // Handle specific error cases
+          if (error.response.status === 400) {
+            console.warn("⚠️ Cart endpoint may not exist or requires different parameters");
+          } else if (error.response.status === 401) {
+            console.warn("⚠️ User not authenticated for cart operations");
+          } else if (error.response.status === 404) {
+            console.warn("⚠️ Cart not found for user");
+          }
+        }
+        
+        // Try to create a new cart if cart doesn't exist and endpoint is available
+        if (error.response?.status === 404 && isCartEndpointAvailable('carts')) {
+          console.log("🛒 Cart not found, attempting to create new cart for user:", userId);
+          try {
+            const newCart = await cartApi.createCart(userId);
+            console.log("✅ Created new cart:", newCart);
+            if (newCart && newCart.cartId) {
+              setCartId(newCart.cartId);
+            }
+          } catch (createError: any) {
+            console.error("❌ Failed to create cart:", createError);
+            setCartId(null);
+          }
+        } else {
+          // Don't throw error to prevent breaking the page
+          setCartId(null);
+        }
       }
     }
 
@@ -102,11 +153,15 @@ export default function ProductDetailPage() {
     console.log("👉 Click thêm giỏ hàng", { product, cartId, quantity, userId });
 
     if (!product) {
-      alert("Không tìm thấy sản phẩm");
+      toastError("Lỗi sản phẩm", "Không tìm thấy sản phẩm");
+      return;
+    }
+    if (!userId || userId <= 0) {
+      toastError("Lỗi đăng nhập", "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
       return;
     }
     if (!cartId) {
-      alert("Không tìm thấy giỏ hàng");
+      toastError("Lỗi giỏ hàng", "Không tìm thấy giỏ hàng. Vui lòng đăng nhập để sử dụng giỏ hàng.");
       return;
     }
 
@@ -115,10 +170,32 @@ export default function ProductDetailPage() {
       const res = await cartApi.addToCart(cartId, product.productId, quantity);
       console.log("✅ API addToCart response:", res);
 
-      alert("✅ Đã thêm vào giỏ hàng!");
+      toastSuccess("Thành công!", "Đã thêm sản phẩm vào giỏ hàng");
     } catch (error: any) {
       console.error("❌ Lỗi khi thêm giỏ hàng:", error);
-      alert("❌ Thêm giỏ hàng thất bại");
+      
+      // Log detailed error information
+      if (error.response) {
+        console.error("❌ AddToCart API Error Details:", {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          url: error.config?.url,
+          requestData: { cartId, productId: product.productId, quantity }
+        });
+        
+        // Handle specific error cases
+        if (error.response.status === 400) {
+          console.warn("⚠️ Add to cart endpoint may not exist or requires different parameters");
+        } else if (error.response.status === 401) {
+          console.warn("⚠️ User not authenticated for cart operations");
+        } else if (error.response.status === 404) {
+          console.warn("⚠️ Cart or product not found");
+        }
+      }
+      
+      const errorMessage = error.response?.data?.message || error.message || "Thêm giỏ hàng thất bại";
+      toastError("Thất bại", errorMessage);
     } finally {
       setAdding(false);
     }
@@ -211,9 +288,14 @@ export default function ProductDetailPage() {
           <button
             onClick={handleAddToCart}
             className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-            disabled={product.stockQuantity <= 0 || adding}
+            disabled={product.stockQuantity <= 0 || adding || !userId}
           >
-            {adding ? "Đang thêm..." : "Thêm vào giỏ hàng"}
+            {adding 
+              ? "Đang thêm..." 
+              : !userId 
+                ? "Đăng nhập để mua hàng" 
+                : "Thêm vào giỏ hàng"
+            }
           </button>
         </div>
       </div>
@@ -227,6 +309,9 @@ export default function ProductDetailPage() {
       <div className="mt-16">
         <ProductReviews productId={product.productId} />
       </div>
+
+      {/* Debug: Cart Debug */}
+      <CartDebug />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useAuth } from '@/hooks/useAuth';
-import { LoginCredentials } from '@/types/auth';
+import { LoginCredentials, UserRole } from '@/types/auth';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
 import { Password } from 'primereact/password';
@@ -44,13 +44,60 @@ const LoginForm: React.FC = () => {
 
 const onSubmit = async (data: LoginCredentials) => {
   try {
+    console.log("🚀 Login attempt with:", data);
     const result = await login(data);
-    if (result?.user?.id) {
+    console.log("✅ Login result:", result);
+    
+    if (result?.access_token && result?.user) {
       console.log("✅ Đăng nhập thành công, userId:", result.user.id);
-      router.push('/'); // hoặc /profile, tùy bạn muốn
+      
+      // Redirect to home page
+      console.log("🔄 Redirecting from /login to http://localhost:3000");
+      console.log("🔍 Current URL before redirect:", window.location.href);
+      console.log("🔍 Current path before redirect:", window.location.pathname);
+      
+      setTimeout(() => {
+        console.log("🔄 Executing redirect to home page");
+        console.log("🔍 About to call window.location.href = '/'");
+        
+        try {
+          window.location.href = '/';
+          console.log("✅ window.location.href = '/' called successfully");
+          
+          // Check if redirect worked
+          setTimeout(() => {
+            console.log("🔍 URL after redirect attempt:", window.location.href);
+            console.log("🔍 Path after redirect attempt:", window.location.pathname);
+            
+            if (window.location.pathname === '/login') {
+              console.log("❌ Still on login page, redirect failed!");
+              console.log("🔄 Trying router.push as backup");
+              router.push('/');
+            } else {
+              console.log("✅ Redirect successful!");
+            }
+          }, 500);
+        } catch (error) {
+          console.error("❌ Redirect error:", error);
+          console.log("🔄 Trying router.push as backup");
+          router.push('/');
+        }
+      }, 100);
+    } else {
+      console.warn("⚠️ Login successful but no user data or token received");
     }
-  } catch (error) {
-    console.error('Login error:', error);
+  } catch (error: any) {
+    console.error('❌ Login error:', error);
+    
+    // Log more details about the error
+    if (error.response) {
+      console.error('❌ Login API Error Details:', {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+        url: error.config?.url
+      });
+    }
   }
 };
 

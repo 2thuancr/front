@@ -18,6 +18,7 @@ class ViewTracker {
   private readonly CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
   private apiCallCount: number = 0; // Debug counter
   private pendingCalls: Set<number> = new Set(); // Prevent concurrent calls
+  private failedEndpoints: Set<string> = new Set(); // Track failed endpoints
 
   constructor() {
     this.loadCache();
@@ -105,6 +106,34 @@ class ViewTracker {
    * Track product view with caching
    */
   async trackView(productId: number, apiCall: (productId: number) => Promise<TrackingResult>): Promise<TrackingResult> {
+    // Validate productId
+    if (!productId || isNaN(productId) || productId <= 0) {
+      console.warn(`⚠️ Invalid productId: ${productId}`);
+      return {
+        tracked: false,
+        message: 'Invalid product ID'
+      };
+    }
+
+    // Check if user is authenticated (optional check)
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) {
+      console.log(`📊 Product ${productId} view tracking skipped - user not authenticated`);
+      return {
+        tracked: false,
+        message: 'User not authenticated'
+      };
+    }
+
+    // Check if tracking endpoint has failed before
+    if (this.failedEndpoints.has('product-views/track')) {
+      console.log(`📊 Product ${productId} view tracking skipped - endpoint known to fail`);
+      return {
+        tracked: false,
+        message: 'Tracking endpoint not available'
+      };
+    }
+
     // Check cache first
     if (this.isAlreadyTracked(productId)) {
       console.log(`📊 Product ${productId} already tracked today (cached)`);
@@ -141,11 +170,38 @@ class ViewTracker {
       }
       
       return result;
-    } catch (error) {
+    } catch (error: any) {
       console.error(`❌ Failed to track view for product ${productId}:`, error);
+      
+      // Log more details about the error
+      if (error.response) {
+        console.error(`❌ API Error Details:`, {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          url: error.config?.url,
+          method: error.config?.method
+        });
+        
+        // Handle specific error cases
+        if (error.response.status === 400) {
+          console.warn(`⚠️ Product view tracking endpoint may not exist or requires different parameters`);
+          this.failedEndpoints.add('product-views/track');
+        } else if (error.response.status === 401) {
+          console.warn(`⚠️ User not authenticated for product view tracking`);
+        } else if (error.response.status === 404) {
+          console.warn(`⚠️ Product view tracking endpoint not found`);
+          this.failedEndpoints.add('product-views/track');
+        }
+      } else if (error.request) {
+        console.error(`❌ Network Error:`, error.request);
+      } else {
+        console.error(`❌ Other Error:`, error.message);
+      }
+      
       return {
         tracked: false,
-        message: 'Failed to track view'
+        message: `Failed to track view: ${error.response?.data?.message || error.message || 'Unknown error'}`
       };
     } finally {
       // Remove from pending
@@ -159,6 +215,21 @@ class ViewTracker {
   clearCacheForNewDay(): void {
     this.clearCache();
     console.log('🔄 View tracking cache cleared for new day');
+  }
+
+  /**
+   * Reset failed endpoints (useful when backend is fixed)
+   */
+  resetFailedEndpoints(): void {
+    this.failedEndpoints.clear();
+    console.log('🔄 Failed endpoints reset');
+  }
+
+  /**
+   * Check if tracking is available
+   */
+  isTrackingAvailable(): boolean {
+    return !this.failedEndpoints.has('product-views/track');
   }
 }
 
