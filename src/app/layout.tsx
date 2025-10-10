@@ -2,8 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/store/provider';
-import Navigation from '@/components/layout/Navigation';
-import Footer from '@/components/layout/Footer';
+import ConditionalLayout from '@/components/layout/ConditionalLayout';
 import { ViewTrackingProvider } from '@/components/providers/ViewTrackingProvider';
 import { AuthInitializer } from '@/components/providers/AuthInitializer';
 import { WishlistInitializer } from '@/components/providers/WishlistInitializer';
@@ -63,11 +62,9 @@ export default function RootLayout({
           <WishlistInitializer />
           <ToastProvider>
             <ViewTrackingProvider>
-              <Navigation />
-              <main>
+              <ConditionalLayout>
                 {children}
-              </main>
-              <Footer />
+              </ConditionalLayout>
             </ViewTrackingProvider>
           </ToastProvider>
         </Providers>

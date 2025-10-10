@@ -56,6 +56,7 @@ api.interceptors.response.use(
 
 // API endpoints
 export const authAPI = {
+  // Customer authentication
   login: (credentials: { email: string; password: string }) =>
     api.post('/auth/login', credentials),
   
@@ -84,6 +85,37 @@ export const authAPI = {
     api.post('/auth/resend-otp', { email }),
   
   refreshToken: () => api.post('/auth/refresh-token'),
+};
+
+// Admin authentication
+export const adminAuthAPI = {
+  login: (credentials: { username: string; password: string }) =>
+    api.post('/admin-auth/login', credentials),
+  
+  refreshToken: (refreshToken: string) =>
+    api.post('/admin-auth/refresh', { refresh_token: refreshToken }),
+  
+  logout: () => api.post('/admin-auth/logout'),
+};
+
+// Vendor authentication
+export const vendorAuthAPI = {
+  login: (credentials: { username: string; password: string }) =>
+    api.post('/vendor-auth/login', credentials),
+  
+  refreshToken: (refreshToken: string) =>
+    api.post('/vendor-auth/refresh', { refresh_token: refreshToken }),
+};
+
+// Staff authentication
+export const staffAuthAPI = {
+  login: (credentials: { email: string; password: string }) =>
+    api.post('/staff-auth/login', credentials),
+  
+  refreshToken: (refreshToken: string) =>
+    api.post('/staff-auth/refresh', { refresh_token: refreshToken }),
+  
+  logout: () => api.post('/staff-auth/logout'),
 };
 
 export const userAPI = {

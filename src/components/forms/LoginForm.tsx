@@ -48,43 +48,34 @@ const onSubmit = async (data: LoginCredentials) => {
     const result = await login(data);
     console.log("✅ Login result:", result);
     
-    if (result?.access_token && result?.user) {
-      console.log("✅ Đăng nhập thành công, userId:", result.user.id);
+    if (result?.access_token) {
+      console.log("✅ Đăng nhập thành công, userType:", result.userType);
       
-      // Redirect to home page
-      console.log("🔄 Redirecting from /login to http://localhost:3000");
-      console.log("🔍 Current URL before redirect:", window.location.href);
-      console.log("🔍 Current path before redirect:", window.location.pathname);
+      // Redirect based on user type
+      let redirectPath = '/';
+      if (result.userType === 'admin') {
+        redirectPath = '/admin/dashboard';
+      } else if (result.userType === 'vendor') {
+        redirectPath = '/vendor/dashboard';
+      } else if (result.userType === 'staff') {
+        redirectPath = '/staff/dashboard';
+      } else {
+        redirectPath = '/'; // Customer
+      }
+      
+      console.log("🔄 Redirecting to:", redirectPath);
       
       setTimeout(() => {
-        console.log("🔄 Executing redirect to home page");
-        console.log("🔍 About to call window.location.href = '/'");
-        
         try {
-          window.location.href = '/';
-          console.log("✅ window.location.href = '/' called successfully");
-          
-          // Check if redirect worked
-          setTimeout(() => {
-            console.log("🔍 URL after redirect attempt:", window.location.href);
-            console.log("🔍 Path after redirect attempt:", window.location.pathname);
-            
-            if (window.location.pathname === '/login') {
-              console.log("❌ Still on login page, redirect failed!");
-              console.log("🔄 Trying router.push as backup");
-              router.push('/');
-            } else {
-              console.log("✅ Redirect successful!");
-            }
-          }, 500);
+          window.location.href = redirectPath;
+          console.log("✅ Redirect successful to:", redirectPath);
         } catch (error) {
           console.error("❌ Redirect error:", error);
-          console.log("🔄 Trying router.push as backup");
-          router.push('/');
+          router.push(redirectPath);
         }
       }, 100);
     } else {
-      console.warn("⚠️ Login successful but no user data or token received");
+      console.warn("⚠️ Login successful but no token received");
     }
   } catch (error: any) {
     console.error('❌ Login error:', error);
@@ -117,14 +108,14 @@ const onSubmit = async (data: LoginCredentials) => {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="field">
             <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-              Tên đăng nhập
+              Tên đăng nhập / Email
             </label>
             <span className="p-input-icon-left w-full">
               <Mail className="h-4 w-4" />
               <InputText
                 id="username"
                 type="text"
-                placeholder="Nhập tên đăng nhập của bạn"
+                placeholder="Nhập email hoặc tên đăng nhập"
                 className={`w-full ${errors.username ? 'p-invalid' : ''}`}
                 {...register('username')}
               />
@@ -132,6 +123,9 @@ const onSubmit = async (data: LoginCredentials) => {
             {errors.username && (
               <small className="p-error block mt-1">{errors.username.message}</small>
             )}
+            <small className="text-gray-500 mt-1 block">
+              Khách hàng/Nhân viên: Email | Admin/Nhà cung cấp: Tên đăng nhập
+            </small>
           </div>
 
           <Input
@@ -184,7 +178,7 @@ const onSubmit = async (data: LoginCredentials) => {
           />
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center space-y-4">
           <p className="text-sm text-gray-600">
             Chưa có tài khoản?{' '}
             <Link
@@ -194,6 +188,7 @@ const onSubmit = async (data: LoginCredentials) => {
               Đăng ký ngay
             </Link>
           </p>
+          
         </div>
       </Card>
     </div>

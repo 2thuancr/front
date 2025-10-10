@@ -2,27 +2,71 @@
 
 import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { UserRole } from '@/types/auth';
+import { UserRole, AdminRole, getUserType, isAdmin, isVendor, isStaff, isCustomer } from '@/types/auth';
 
 interface RoleGuardProps {
-  allowedRoles: UserRole[];
+  allowedRoles?: (UserRole | AdminRole)[];
+  allowedUserTypes?: ('customer' | 'admin' | 'vendor' | 'staff')[];
   children: React.ReactNode;
   fallback?: React.ReactNode;
 }
 
 export const RoleGuard: React.FC<RoleGuardProps> = ({ 
-  allowedRoles, 
+  allowedRoles = [], 
+  allowedUserTypes = [],
   children, 
   fallback 
 }) => {
-  const { user, hasAnyRole } = useAuth();
+  const { user, userType, hasAnyRole } = useAuth();
   
-  if (!user || !hasAnyRole(allowedRoles)) {
+  // Check if user exists
+  if (!user) {
+    return fallback || <AccessDenied />;
+  }
+
+  // Check user type if specified
+  if (allowedUserTypes.length > 0 && (!userType || !allowedUserTypes.includes(userType))) {
+    return fallback || <AccessDenied />;
+  }
+
+  // Check roles if specified
+  if (allowedRoles.length > 0 && !hasAnyRole(allowedRoles)) {
     return fallback || <AccessDenied />;
   }
   
   return <>{children}</>;
 };
+
+// Specific role guards for convenience
+export const AdminGuard: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ children, fallback }) => (
+  <RoleGuard allowedUserTypes={['admin']} fallback={fallback}>
+    {children}
+  </RoleGuard>
+);
+
+export const VendorGuard: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ children, fallback }) => (
+  <RoleGuard allowedUserTypes={['vendor']} fallback={fallback}>
+    {children}
+  </RoleGuard>
+);
+
+export const StaffGuard: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ children, fallback }) => (
+  <RoleGuard allowedUserTypes={['staff']} fallback={fallback}>
+    {children}
+  </RoleGuard>
+);
+
+export const CustomerGuard: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ children, fallback }) => (
+  <RoleGuard allowedUserTypes={['customer']} fallback={fallback}>
+    {children}
+  </RoleGuard>
+);
+
+export const AdminOrStaffGuard: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ children, fallback }) => (
+  <RoleGuard allowedUserTypes={['admin', 'staff']} fallback={fallback}>
+    {children}
+  </RoleGuard>
+);
 
 const AccessDenied: React.FC = () => {
   return (
