@@ -35,16 +35,37 @@ api.interceptors.response.use(
     return response;
   },
   async (error) => {
-    console.error('❌ API Error:', error.response?.status, error.config?.url, error.response?.data);
+    const url = error.config?.url || '';
+    const status = error.response?.status;
+    
+    // Skip logging for known problematic endpoints
+    const skipLoggingEndpoints = [
+      '/carts/user',
+      '/wishlist',
+      '/auth/login',
+      '/auth/register',
+      '/auth/forgot-password'
+    ];
+    
+    const shouldSkipLogging = skipLoggingEndpoints.some(endpoint => url.includes(endpoint));
+    
+    if (!shouldSkipLogging) {
+      console.error('❌ API Error:', status, url, error.response?.data);
+    } else {
+      console.warn('⚠️ API Error (expected):', status, url);
+    }
     
     // Handle 401 Unauthorized - but not for login/register endpoints
-    if (error.response?.status === 401) {
-      const url = error.config?.url || '';
-      
+    if (status === 401) {
       // Don't handle unauthorized for auth endpoints (login, register, etc.)
       if (!url.includes('/auth/login') && !url.includes('/auth/register') && !url.includes('/auth/forgot-password')) {
-        console.log('🔒 401 Unauthorized on non-auth endpoint, clearing auth data');
-        handleUnauthorized();
+        // Don't clear auth data for cart/wishlist endpoints that might not be implemented yet
+        if (!url.includes('/carts/user') && !url.includes('/wishlist')) {
+          console.log('🔒 401 Unauthorized on non-auth endpoint, clearing auth data');
+          handleUnauthorized();
+        } else {
+          console.log('🔒 401 on cart/wishlist endpoint - likely not implemented yet');
+        }
       } else {
         console.log('🔒 401 on auth endpoint, not clearing auth data');
       }
@@ -355,7 +376,16 @@ export const cartApi = {
       console.log(`✅ getCartByUser API response:`, res.data);
       return res.data;
     }).catch((error) => {
-      console.error(`❌ getCartByUser API error:`, error);
+      // Handle specific error cases gracefully
+      if (error.response?.status === 401) {
+        console.warn(`🔒 Unauthorized access to cart for user ${userId} - user may not be authenticated`);
+      } else if (error.response?.status === 404) {
+        console.warn(`📦 No cart found for user ${userId}`);
+      } else if (error.response?.status === 400) {
+        console.warn(`⚠️ Bad request for cart user ${userId}`);
+      } else {
+        console.error(`❌ getCartByUser API error:`, error);
+      }
       
       // Mark endpoint as failed for specific error codes
       if (error.response?.status === 400 || error.response?.status === 404) {

@@ -48,6 +48,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const dispatch = useDispatch<AppDispatch>();
   const { checkedItems } = useSelector((state: RootState) => state.wishlist);
   const isWishlisted = checkedItems[product.id] || false;
+  
+  // Check authentication status from Redux
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const authToken = useSelector((state: RootState) => state.auth.token);
 
   // Kiểm tra trạng thái wishlist khi component mount
   useEffect(() => {
@@ -61,6 +65,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   useEffect(() => {
     const fetchCart = async () => {
       if (!userId || userId <= 0) {
+        console.log("👤 Guest user - skipping cart fetch");
+        setCartId(null);
+        return;
+      }
+
+      // Check if user is actually authenticated
+      if (!isAuthenticated || !authToken) {
+        console.log("🔒 User not authenticated - skipping cart fetch");
         setCartId(null);
         return;
       }
@@ -76,7 +88,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           console.warn("⚠️ Cart data is invalid:", cart);
         }
       } catch (error: any) {
-        console.error("❌ Lỗi khi lấy giỏ hàng:", error);
+        console.warn("⚠️ Cart API not available yet:", error.response?.status);
         
         // Thử tạo giỏ hàng mới nếu không tìm thấy
         if (error.response?.status === 404) {
@@ -95,7 +107,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     };
 
     fetchCart();
-  }, [userId]);
+  }, [userId, isAuthenticated, authToken]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {

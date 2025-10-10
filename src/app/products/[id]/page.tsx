@@ -31,6 +31,10 @@ export default function ProductDetailPage() {
   // Toast hooks
   const toastSuccess = useToastSuccess();
   const toastError = useToastError();
+  
+  // Check authentication status from Redux
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const authToken = useSelector((state: RootState) => state.auth.token);
 
   // 🔹 Load sản phẩm + giỏ hàng
   useEffect(() => {
@@ -58,11 +62,17 @@ export default function ProductDetailPage() {
 
     async function fetchCart() {
       if (!userId || userId <= 0) {
-        console.warn("⚠️ Invalid userId:", userId);
+        console.log("👤 Guest user - skipping cart fetch");
+        setCartId(null);
         return;
       }
 
-      // Note: We'll try the API call first, and only skip if it fails
+      // Check if user is actually authenticated
+      if (!isAuthenticated || !authToken) {
+        console.log("🔒 User not authenticated - skipping cart fetch");
+        setCartId(null);
+        return;
+      }
 
       try {
         console.log("🛒 Lấy giỏ hàng cho user:", userId);
@@ -77,7 +87,7 @@ export default function ProductDetailPage() {
           console.warn("⚠️ Cart data is invalid:", cart);
         }
       } catch (error: any) {
-        console.error("❌ Lỗi khi lấy giỏ hàng:", error);
+        console.warn("⚠️ Cart API not available yet:", error.response?.status);
         
         // Log detailed error information
         if (error.response) {
@@ -121,7 +131,7 @@ export default function ProductDetailPage() {
 
     fetchProduct();
     fetchCart();
-  }, [id, userId]);
+  }, [id, userId, isAuthenticated, authToken]);
 
   // 🔹 Track product view separately to avoid double calls
   useEffect(() => {
