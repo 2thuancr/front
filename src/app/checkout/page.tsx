@@ -18,6 +18,7 @@ import { OrderSummary } from "./components/OrderSummary";
 import { PaymentMethodSelector } from "./components/PaymentMethodSelector";
 import { CheckoutSuccess } from "./components/CheckoutSuccess";
 import { ShippingInfo } from "@/types/order";
+import { useUserId } from "@/hooks/useUserId";
 
 export default function CheckoutPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -34,7 +35,7 @@ export default function CheckoutPage() {
     currentOrder 
   } = useSelector((state: RootState) => state.order);
   
-  const userId = useSelector((state: RootState) => state.user?.profile?.id);
+  const userId = useUserId();
   
   // Local state
   const [currentStep, setCurrentStep] = useState(1);
@@ -49,6 +50,7 @@ export default function CheckoutPage() {
     ward: "",
     notes: ""
   });
+
 
   // Load data on mount
   useEffect(() => {

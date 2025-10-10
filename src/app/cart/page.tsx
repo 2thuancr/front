@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store";
 import {
@@ -12,13 +12,14 @@ import { isCartEndpointAvailable } from "@/lib/api";
 import Link from "next/link";
 import { CartItem } from "@/types/cart";
 import { motion, AnimatePresence } from "framer-motion";
+import { useUserId } from "@/hooks/useUserId";
 
 export default function CartPage() {
   const dispatch = useDispatch<AppDispatch>();
   const { data: cart, loading, error } = useSelector(
     (state: RootState) => state.cart
   );
-  const userId = useSelector((state: RootState) => state.user?.profile?.id);
+  const userId = useUserId();
 
   useEffect(() => {
     if (userId) {

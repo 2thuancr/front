@@ -3,14 +3,46 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { productAPI } from '@/lib/api';
 import Link from 'next/link';
-import { WishlistButton } from '@/components/ui';
+import { ProductCard } from '@/components/ui';
+import { LegacyProduct } from '@/types/api';
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<LegacyProduct[]>([]);
   const [page, setPage] = useState(1);
   const [limit] = useState(6);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+
+  // Convert API Product to LegacyProduct format
+  const convertToLegacyProduct = (product: any): LegacyProduct => {
+    const primaryImage = product.images?.find((img: any) => 
+      Boolean(img.isPrimary) || img.isPrimary === 1
+    );
+    const imageUrl = primaryImage?.imageUrl || product.images?.[0]?.imageUrl || '/images/hcmute-logo.png';
+    const price = parseFloat(product.price);
+    const discountPercent = product.discountPercent ? parseFloat(product.discountPercent) : 0;
+    const originalPrice = discountPercent > 0 ? price / (1 - discountPercent / 100) : undefined;
+
+    return {
+      id: product.productId,
+      name: product.productName,
+      description: product.description,
+      price: price,
+      originalPrice: originalPrice,
+      rating: 4.5, // Default rating since not in API
+      reviewCount: Math.floor(Math.random() * 100) + 10, // Random for demo
+      image: imageUrl,
+      images: product.images?.map((img: any) => img.imageUrl) || [],
+      category: product.category.categoryName,
+      categoryId: product.categoryId,
+      isNew: false,
+      isHot: false,
+      discount: discountPercent > 0 ? Math.round(discountPercent) : undefined,
+      stock: product.stockQuantity,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt,
+    };
+  };
 
   const observer = useRef<IntersectionObserver | null>(null);
   const lastProductRef = useCallback(
@@ -36,11 +68,12 @@ export default function ProductsPage() {
       try {
         const res = await productAPI.getAllProducts({ page, limit });
         const newProducts = res.data.products || [];
+        const convertedProducts = newProducts.map(convertToLegacyProduct);
 
         setProducts(prev => {
-          const allProducts = [...prev, ...newProducts];
+          const allProducts = [...prev, ...convertedProducts];
           const uniqueProducts = Array.from(
-            new Map(allProducts.map(p => [p.productId, p])).values()
+            new Map(allProducts.map(p => [p.id, p])).values()
           );
           return uniqueProducts;
         });
@@ -72,54 +105,15 @@ export default function ProductsPage() {
       </h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        {products.map((product: any, index: number) => {
+        {products.map((product: LegacyProduct, index: number) => {
           const isLast = index === products.length - 1;
           return (
-            <div
-              key={product.productId}
-              ref={isLast ? lastProductRef : null}
-              className="group border rounded-2xl shadow hover:shadow-lg overflow-hidden transition relative"
-            >
-              <Link href={`/products/${product.productId}`}>
-                <div className="relative">
-                  <img
-                    src={product.images?.[0]?.imageUrl || '/no-image.png'}
-                    alt={product.productName}
-                    className="w-full h-56 object-cover group-hover:scale-105 transition-transform"
-                  />
-                  {product.stockQuantity <= 0 && (
-                    <span className="absolute top-2 left-2 bg-red-600 text-white text-xs px-2 py-1 rounded">
-                      Hết hàng
-                    </span>
-                  )}
-                </div>
-              </Link>
-              
-              {/* Wishlist Button */}
-              <div className="absolute top-2 right-2">
-                <WishlistButton 
-                  productId={product.productId} 
-                  size="sm" 
-                  variant="ghost"
-                  className="bg-white/80 backdrop-blur-sm"
-                />
-              </div>
-
-              <div className="p-4">
-                <Link href={`/products/${product.productId}`}>
-                  <h2 className="text-lg font-semibold line-clamp-2 mb-2 group-hover:text-blue-600">
-                    {product.productName}
-                  </h2>
-                </Link>
-                <p className="text-red-500 font-bold text-xl mb-1">
-                  {Number(product.price).toLocaleString()}₫
-                </p>
-                <p className="text-sm text-gray-500">
-                  {product.stockQuantity > 0
-                    ? `Còn ${product.stockQuantity} sản phẩm`
-                    : 'Hết hàng'}
-                </p>
-              </div>
+            <div key={product.id} ref={isLast ? lastProductRef : null}>
+              <ProductCard 
+                product={product}
+                onAddToCart={(productId) => console.log('Add to cart:', productId)}
+                onToggleWishlist={(productId) => console.log('Toggle wishlist:', productId)}
+              />
             </div>
           );
         })}

@@ -15,6 +15,8 @@ import { RootState } from '@/store';
 import { WishlistButton, ProductStats, SimilarProducts, ProductReviews } from '@/components/ui';
 import { Product } from '@/types/api';
 import CartDebug from '@/components/debug/CartDebug';
+import { useToastSuccess, useToastError } from '@/components/ui/Toast';
+import { useUserId } from '@/hooks/useUserId';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -25,7 +27,11 @@ export default function ProductDetailPage() {
   const [adding, setAdding] = useState(false);
   const [hasTrackedView, setHasTrackedView] = useState(false);
   const hasTrackedRef = useRef(false);
-  const userId = useSelector((state: RootState) => state.user?.profile?.id);
+  const userId = useUserId();
+  
+  // Toast hooks
+  const toastSuccess = useToastSuccess();
+  const toastError = useToastError();
 
   // 🔹 Load sản phẩm + giỏ hàng
   useEffect(() => {
@@ -147,15 +153,15 @@ export default function ProductDetailPage() {
     console.log("👉 Click thêm giỏ hàng", { product, cartId, quantity, userId });
 
     if (!product) {
-      alert("Không tìm thấy sản phẩm");
+      toastError("Lỗi sản phẩm", "Không tìm thấy sản phẩm");
       return;
     }
     if (!userId || userId <= 0) {
-      alert("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
+      toastError("Lỗi đăng nhập", "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
       return;
     }
     if (!cartId) {
-      alert("Không tìm thấy giỏ hàng. Vui lòng đăng nhập để sử dụng giỏ hàng.");
+      toastError("Lỗi giỏ hàng", "Không tìm thấy giỏ hàng. Vui lòng đăng nhập để sử dụng giỏ hàng.");
       return;
     }
 
@@ -164,7 +170,7 @@ export default function ProductDetailPage() {
       const res = await cartApi.addToCart(cartId, product.productId, quantity);
       console.log("✅ API addToCart response:", res);
 
-      alert("✅ Đã thêm vào giỏ hàng!");
+      toastSuccess("Thành công!", "Đã thêm sản phẩm vào giỏ hàng");
     } catch (error: any) {
       console.error("❌ Lỗi khi thêm giỏ hàng:", error);
       
@@ -189,7 +195,7 @@ export default function ProductDetailPage() {
       }
       
       const errorMessage = error.response?.data?.message || error.message || "Thêm giỏ hàng thất bại";
-      alert(`❌ ${errorMessage}`);
+      toastError("Thất bại", errorMessage);
     } finally {
       setAdding(false);
     }

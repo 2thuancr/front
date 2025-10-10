@@ -54,13 +54,16 @@ export const useAuth = () => {
           return;
         }
 
-        // If we have valid token but no user data, fetch user profile (only once)
-        if (token && !user && !didFetchProfile.current && isTokenValid()) {
+        // If we have valid token but no userProfile data, fetch user profile (only once)
+        if (token && !userProfile && !didFetchProfile.current && isTokenValid()) {
           isCheckingAuth.current = true;
           didFetchProfile.current = true;
+          console.log('🔄 Auto-fetching user profile...');
           try {
             await dispatch(fetchUserProfile()).unwrap();
+            console.log('✅ User profile fetched successfully');
           } catch (error: any) {
+            console.error('❌ Failed to fetch user profile:', error);
             // If 401 Unauthorized, token is invalid/expired
             if (error?.response?.status === 401) {
               localStorage.removeItem('token');
