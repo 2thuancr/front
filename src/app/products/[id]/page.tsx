@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { productAPI, cartApi, productStatsApi, isCartEndpointAvailable } from '@/lib/api';
 import { viewTracker } from '@/lib/viewTracker';
 import Link from 'next/link';
@@ -19,6 +19,7 @@ import { useUserId } from '@/hooks/useUserId';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
+  const router = useRouter();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
@@ -31,6 +32,10 @@ export default function ProductDetailPage() {
   // Toast hooks
   const toastSuccess = useToastSuccess();
   const toastError = useToastError();
+  
+  // Check authentication status from Redux
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const authToken = useSelector((state: RootState) => state.auth.token);
 
   // 🔹 Load sản phẩm + giỏ hàng
   useEffect(() => {
@@ -58,11 +63,17 @@ export default function ProductDetailPage() {
 
     async function fetchCart() {
       if (!userId || userId <= 0) {
-        console.warn("⚠️ Invalid userId:", userId);
+        console.log("👤 Guest user - skipping cart fetch");
+        setCartId(null);
         return;
       }
 
-      // Note: We'll try the API call first, and only skip if it fails
+      // Check if user is actually authenticated
+      if (!isAuthenticated || !authToken) {
+        console.log("🔒 User not authenticated - skipping cart fetch");
+        setCartId(null);
+        return;
+      }
 
       try {
         console.log("🛒 Lấy giỏ hàng cho user:", userId);
@@ -77,7 +88,7 @@ export default function ProductDetailPage() {
           console.warn("⚠️ Cart data is invalid:", cart);
         }
       } catch (error: any) {
-        console.error("❌ Lỗi khi lấy giỏ hàng:", error);
+        console.warn("⚠️ Cart API not available yet:", error.response?.status);
         
         // Log detailed error information
         if (error.response) {
@@ -121,7 +132,7 @@ export default function ProductDetailPage() {
 
     fetchProduct();
     fetchCart();
-  }, [id, userId]);
+  }, [id, userId, isAuthenticated, authToken]);
 
   // 🔹 Track product view separately to avoid double calls
   useEffect(() => {
@@ -155,10 +166,14 @@ export default function ProductDetailPage() {
       toastError("Lỗi sản phẩm", "Không tìm thấy sản phẩm");
       return;
     }
-    if (!userId || userId <= 0) {
-      toastError("Lỗi đăng nhập", "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
+    
+    // Redirect to login if not authenticated
+    if (!userId || userId <= 0 || !isAuthenticated || !authToken) {
+      console.log("🔒 User not authenticated - redirecting to login");
+      router.push('/login');
       return;
     }
+    
     if (!cartId) {
       toastError("Lỗi giỏ hàng", "Không tìm thấy giỏ hàng. Vui lòng đăng nhập để sử dụng giỏ hàng.");
       return;

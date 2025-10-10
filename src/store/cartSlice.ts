@@ -17,7 +17,12 @@ const initialState: CartState = {
 // 🛒 Lấy giỏ hàng theo userId
 export const fetchCart = createAsyncThunk("cart/fetchCart", async (userId: number) => {
   try {
-    // Note: We'll try the API call first, and only skip if it fails
+    // Check if user is authenticated before making API call
+    const authToken = localStorage.getItem('authToken') || localStorage.getItem('accessToken');
+    if (!authToken) {
+      console.log("🔒 User not authenticated - skipping cart fetch");
+      throw new Error("User not authenticated");
+    }
 
     const response = await cartApi.getCartByUser(userId);
     console.log("🛒 API Cart Response:", response);

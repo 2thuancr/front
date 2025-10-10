@@ -35,16 +35,37 @@ api.interceptors.response.use(
     return response;
   },
   async (error) => {
-    console.error('❌ API Error:', error.response?.status, error.config?.url, error.response?.data);
+    const url = error.config?.url || '';
+    const status = error.response?.status;
+    
+    // Skip logging for known problematic endpoints
+    const skipLoggingEndpoints = [
+      '/carts/user',
+      '/wishlist',
+      '/auth/login',
+      '/auth/register',
+      '/auth/forgot-password'
+    ];
+    
+    const shouldSkipLogging = skipLoggingEndpoints.some(endpoint => url.includes(endpoint));
+    
+    if (!shouldSkipLogging) {
+      console.error('❌ API Error:', status, url, error.response?.data);
+    } else {
+      console.warn('⚠️ API Error (expected):', status, url);
+    }
     
     // Handle 401 Unauthorized - but not for login/register endpoints
-    if (error.response?.status === 401) {
-      const url = error.config?.url || '';
-      
+    if (status === 401) {
       // Don't handle unauthorized for auth endpoints (login, register, etc.)
       if (!url.includes('/auth/login') && !url.includes('/auth/register') && !url.includes('/auth/forgot-password')) {
-        console.log('🔒 401 Unauthorized on non-auth endpoint, clearing auth data');
-        handleUnauthorized();
+        // Don't clear auth data for cart/wishlist endpoints that might not be implemented yet
+        if (!url.includes('/carts/user') && !url.includes('/wishlist')) {
+          console.log('🔒 401 Unauthorized on non-auth endpoint, clearing auth data');
+          handleUnauthorized();
+        } else {
+          console.log('🔒 401 on cart/wishlist endpoint - likely not implemented yet');
+        }
       } else {
         console.log('🔒 401 on auth endpoint, not clearing auth data');
       }
@@ -153,6 +174,105 @@ export const userAPI = {
   getUsersStats: () => api.get('/users/stats'),
 };
 
+// Admin Customer Management API
+export const adminCustomerAPI = {
+  getAllCustomers: () => api.get('/admin/customers'),
+  
+  getCustomerById: (customerId: number) => 
+    api.get(`/admin/customers/${customerId}`),
+  
+  updateCustomer: (customerId: number, data: any) =>
+    api.put(`/admin/customers/${customerId}`, data),
+  
+  toggleCustomerActive: (customerId: number) =>
+    api.patch(`/admin/customers/${customerId}/toggle-active`),
+  
+  deleteCustomer: (customerId: number) =>
+    api.delete(`/admin/customers/${customerId}`),
+  
+  getCustomerStats: () => api.get('/admin/customers/stats'),
+};
+
+// Admin Product Management API
+export const adminProductAPI = {
+  getAllProducts: (page: number = 1, limit: number = 10) => api.get('/products', { 
+    params: { 
+      page,
+      limit
+    } 
+  }),
+  
+  getProductById: (productId: number) => 
+    api.get(`/products/${productId}`),
+  
+  createProduct: (data: FormData) =>
+    api.post('/products', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }),
+  
+  updateProduct: (productId: number, data: any) =>
+    api.put(`/products/${productId}`, data),
+  
+  deleteProduct: (productId: number) =>
+    api.delete(`/products/${productId}`),
+  
+  toggleProductActive: (productId: number) =>
+    api.patch(`/products/${productId}/toggle-active`),
+  
+  updateProductStock: (productId: number, stock: number) =>
+    api.patch(`/products/${productId}/stock`, { stock }),
+  
+  getProductStats: () => api.get('/admin/products/stats'),
+};
+
+// Admin Category Management API
+export const adminCategoryAPI = {
+  getAllCategories: (page: number = 1, limit: number = 10) => api.get('/categories', { 
+    params: { 
+      page,
+      limit
+    } 
+  }),
+  
+  getCategoryById: (categoryId: number) => 
+    api.get(`/categories/${categoryId}`),
+  
+  createCategory: (data: any) =>
+    api.post('/categories', data),
+  
+  updateCategory: (categoryId: number, data: any) =>
+    api.put(`/categories/${categoryId}`, data),
+  
+  deleteCategory: (categoryId: number) =>
+    api.delete(`/categories/${categoryId}`),
+  
+  getCategoryStats: () => api.get('/admin/categories/stats'),
+};
+
+// Admin Order Management API
+export const adminOrderAPI = {
+  getAllOrders: (page: number = 1, limit: number = 10) => 
+    api.get('/orders', { 
+      params: { 
+        page,
+        limit
+      } 
+    }),
+  
+  getOrderById: (orderId: number) => 
+    api.get(`/orders/${orderId}`),
+  
+  updateOrderStatus: (orderId: number, status: string) =>
+    api.patch(`/orders/${orderId}/status`, { status }),
+  
+  updatePaymentStatus: (orderId: number, paymentStatus: string) =>
+    api.patch(`/orders/${orderId}/payment-status`, { paymentStatus }),
+  
+  getOrderStats: () => api.get('/admin/orders/stats'),
+};
+
 export const productAPI = {
   getAll: (params?: any) => api.get("/products", { params }),
   getProductById: (id: number) => api.get(`/products/${id}`),
@@ -256,7 +376,16 @@ export const cartApi = {
       console.log(`✅ getCartByUser API response:`, res.data);
       return res.data;
     }).catch((error) => {
-      console.error(`❌ getCartByUser API error:`, error);
+      // Handle specific error cases gracefully
+      if (error.response?.status === 401) {
+        console.warn(`🔒 Unauthorized access to cart for user ${userId} - user may not be authenticated`);
+      } else if (error.response?.status === 404) {
+        console.warn(`📦 No cart found for user ${userId}`);
+      } else if (error.response?.status === 400) {
+        console.warn(`⚠️ Bad request for cart user ${userId}`);
+      } else {
+        console.error(`❌ getCartByUser API error:`, error);
+      }
       
       // Mark endpoint as failed for specific error codes
       if (error.response?.status === 400 || error.response?.status === 404) {
@@ -374,36 +503,56 @@ export const paymentApi = {
 
 // WISHLIST API
 export const wishlistApi = {
-  // Wishlist Management
-  addToWishlist: (productId: number) =>
-    api.post('/wishlist', { productId }).then((res) => res.data),
+  // Wishlist Management - Temporarily disabled until backend API is ready
+  addToWishlist: (productId: number) => {
+    console.warn('⚠️ Wishlist API not implemented yet');
+    return Promise.resolve({ success: true, message: 'Wishlist feature coming soon' });
+  },
 
-  getWishlist: () =>
-    api.get('/wishlist').then((res) => res.data),
+  getWishlist: () => {
+    console.warn('⚠️ Wishlist API not implemented yet');
+    return Promise.resolve({ wishlist: [] });
+  },
 
-  getUserWishlist: (userId: number) =>
-    api.get(`/wishlist/user/${userId}`).then((res) => res.data),
+  getUserWishlist: (userId: number) => {
+    console.warn('⚠️ Wishlist API not implemented yet');
+    return Promise.resolve({ wishlist: [] });
+  },
 
-  getProductWishlist: (productId: number) =>
-    api.get(`/wishlist/product/${productId}`).then((res) => res.data),
+  getProductWishlist: (productId: number) => {
+    console.warn('⚠️ Wishlist API not implemented yet');
+    return Promise.resolve({ wishlist: [] });
+  },
 
-  getWishlistCount: (productId: number) =>
-    api.get(`/wishlist/product/${productId}/count`).then((res) => res.data),
+  getWishlistCount: (productId: number) => {
+    console.warn('⚠️ Wishlist API not implemented yet');
+    return Promise.resolve({ count: 0 });
+  },
 
-  getUserWishlistCount: (userId: number) =>
-    api.get(`/wishlist/user/${userId}/count`).then((res) => res.data),
+  getUserWishlistCount: (userId: number) => {
+    console.warn('⚠️ Wishlist API not implemented yet');
+    return Promise.resolve({ count: 0 });
+  },
 
-  getMostWishlisted: (limit?: number) =>
-    api.get('/wishlist/most-wishlisted', { params: { limit } }).then((res) => res.data),
+  getMostWishlisted: (limit?: number) => {
+    console.warn('⚠️ Wishlist API not implemented yet');
+    return Promise.resolve({ products: [] });
+  },
 
-  checkInWishlist: (productId: number) =>
-    api.get(`/wishlist/check/${productId}`).then((res) => res.data),
+  checkInWishlist: (productId: number) => {
+    console.warn('⚠️ Wishlist API not implemented yet');
+    return Promise.resolve({ exists: false });
+  },
 
-  removeFromWishlist: (wishlistId: number) =>
-    api.delete(`/wishlist/${wishlistId}`).then((res) => res.data),
+  removeFromWishlist: (wishlistId: number) => {
+    console.warn('⚠️ Wishlist API not implemented yet');
+    return Promise.resolve({ success: true });
+  },
 
-  removeProductFromWishlist: (productId: number) =>
-    api.delete(`/wishlist/product/${productId}`).then((res) => res.data),
+  removeProductFromWishlist: (productId: number) => {
+    console.warn('⚠️ Wishlist API not implemented yet');
+    return Promise.resolve({ success: true });
+  },
 };
 
 // PRODUCT STATS API

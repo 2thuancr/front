@@ -21,8 +21,8 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ className = '' }) => {
   console.log('🎯 UserDropdown render:', { 
     user, 
     hasUser: !!user,
-    userFirstName: user?.firstName,
-    userLastName: user?.lastName,
+    userFirstName: (user as any)?.firstName,
+    userLastName: (user as any)?.lastName,
     userEmail: user?.email
   });
 
@@ -52,9 +52,9 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ className = '' }) => {
 
   const getUserDisplayName = () => {
     // Always prioritize Redux state if available
-    if (user && (user.firstName || user.lastName || user.email)) {
-      if (user.firstName && user.lastName) {
-        return `${user.firstName} ${user.lastName}`;
+    if (user && ((user as any).firstName || (user as any).lastName || user.email)) {
+      if ((user as any).firstName && (user as any).lastName) {
+        return `${(user as any).firstName} ${(user as any).lastName}`;
       }
       if (user.email) {
         return user.email.split('@')[0];
@@ -84,9 +84,9 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ className = '' }) => {
 
   const getUserInitials = () => {
     // Always prioritize Redux state if available
-    if (user && (user.firstName || user.lastName || user.email)) {
-      if (user.firstName && user.lastName) {
-        return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+    if (user && ((user as any).firstName || (user as any).lastName || user.email)) {
+      if ((user as any).firstName && (user as any).lastName) {
+        return `${(user as any).firstName.charAt(0)}${(user as any).lastName.charAt(0)}`.toUpperCase();
       }
       if (user.email) {
         return user.email.charAt(0).toUpperCase();

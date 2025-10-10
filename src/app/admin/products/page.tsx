@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Package, 
   Search, 
@@ -11,96 +11,140 @@ import {
   Eye,
   Plus,
   Download,
-  Star
+  Star,
+  RefreshCw,
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
+import { adminProductAPI } from '@/lib/api';
+import { Product, ProductsResponse } from '@/types/api';
+import { useToastSuccess, useToastError } from '@/components/ui/Toast';
+import ProductForm from '@/components/admin/ProductForm';
 
 export default function AdminProducts() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [limit] = useState(10);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  
+  const toastSuccess = useToastSuccess();
+  const toastError = useToastError();
 
-  // Mock data
-  const products = [
-    {
-      id: 1,
-      name: 'Áo thun HCMUTE',
-      category: 'Clothing',
-      price: 150000,
-      originalPrice: 200000,
-      stock: 50,
-      rating: 4.5,
-      reviewCount: 23,
-      image: '/images/ao-thun-hcmute.jpg',
-      status: 'active'
-    },
-    {
-      id: 2,
-      name: 'Ba lô HCMUTE',
-      category: 'Accessories',
-      price: 300000,
-      originalPrice: null,
-      stock: 25,
-      rating: 4.8,
-      reviewCount: 15,
-      image: '/images/ba-lo-hcmute.jpg',
-      status: 'active'
-    },
-    {
-      id: 3,
-      name: 'Mũ bảo hiểm',
-      category: 'Safety',
-      price: 500000,
-      originalPrice: 600000,
-      stock: 0,
-      rating: 4.2,
-      reviewCount: 8,
-      image: '/images/placeholder.svg',
-      status: 'inactive'
-    },
-    {
-      id: 4,
-      name: 'Cốc giữ nhiệt',
-      category: 'Accessories',
-      price: 80000,
-      originalPrice: null,
-      stock: 100,
-      rating: 4.7,
-      reviewCount: 42,
-      image: '/images/placeholder.svg',
-      status: 'active'
-    }
-  ];
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-red-100 text-red-800';
-      case 'draft': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+  // Fetch products from API with pagination
+  const fetchProducts = async (page: number = currentPage) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await adminProductAPI.getAllProducts(page, limit);
+      
+      if (response.data && response.data.products) {
+        setProducts(response.data.products);
+        setTotalProducts(response.data.total || response.data.products.length);
+        
+        // Calculate total pages
+        const total = response.data.total || response.data.products.length;
+        const calculatedTotalPages = Math.ceil(total / limit);
+        setTotalPages(calculatedTotalPages);
+        
+      } else {
+        console.warn('⚠️ No products data in response');
+        setProducts([]);
+        setTotalProducts(0);
+        setTotalPages(0);
+      }
+    } catch (error: any) {
+      console.error('❌ Error fetching products:', error);
+      setError(error.response?.data?.message || 'Không thể tải danh sách sản phẩm');
+      toastError('Lỗi', 'Không thể tải danh sách sản phẩm');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'active': return 'Hoạt động';
-      case 'inactive': return 'Không hoạt động';
-      case 'draft': return 'Bản nháp';
-      default: return status;
-    }
-  };
+  // Fetch products from API
+  useEffect(() => {
+    fetchProducts(currentPage);
+  }, [currentPage]); // Re-fetch when page changes
 
-  const formatPrice = (price: number) => {
+  const formatPrice = (price: string) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
-      currency: 'VND'
-    }).format(price);
+      currency: 'VND',
+      minimumFractionDigits: 0,
+    }).format(parseFloat(price));
+  };
+
+  const getDiscountPrice = (price: string, discountPercent: string) => {
+    const originalPrice = parseFloat(price);
+    const discount = parseFloat(discountPercent);
+    return originalPrice / (1 - discount / 100);
+  };
+
+  const getAverageRating = (reviews: any[]) => {
+    if (!reviews || reviews.length === 0) return 0;
+    const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+    return totalRating / reviews.length;
+  };
+
+  const getStockStatus = (stock: number) => {
+    if (stock === 0) return { text: 'Hết hàng', color: 'text-red-600' };
+    if (stock < 10) return { text: 'Tồn kho thấp', color: 'text-yellow-600' };
+    return { text: 'Còn hàng', color: 'text-green-600' };
+  };
+
+  const getPrimaryImage = (images: any[]) => {
+    const primaryImage = images?.find(img => img.isPrimary === true || img.isPrimary === 1);
+    return primaryImage?.imageUrl || images?.[0]?.imageUrl || '/images/placeholder.svg';
   };
 
   const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
+    const matchesSearch = product.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.category.categoryName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || 
+                           product.category.categoryName === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  const handleRefresh = async () => {
+    await fetchProducts(currentPage);
+    toastSuccess('Thành công', 'Đã làm mới danh sách sản phẩm');
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleFormSuccess = () => {
+    // Refresh the products list after successful creation
+    fetchProducts(currentPage);
+  };
+
+  const handleToggleActive = async (productId: number) => {
+    try {
+      await adminProductAPI.toggleProductActive(productId);
+      
+      // Update local state instead of calling API again
+      setProducts(prevProducts => 
+        prevProducts.map(product => 
+          product.productId === productId 
+            ? { ...product, isActive: !product.isActive }
+            : product
+        )
+      );
+      
+      toastSuccess('Thành công', 'Đã cập nhật trạng thái sản phẩm');
+    } catch (error: any) {
+      console.error('❌ Error toggling product active:', error);
+      toastError('Lỗi', 'Không thể cập nhật trạng thái sản phẩm');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -113,10 +157,23 @@ export default function AdminProducts() {
             <p className="text-gray-600 text-sm">Quản lý danh mục sản phẩm và tồn kho</p>
           </div>
         </div>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2">
-          <Plus className="w-4 h-4" />
-          <span>Thêm sản phẩm</span>
-        </button>
+        <div className="flex items-center space-x-3">
+          <button 
+            onClick={handleRefresh}
+            disabled={loading}
+            className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span>Làm mới</span>
+          </button>
+          <button 
+            onClick={() => setIsFormOpen(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Thêm sản phẩm</span>
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -125,7 +182,7 @@ export default function AdminProducts() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Tổng sản phẩm</p>
-              <p className="text-2xl font-bold text-gray-900">1,234</p>
+              <p className="text-2xl font-bold text-gray-900">{totalProducts}</p>
             </div>
             <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
               <Package className="w-6 h-6 text-white" />
@@ -136,8 +193,10 @@ export default function AdminProducts() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Sản phẩm hoạt động</p>
-              <p className="text-2xl font-bold text-gray-900">1,156</p>
+              <p className="text-sm font-medium text-gray-600">Có giảm giá</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {products.filter(p => parseFloat(p.discountPercent) > 0).length}
+              </p>
             </div>
             <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
               <Package className="w-6 h-6 text-white" />
@@ -149,7 +208,9 @@ export default function AdminProducts() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Tồn kho thấp</p>
-              <p className="text-2xl font-bold text-gray-900">23</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {products.filter(p => p.stockQuantity < 10 && p.stockQuantity > 0).length}
+              </p>
             </div>
             <div className="w-12 h-12 bg-yellow-500 rounded-lg flex items-center justify-center">
               <Package className="w-6 h-6 text-white" />
@@ -161,7 +222,9 @@ export default function AdminProducts() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Hết hàng</p>
-              <p className="text-2xl font-bold text-gray-900">55</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {products.filter(p => p.stockQuantity === 0).length}
+              </p>
             </div>
             <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center">
               <Package className="w-6 h-6 text-white" />
@@ -193,9 +256,9 @@ export default function AdminProducts() {
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="all">Tất cả danh mục</option>
-              <option value="Clothing">Quần áo</option>
-              <option value="Accessories">Phụ kiện</option>
-              <option value="Safety">An toàn</option>
+              {Array.from(new Set(products.map(p => p.category.categoryName))).map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
             </select>
             
             <button className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
@@ -211,117 +274,266 @@ export default function AdminProducts() {
         </div>
       </div>
 
-      {/* Products Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Sản phẩm
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Danh mục
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Giá
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tồn kho
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Đánh giá
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Trạng thái
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Thao tác
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredProducts.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                        <Package className="w-6 h-6 text-gray-600" />
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                        <div className="text-sm text-gray-500">Mã: {product.id}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {product.category}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {formatPrice(product.price)}
-                    </div>
-                    {product.originalPrice && (
-                      <div className="text-sm text-gray-500 line-through">
-                        {formatPrice(product.originalPrice)}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`text-sm font-medium ${
-                      product.stock === 0 ? 'text-red-600' : 
-                      product.stock < 10 ? 'text-yellow-600' : 
-                      'text-green-600'
-                    }`}>
-                      {product.stock} sản phẩm
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-3 h-3 ${
-                              i < Math.floor(product.rating) 
-                                ? 'text-yellow-400 fill-current' 
-                                : 'text-gray-300'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <span className="ml-1 text-sm text-gray-600">
-                        {product.rating} ({product.reviewCount})
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(product.status)}`}>
-                      {getStatusText(product.status)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end space-x-2">
-                      <button className="text-gray-400 hover:text-gray-600">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button className="text-gray-400 hover:text-gray-600">
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button className="text-gray-400 hover:text-gray-600">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                      <button className="text-gray-400 hover:text-gray-600">
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-3">
+          <AlertCircle className="w-5 h-5 text-red-500" />
+          <div>
+            <p className="text-sm font-medium text-red-800">Lỗi tải dữ liệu</p>
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Loading State */}
+      {loading && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+          <div className="flex items-center justify-center">
+            <RefreshCw className="w-6 h-6 animate-spin text-gray-500" />
+            <span className="ml-2 text-gray-500">Đang tải danh sách sản phẩm...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Products Table */}
+      {!loading && !error && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Sản phẩm
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Danh mục
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Giá
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Tồn kho
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Đánh giá
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Giảm giá
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Thao tác
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredProducts.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                      Không tìm thấy sản phẩm nào
+                    </td>
+                  </tr>
+                ) : (
+                  filteredProducts.map((product) => {
+                    const averageRating = getAverageRating(product.reviews);
+                    const stockStatus = getStockStatus(product.stockQuantity);
+                    const primaryImage = getPrimaryImage(product.images);
+                    const discountPercent = parseFloat(product.discountPercent);
+                    
+                    return (
+                      <tr key={product.productId} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
+                              <img 
+                                src={primaryImage} 
+                                alt={product.productName}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.src = '/images/placeholder.svg';
+                                }}
+                              />
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">{product.productName}</div>
+                              <div className="text-sm text-gray-500">ID: {product.productId}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {product.category.categoryName}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {formatPrice(product.price)}
+                          </div>
+                          {discountPercent > 0 && (
+                            <div className="text-sm text-gray-500 line-through">
+                              {formatPrice(getDiscountPrice(product.price, product.discountPercent).toString())}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`text-sm font-medium ${stockStatus.color}`}>
+                            {product.stockQuantity} sản phẩm
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex items-center">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`w-3 h-3 ${
+                                    i < Math.floor(averageRating) 
+                                      ? 'text-yellow-400 fill-current' 
+                                      : 'text-gray-300'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="ml-1 text-sm text-gray-600">
+                              {averageRating.toFixed(1)} ({product.reviews?.length || 0})
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {discountPercent > 0 ? (
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                              -{discountPercent}%
+                            </span>
+                          ) : (
+                            <span className="text-sm text-gray-500">Không có</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex items-center justify-end space-x-2">
+                            <button className="text-gray-400 hover:text-gray-600" title="Xem chi tiết">
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button className="text-gray-400 hover:text-gray-600" title="Chỉnh sửa">
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button className="text-gray-400 hover:text-gray-600" title="Xóa">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Pagination - Always show if there are products */}
+      {!loading && !error && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mt-4">
+          <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Trước
+              </button>
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Sau
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Hiển thị{' '}
+                  <span className="font-medium">{(currentPage - 1) * limit + 1}</span>
+                  {' '}đến{' '}
+                  <span className="font-medium">
+                    {Math.min(currentPage * limit, totalProducts)}
+                  </span>
+                  {' '}trong tổng số{' '}
+                  <span className="font-medium">{totalProducts}</span> sản phẩm
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  
+                  {/* Page numbers */}
+                  {totalPages > 1 && Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                    // Show first page, last page, current page, and pages around current page
+                    const shouldShow = 
+                      page === 1 || 
+                      page === totalPages || 
+                      Math.abs(page - currentPage) <= 1;
+                    
+                    if (!shouldShow) {
+                      // Show ellipsis for gaps
+                      if (page === 2 && currentPage > 4) {
+                        return (
+                          <span key={page} className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                            ...
+                          </span>
+                        );
+                      }
+                      if (page === totalPages - 1 && currentPage < totalPages - 3) {
+                        return (
+                          <span key={page} className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                            ...
+                          </span>
+                        );
+                      }
+                      return null;
+                    }
+                    
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          page === currentPage
+                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+                  
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Product Form Modal */}
+      <ProductForm
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSuccess={handleFormSuccess}
+      />
     </div>
   );
 }

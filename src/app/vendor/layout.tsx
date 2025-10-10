@@ -3,15 +3,13 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { AdminGuard } from '@/components/guards';
+import { VendorGuard } from '@/components/guards';
 import { useAuth } from '@/hooks/useAuth';
-import { Admin } from '@/types/auth';
+import { Vendor } from '@/types/auth';
 import { 
   LayoutDashboard, 
-  Users, 
   Package, 
   ShoppingCart, 
-  Store, 
   BarChart3, 
   Settings, 
   Search, 
@@ -23,6 +21,10 @@ import {
   ChevronRight,
   LogOut,
   User,
+  Store,
+  Star,
+  HelpCircle,
+  Users,
   FolderOpen
 } from 'lucide-react';
 
@@ -35,93 +37,53 @@ interface SidebarItem {
   badgeColor?: string;
 }
 
-const sidebarItems: SidebarItem[] = [
+const vendorMenuItems: SidebarItem[] = [
   {
     name: 'Bảng điều khiển',
-    href: '/admin/dashboard',
-    icon: LayoutDashboard,
-    children: [
-      { name: 'Mặc định', href: '/admin/dashboard' },
-      { name: 'CRM', href: '/admin/dashboard/crm' },
-      { name: 'Phân tích', href: '/admin/dashboard/analytics', badge: 'mới', badgeColor: 'bg-blue-500' }
-    ]
-  },
-  {
-    name: 'Bố cục trang',
-    href: '/admin/layouts',
-    icon: Package,
-    badge: '3',
-    badgeColor: 'bg-orange-500'
-  },
-  {
-    name: 'Điều hướng',
-    href: '/admin/navigation',
-    icon: Eye
-  },
-  {
-    name: 'Widget',
-    href: '/admin/widget',
-    icon: BarChart3,
-    badge: '10+',
-    badgeColor: 'bg-red-500'
-  },
-  {
-    name: 'Cơ bản',
-    href: '/admin/basic',
-    icon: Settings
-  },
-  {
-    name: 'Nâng cao',
-    href: '/admin/advance',
-    icon: Settings
-  },
-  {
-    name: 'Bổ sung',
-    href: '/admin/extra',
-    icon: Settings
-  },
-  {
-    name: 'Hoạt ảnh',
-    href: '/admin/animations',
-    icon: Settings
-  }
-];
-
-const adminMenuItems: SidebarItem[] = [
-  {
-    name: 'Người dùng',
-    href: '/admin/users',
-    icon: Users
+    href: '/vendor/dashboard',
+    icon: LayoutDashboard
   },
   {
     name: 'Sản phẩm',
-    href: '/admin/products',
+    href: '/vendor/products',
     icon: Package
   },
   {
     name: 'Danh mục',
-    href: '/admin/categories',
+    href: '/vendor/categories',
     icon: FolderOpen
   },
   {
     name: 'Đơn hàng',
-    href: '/admin/orders',
-    icon: ShoppingCart
+    href: '/vendor/orders',
+    icon: ShoppingCart,
+    badge: '5',
+    badgeColor: 'bg-orange-500'
   },
   {
-    name: 'Nhà cung cấp',
-    href: '/admin/vendors',
-    icon: Store
+    name: 'Nhân viên',
+    href: '/vendor/staff',
+    icon: Users
   },
   {
-    name: 'Báo cáo',
-    href: '/admin/reports',
+    name: 'Thống kê',
+    href: '/vendor/analytics',
     icon: BarChart3
   },
   {
+    name: 'Đánh giá',
+    href: '/vendor/reviews',
+    icon: Star
+  },
+  {
     name: 'Cài đặt',
-    href: '/admin/settings',
+    href: '/vendor/settings',
     icon: Settings
+  },
+  {
+    name: 'Hỗ trợ',
+    href: '/vendor/support',
+    icon: HelpCircle
   }
 ];
 
@@ -132,7 +94,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const pathname = usePathname();
-  const [expandedItems, setExpandedItems] = useState<string[]>(['Dashboard']);
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const toggleExpanded = (itemName: string) => {
     setExpandedItems(prev => 
@@ -229,11 +191,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       {/* Logo */}
       <div className="flex items-center justify-between p-4 border-b border-gray-700">
         <div className="flex items-center">
-          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-            <span className="text-white font-bold text-sm">A</span>
+          <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+            <Store className="w-5 h-5 text-white" />
           </div>
           {!isCollapsed && (
-            <span className="ml-2 text-xl font-bold">ADMINDEK</span>
+            <span className="ml-2 text-xl font-bold">VENDOR</span>
           )}
         </div>
         <button
@@ -248,19 +210,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       <div className="flex-1 p-4">
         <div className="mb-6">
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-            {!isCollapsed && 'Điều hướng'}
+            {!isCollapsed && 'Quản lý cửa hàng'}
           </h3>
           <div className="space-y-1">
-            {sidebarItems.map(item => renderSidebarItem(item))}
-          </div>
-        </div>
-
-        <div className="mb-6">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-            {!isCollapsed && 'Quản trị hệ thống'}
-          </h3>
-          <div className="space-y-1">
-            {adminMenuItems.map(item => renderSidebarItem(item))}
+            {vendorMenuItems.map(item => renderSidebarItem(item))}
           </div>
         </div>
       </div>
@@ -269,7 +222,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
 };
 
 interface HeaderProps {
-  user: Admin;
+  user: Vendor;
 }
 
 const Header: React.FC<HeaderProps> = ({ user }) => {
@@ -314,9 +267,9 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-medium text-gray-900">
-                {user?.fullName || user?.username}
+                {user?.ownerName || user?.storeName}
               </span>
-              <span className="text-xs text-gray-500">Quản trị viên</span>
+              <span className="text-xs text-gray-500">Nhà cung cấp</span>
             </div>
             <button
               onClick={handleLogout}
@@ -332,17 +285,17 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
   );
 };
 
-interface AdminLayoutProps {
+interface VendorLayoutProps {
   children: React.ReactNode;
 }
 
-export default function AdminLayout({ children }: AdminLayoutProps) {
+export default function VendorLayout({ children }: VendorLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { user } = useAuth();
-  const admin = user as Admin;
+  const vendor = user as Vendor;
 
   return (
-    <AdminGuard>
+    <VendorGuard>
       <div className="min-h-screen bg-gray-50">
         <div className="flex">
           {/* Sidebar */}
@@ -354,7 +307,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           {/* Main content */}
           <div className="flex-1 flex flex-col">
             {/* Header */}
-            <Header user={admin} />
+            <Header user={vendor} />
             
             {/* Page content */}
             <main className="flex-1 p-6">
@@ -363,6 +316,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </div>
         </div>
       </div>
-    </AdminGuard>
+    </VendorGuard>
   );
 }

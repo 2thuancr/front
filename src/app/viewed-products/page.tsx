@@ -55,14 +55,14 @@ const ViewedProductsPage: React.FC = () => {
   console.log('🔍 ViewedProductsPage - User data:', { 
     isAuthenticated, 
     user, 
-    userId: user?.id,
+    userId: (user as any)?.id,
     localStorageUserId: typeof window !== 'undefined' ? localStorage.getItem('userId') : null
   });
 
   useEffect(() => {
     const fetchViewedProducts = async () => {
       // Get userId from user object or localStorage
-      let userId = user?.id;
+      let userId = (user as any)?.id;
       
       if (!userId && typeof window !== 'undefined') {
         // Try to get from localStorage userId
@@ -96,7 +96,7 @@ const ViewedProductsPage: React.FC = () => {
         // Debug each product to see its structure
         if (response.views && response.views.length > 0) {
           console.log('First product structure:', response.views[0]);
-          console.log('Product images:', response.views[0].product);
+          console.log('Product images:', response.views[0]?.product);
         }
         
         // Fetch detailed product info including images for each product

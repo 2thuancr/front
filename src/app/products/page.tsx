@@ -34,12 +34,11 @@ export default function ProductsPage() {
     const discountPercent = product.discountPercent ? parseFloat(product.discountPercent) : 0;
     const originalPrice = discountPercent > 0 ? price / (1 - discountPercent / 100) : undefined;
 
-    return {
+    const result: any = {
       id: product.productId,
       name: product.productName,
       description: product.description,
       price: price,
-      originalPrice: originalPrice,
       rating: 4.5, // Default rating since not in API
       reviewCount: Math.floor(Math.random() * 100) + 10, // Random for demo
       image: imageUrl,
@@ -48,11 +47,20 @@ export default function ProductsPage() {
       categoryId: product.categoryId,
       isNew: false,
       isHot: false,
-      discount: discountPercent > 0 ? Math.round(discountPercent) : undefined,
       stock: product.stockQuantity,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     };
+    
+    if (originalPrice !== undefined) {
+      result.originalPrice = originalPrice;
+    }
+    
+    if (discountPercent > 0) {
+      result.discount = Math.round(discountPercent);
+    }
+    
+    return result;
   };
 
   // Lấy cartId khi userId thay đổi

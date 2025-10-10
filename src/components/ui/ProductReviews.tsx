@@ -161,12 +161,16 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({
 
     setSubmitting(true);
     try {
-      const reviewData = {
+      const reviewData: any = {
         productId: Number(productId),
-        userId: Number(user.id),
+        userId: Number((user as any).id),
         rating: Number(newRating),
-        comment: newComment.trim() || undefined,
       };
+      
+      const trimmedComment = newComment.trim();
+      if (trimmedComment) {
+        reviewData.comment = trimmedComment;
+      }
 
       console.log('Submitting review with data:', reviewData);
       console.log('User data:', user);

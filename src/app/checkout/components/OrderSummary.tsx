@@ -2,8 +2,6 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Cart } from "@/types/cart";
-import { CartItem } from "@/types/order";
 
 interface OrderSummaryProps {
   checkoutItems: any[];
@@ -75,7 +73,7 @@ export function OrderSummary({ checkoutItems, discountAmount = 0, voucherCode }:
         {discount > 0 && (
           <div className="flex justify-between text-sm text-green-700">
             <span>
-              Giảm giá{voucherCode ? ` (${voucherCode})` : ""}:
+              Giảm giá {voucherCode ? ` (${voucherCode})` : ""}:
             </span>
             <span>-{discount.toLocaleString()}₫</span>
           </div>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, Eye as EyeIcon, Percent, Clock } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { Dropdown } from 'primereact/dropdown';
 import { Button } from 'primereact/button';
 import { motion } from 'framer-motion';
@@ -11,8 +12,8 @@ import { ProductCard } from '@/components/ui';
 import Link from 'next/link';
 import { useToastSuccess, useToastError } from '@/components/ui/Toast';
 import { useUserId } from '@/hooks/useUserId';
-import { useDispatch } from 'react-redux';
-import { AppDispatch } from '@/store';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@/store';
 import { toggleWishlist } from '@/store/wishlistSlice';
 
 type ProductType = 'latest' | 'bestseller' | 'most-viewed' | 'highest-discount';
@@ -30,6 +31,11 @@ const ProductGrid: React.FC = () => {
   const userId = useUserId();
   const toastSuccess = useToastSuccess();
   const toastError = useToastError();
+  const router = useRouter();
+  
+  // Check authentication status from Redux
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const authToken = useSelector((state: RootState) => state.auth.token);
   const dispatch = useDispatch<AppDispatch>();
 
   const productTypes = [
@@ -81,6 +87,14 @@ const ProductGrid: React.FC = () => {
   useEffect(() => {
     const fetchCart = async () => {
       if (!userId || userId <= 0) {
+        console.log("👤 Guest user - skipping cart fetch");
+        setCartId(null);
+        return;
+      }
+
+      // Check if user is actually authenticated
+      if (!isAuthenticated || !authToken) {
+        console.log("🔒 User not authenticated - skipping cart fetch");
         setCartId(null);
         return;
       }
@@ -96,7 +110,16 @@ const ProductGrid: React.FC = () => {
           console.warn("⚠️ Cart data is invalid:", cart);
         }
       } catch (error: any) {
-        console.error("❌ Lỗi khi lấy giỏ hàng:", error);
+        console.warn("⚠️ Cart API not available yet:", error.response?.status);
+        
+        // Handle specific error cases
+        if (error.response?.status === 401) {
+          console.log("🔒 User not authenticated for cart access");
+        } else if (error.response?.status === 404) {
+          console.log("📦 No cart found for user");
+        } else {
+          console.log("🚫 Cart endpoint not implemented yet");
+        }
         
         // Thử tạo giỏ hàng mới nếu không tìm thấy
         if (error.response?.status === 404) {
@@ -115,7 +138,7 @@ const ProductGrid: React.FC = () => {
     };
 
     fetchCart();
-  }, [userId]);
+  }, [userId, isAuthenticated, authToken]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -194,7 +217,7 @@ const ProductGrid: React.FC = () => {
     fetchProducts();
   }, [selectedType, productCount]);
 
-  const toggleWishlist = (productId: number) => {
+  const toggleLocalWishlist = (productId: number) => {
     setWishlist(prev =>
       prev.includes(productId)
         ? prev.filter(id => id !== productId)
@@ -212,11 +235,13 @@ const ProductGrid: React.FC = () => {
   const handleAddToCart = async (productId: number) => {
     console.log("🔥 handleAddToCart được gọi từ ProductGrid!", { productId, cartId, userId });
 
-    if (!userId || userId <= 0) {
-      console.log("❌ Không có userId:", userId);
-      toastError("Lỗi đăng nhập", "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
+    // Redirect to login if not authenticated
+    if (!userId || userId <= 0 || !isAuthenticated || !authToken) {
+      console.log("🔒 User not authenticated - redirecting to login");
+      router.push('/login');
       return;
     }
+    
     if (!cartId) {
       console.log("❌ Không có cartId:", cartId);
       toastError("Lỗi giỏ hàng", "Không tìm thấy giỏ hàng. Vui lòng đăng nhập để sử dụng giỏ hàng.");
@@ -266,7 +291,7 @@ const ProductGrid: React.FC = () => {
 
     try {
       console.log("🔄 Gọi Redux toggleWishlist");
-      const result = await dispatch(toggleWishlist(productId)).unwrap();
+      const result = await dispatch(toggleWishlist(productId)).unwrap() as any;
       console.log("✅ Toggle wishlist result:", result);
       
       if (result.action === 'added') {

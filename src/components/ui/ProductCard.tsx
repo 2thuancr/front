@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Card } from 'primereact/card';
 import { Button } from 'primereact/button';
@@ -14,7 +15,7 @@ import {
   Clock,
   TrendingUp
 } from 'lucide-react';
-import { LegacyProduct } from '@/types/product';
+import { LegacyProduct } from '@/types/api';
 import { useToastSuccess, useToastError } from './Toast';
 import { useUserId } from '@/hooks/useUserId';
 import { cartApi } from '@/lib/api';
@@ -44,10 +45,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const userId = useUserId();
   const toastSuccess = useToastSuccess();
   const toastError = useToastError();
+  const router = useRouter();
   
   const dispatch = useDispatch<AppDispatch>();
   const { checkedItems } = useSelector((state: RootState) => state.wishlist);
   const isWishlisted = checkedItems[product.id] || false;
+  
+  // Check authentication status from Redux
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const authToken = useSelector((state: RootState) => state.auth.token);
 
   // Kiểm tra trạng thái wishlist khi component mount
   useEffect(() => {
@@ -61,6 +67,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   useEffect(() => {
     const fetchCart = async () => {
       if (!userId || userId <= 0) {
+        console.log("👤 Guest user - skipping cart fetch");
+        setCartId(null);
+        return;
+      }
+
+      // Check if user is actually authenticated
+      if (!isAuthenticated || !authToken) {
+        console.log("🔒 User not authenticated - skipping cart fetch");
         setCartId(null);
         return;
       }
@@ -76,7 +90,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           console.warn("⚠️ Cart data is invalid:", cart);
         }
       } catch (error: any) {
-        console.error("❌ Lỗi khi lấy giỏ hàng:", error);
+        console.warn("⚠️ Cart API not available yet:", error.response?.status);
         
         // Thử tạo giỏ hàng mới nếu không tìm thấy
         if (error.response?.status === 404) {
@@ -95,7 +109,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     };
 
     fetchCart();
-  }, [userId]);
+  }, [userId, isAuthenticated, authToken]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -107,6 +121,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const handleAddToCart = async () => {
     console.log("🔥 handleAddToCart được gọi từ ProductCard!", { product, onAddToCart });
+
+    // Redirect to login if not authenticated
+    if (!userId || userId <= 0 || !isAuthenticated || !authToken) {
+      console.log("🔒 User not authenticated - redirecting to login");
+      router.push('/login');
+      return;
+    }
 
     setIsAddingToCart(true);
     try {
@@ -232,8 +253,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
           {/* Quick Actions */}
           {showQuickActions && (
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-              <div className="flex flex-col space-y-4">
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-start justify-start opacity-0 group-hover:opacity-100">
+              <div className="flex flex-col space-y-4 mt-4 ml-4">
                 {/* Shopping Cart Button */}
                 <motion.div
                   whileHover={{ scale: 1.1 }}

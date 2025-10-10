@@ -160,24 +160,36 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 // Convenience hooks for different toast types
 export const useToastSuccess = () => {
   const { addToast } = useToast();
-  return (title: string, message?: string) => 
-    addToast({ type: 'success', title, message });
+  return (title: string, message?: string) => {
+    const toast: any = { type: 'success', title };
+    if (message !== undefined) toast.message = message;
+    addToast(toast);
+  };
 };
 
 export const useToastError = () => {
   const { addToast } = useToast();
-  return (title: string, message?: string) => 
-    addToast({ type: 'error', title, message });
+  return (title: string, message?: string) => {
+    const toast: any = { type: 'error', title };
+    if (message !== undefined) toast.message = message;
+    addToast(toast);
+  };
 };
 
 export const useToastInfo = () => {
   const { addToast } = useToast();
-  return (title: string, message?: string) => 
-    addToast({ type: 'info', title, message });
+  return (title: string, message?: string) => {
+    const toast: any = { type: 'info', title };
+    if (message !== undefined) toast.message = message;
+    addToast(toast);
+  };
 };
 
 export const useToastWarning = () => {
   const { addToast } = useToast();
-  return (title: string, message?: string) => 
-    addToast({ type: 'warning', title, message });
+  return (title: string, message?: string) => {
+    const toast: any = { type: 'warning', title };
+    if (message !== undefined) toast.message = message;
+    addToast(toast);
+  };
 };

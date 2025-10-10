@@ -32,10 +32,10 @@ export default function SettingsPage() {
 
   // Form states
   const [profileData, setProfileData] = useState({
-    firstName: user?.firstName || '',
-    lastName: user?.lastName || '',
+    firstName: (user as any)?.firstName || '',
+    lastName: (user as any)?.lastName || '',
     email: user?.email || '',
-    phone: user?.phone || '',
+    phone: (user as any)?.phone || '',
   });
 
   const [passwordData, setPasswordData] = useState({
