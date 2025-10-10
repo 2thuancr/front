@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card } from 'primereact/card';
 import { Button } from 'primereact/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,27 +24,48 @@ const statusConfig = {
   CANCEL_REQUESTED: { label: 'Yêu cầu hủy', color: 'bg-orange-100 text-orange-800', icon: Clock },
 };
 
+// Helper function to get user ID based on user type
+const getUserId = (user: any): number | undefined => {
+  if (!user) return undefined;
+  if ('id' in user) return user.id;
+  if ('adminId' in user) return user.adminId;
+  if ('vendorId' in user) return user.vendorId;
+  return undefined;
+};
+
 export default function OrdersPage() {
   const { isAuthenticated, user, token } = useAuth();
   const router = useRouter();
   const [orders, setOrders] = useState<any[]>([]);
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [loading, setLoading] = useState(false);
+  const hasFetchedRef = useRef(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/login');
-    } else {
+      return;
+    }
+    
+    // Chỉ fetch một lần khi có user
+    if (user && !hasFetchedRef.current) {
+      hasFetchedRef.current = true;
       fetchOrders();
     }
   }, [isAuthenticated, user]);
 
   // Lấy danh sách đơn
-  const fetchOrders = async () => {
+  const fetchOrders = async (force = false) => {
     if (!user) return;
+    const userId = getUserId(user);
+    if (!userId) return;
+    
+    // Nếu không phải force và đã fetch rồi thì skip
+    if (!force && hasFetchedRef.current && orders.length > 0) return;
+    
     try {
       setLoading(true);
-      const res = await axios.get(`${API_BASE}/orders/user/${user.id}`, {
+      const res = await axios.get(`${API_BASE}/orders/user/${userId}?page=1&limit=10`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setOrders(res.data.orders || []);
@@ -61,7 +82,7 @@ export default function OrdersPage() {
       await axios.patch(`${API_BASE}/orders/${orderId}/cancel`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      fetchOrders();
+      fetchOrders(true); // Force refresh sau khi cancel
     } catch (err: any) {
       alert(err.response?.data?.message || 'Không thể hủy đơn');
     }
@@ -174,8 +195,8 @@ export default function OrdersPage() {
 
                         {/* Order Items */}
                         <div className="space-y-2 mb-4">
-                          {order.orderDetails?.map((detail: any) => (
-                            <div key={detail.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                          {order.orderDetails?.map((detail: any, idx: number) => (
+                            <div key={`${order.orderId}-${detail.productId || detail.id || idx}`} className="flex items-center justify-between bg-gray-50 p-2 rounded">
                               <div className="flex items-center space-x-3">
                                 <img
                                   src={

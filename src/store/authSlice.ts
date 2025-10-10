@@ -1,11 +1,27 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { AuthState, LoginCredentials, RegisterCredentials, User, VerifyOTPData, UserRole, hasRole, hasAnyRole } from '@/types/auth';
-import { authAPI } from '@/lib/api';
+import { 
+  AuthState, 
+  LoginCredentials, 
+  RegisterCredentials, 
+  User, 
+  Admin,
+  Vendor,
+  Staff,
+  VerifyOTPData, 
+  UserRole, 
+  AdminRole,
+  hasRole, 
+  hasAnyRole,
+  getUserType
+} from '@/types/auth';
+import { authAPI, adminAuthAPI, vendorAuthAPI, staffAuthAPI } from '@/lib/api';
 import { clearAuthData } from '@/lib/auth';
+import { clearWishlist } from './wishlistSlice';
 
 // Initial state
 const initialState: AuthState = {
   user: null,
+  userType: null,
   token: null,
   refreshToken: null,
   isAuthenticated: false,
@@ -19,18 +35,65 @@ export const loginUser = createAsyncThunk(
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
       console.log('🔐 loginUser thunk - credentials:', credentials);
-      const response = await authAPI.login({
-        email: credentials.username, // Map username to email
-        password: credentials.password
-      });
+      
+      // Try different login endpoints based on credentials
+      let response;
+      let userType = 'customer';
+      
+      // Check if it's email format (customer/staff) or username format (admin/vendor)
+      const isEmail = credentials.username.includes('@');
+      
+      if (isEmail) {
+        // Try customer login first
+        try {
+          response = await authAPI.login({
+            email: credentials.username,
+            password: credentials.password
+          });
+          userType = 'customer';
+        } catch (customerError) {
+          // If customer login fails, try staff login
+          try {
+            response = await staffAuthAPI.login({
+              email: credentials.username,
+              password: credentials.password
+            });
+            userType = 'staff';
+          } catch (staffError) {
+            throw customerError; // Throw original customer error
+          }
+        }
+      } else {
+        // Try admin login first
+        try {
+          response = await adminAuthAPI.login({
+            username: credentials.username,
+            password: credentials.password
+          });
+          userType = 'admin';
+        } catch (adminError) {
+          // If admin login fails, try vendor login
+          try {
+            response = await vendorAuthAPI.login({
+              username: credentials.username,
+              password: credentials.password
+            });
+            userType = 'vendor';
+          } catch (vendorError) {
+            throw adminError; // Throw original admin error
+          }
+        }
+      }
+      
       console.log('🔐 loginUser thunk - API response:', response.data);
-      return response.data;
+      return { ...response.data, userType };
     } catch (error: any) {
       console.error('🔐 loginUser thunk - error:', error);
       return rejectWithValue(error.response?.data?.message || 'Login failed');
     }
   }
 );
+
 
 export const registerUser = createAsyncThunk(
   'auth/register',
@@ -82,9 +145,13 @@ export const resendOTP = createAsyncThunk(
 
 export const logoutUser = createAsyncThunk(
   'auth/logout',
-  async () => {
+  async (_, { dispatch }) => {
     // Clear auth data from localStorage
     clearAuthData();
+    
+    // Clear wishlist state
+    dispatch(clearWishlist());
+    
     return null;
   }
 );
@@ -97,15 +164,17 @@ const authSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
-    setUser: (state, action: PayloadAction<User>) => {
+    setUser: (state, action: PayloadAction<User | Admin | Vendor | Staff>) => {
       state.user = action.payload;
+      state.userType = getUserType(action.payload);
       state.isAuthenticated = true;
     },
     setToken: (state, action: PayloadAction<string>) => {
       state.token = action.payload;
     },
-    restoreAuth: (state, action: PayloadAction<{ user: User; token: string }>) => {
+    restoreAuth: (state, action: PayloadAction<{ user: User | Admin | Vendor | Staff; token: string; userType: string }>) => {
       state.user = action.payload.user;
+      state.userType = action.payload.userType as 'customer' | 'admin' | 'vendor' | 'staff';
       state.token = action.payload.token;
       state.isAuthenticated = true;
       state.error = null;
@@ -122,12 +191,25 @@ const authSlice = createSlice({
         console.log('🔐 loginUser.fulfilled - payload:', action.payload);
         state.isLoading = false;
         state.isAuthenticated = true;
-        state.user = action.payload.user;
+        
+        // Set user based on userType
+        if (action.payload.userType === 'admin') {
+          state.user = action.payload.admin;
+        } else if (action.payload.userType === 'vendor') {
+          state.user = action.payload.vendor;
+        } else if (action.payload.userType === 'staff') {
+          state.user = action.payload.staff;
+        } else {
+          state.user = action.payload.user;
+        }
+        
+        state.userType = action.payload.userType;
         state.token = action.payload.access_token;
         state.refreshToken = action.payload.refresh_token;
         state.error = null;
         console.log('🔐 loginUser.fulfilled - state after update:', { 
           user: state.user, 
+          userType: state.userType,
           isAuthenticated: state.isAuthenticated 
         });
       })
@@ -135,6 +217,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       });
+
 
     // REGISTER
     builder
@@ -190,6 +273,7 @@ const authSlice = createSlice({
     builder
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
+        state.userType = null;
         state.token = null;
         state.refreshToken = null;
         state.isAuthenticated = false;

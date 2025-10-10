@@ -222,11 +222,11 @@ const orderSlice = createSlice({
       .addCase(cancelOrder.fulfilled, (state, action) => {
         // Update order in list
         const orderIndex = state.orders.findIndex(order => order.orderId === action.payload.orderId);
-        if (orderIndex !== -1) {
+        if (orderIndex !== -1 && state.orders[orderIndex]) {
           state.orders[orderIndex].status = 'cancelled';
         }
         // Update current order if it's the same
-        if (state.currentOrder?.orderId === action.payload.orderId) {
+        if (state.currentOrder && state.currentOrder.orderId === action.payload.orderId) {
           state.currentOrder.status = 'cancelled';
         }
       })
@@ -235,11 +235,11 @@ const orderSlice = createSlice({
       .addCase(updateOrderStatus.fulfilled, (state, action) => {
         // Update order in list
         const orderIndex = state.orders.findIndex(order => order.orderId === action.payload.orderId);
-        if (orderIndex !== -1) {
+        if (orderIndex !== -1 && state.orders[orderIndex]) {
           state.orders[orderIndex].status = action.payload.status;
         }
         // Update current order if it's the same
-        if (state.currentOrder?.orderId === action.payload.orderId) {
+        if (state.currentOrder && state.currentOrder.orderId === action.payload.orderId) {
           state.currentOrder.status = action.payload.status;
         }
       });

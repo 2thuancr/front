@@ -14,7 +14,6 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { WishlistButton, ProductStats, SimilarProducts, ProductReviews } from '@/components/ui';
 import { Product } from '@/types/api';
-import CartDebug from '@/components/debug/CartDebug';
 import { useToastSuccess, useToastError } from '@/components/ui/Toast';
 import { useUserId } from '@/hooks/useUserId';
 
@@ -309,9 +308,6 @@ export default function ProductDetailPage() {
       <div className="mt-16">
         <ProductReviews productId={product.productId} />
       </div>
-
-      {/* Debug: Cart Debug */}
-      <CartDebug />
     </div>
   );
 }

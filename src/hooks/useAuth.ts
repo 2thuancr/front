@@ -11,14 +11,32 @@ import {
   resendOTP,
 } from '@/store/authSlice';
 import { fetchUserProfile } from '@/store/userSlice';
-import { LoginCredentials, RegisterCredentials, VerifyOTPData, UserRole, hasRole, hasAnyRole, User } from '@/types/auth';
+import { clearWishlist } from '@/store/wishlistSlice';
+import { 
+  LoginCredentials, 
+  RegisterCredentials, 
+  VerifyOTPData, 
+  UserRole, 
+  AdminRole,
+  hasRole, 
+  hasAnyRole, 
+  User,
+  Admin,
+  Vendor,
+  Staff,
+  getUserType,
+  isAdmin,
+  isVendor,
+  isStaff,
+  isCustomer
+} from '@/types/auth';
 import { isTokenValid } from '@/lib/auth';
 import { useEffect, useRef } from 'react';
 
 export const useAuth = () => {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
-  const { user: authUser, token, isAuthenticated, isLoading, error } = useSelector(
+  const { user: authUser, userType, token, isAuthenticated, isLoading, error } = useSelector(
     (state: RootState) => state.auth
   );
   const { profile: userProfile } = useSelector(
@@ -26,8 +44,8 @@ export const useAuth = () => {
   );
 
   // Use userProfile from userSlice if available, otherwise fallback to authUser
-  // Cast to User type since we need role and isActive for role checking
-  const user = (userProfile || authUser) as User | null;
+  // Cast to union type since we need role and isActive for role checking
+  const user = (userProfile || authUser) as User | Admin | Vendor | Staff | null;
 
   // Check if we have a token in localStorage as fallback
   const localStorageToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -51,8 +69,11 @@ export const useAuth = () => {
           console.log('🔒 Token is expired or invalid, clearing auth data...');
           console.log('🔍 useAuth: Current path:', window.location.pathname);
           
-          // Don't redirect if we're already on login page
-          if (window.location.pathname !== '/login') {
+          // Don't redirect if we're on public pages (home, products, about, contact)
+          const publicPaths = ['/', '/products', '/about', '/contact', '/login'];
+          const isPublicPage = publicPaths.includes(window.location.pathname);
+          
+          if (!isPublicPage) {
             console.log('🔄 useAuth: Redirecting to login');
             localStorage.removeItem('token');
             localStorage.removeItem('refresh_token');
@@ -60,7 +81,12 @@ export const useAuth = () => {
             dispatch(logoutUser());
             router.push('/login');
           } else {
-            console.log('🔍 useAuth: Already on login page, not redirecting');
+            console.log('🔍 useAuth: On public page, clearing auth data but not redirecting');
+            localStorage.removeItem('token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user');
+            dispatch(clearWishlist());
+            dispatch(logoutUser());
           }
           return;
         }
@@ -117,23 +143,38 @@ export const useAuth = () => {
         if (result.refresh_token) {
           localStorage.setItem('refresh_token', result.refresh_token);
         }
-        if (result.user) {
-          localStorage.setItem('user', JSON.stringify(result.user));
-          if (result.user.id) {
-          localStorage.setItem('userId', JSON.stringify(result.user.id));
+        
+        // Save user data based on userType
+        let userData;
+        if (result.userType === 'admin') {
+          userData = result.admin;
+        } else if (result.userType === 'vendor') {
+          userData = result.vendor;
+        } else if (result.userType === 'staff') {
+          userData = result.staff;
+        } else {
+          userData = result.user;
         }
+        
+        if (userData) {
+          localStorage.setItem('user', JSON.stringify(userData));
+          localStorage.setItem('userType', result.userType);
+          
+          // Set userId based on user type
+          if (userData.id) {
+            localStorage.setItem('userId', JSON.stringify(userData.id));
+          } else if (userData.adminId) {
+            localStorage.setItem('userId', JSON.stringify(userData.adminId));
+          } else if (userData.vendorId) {
+            localStorage.setItem('userId', JSON.stringify(userData.vendorId));
+          }
         }
         
         console.log('✅ Auth data saved to localStorage');
         console.log('🔍 localStorage check:', {
           token: localStorage.getItem('token'),
-          user: localStorage.getItem('user')
-        });
-        
-        console.log('✅ Auth data saved to localStorage');
-        console.log('🔍 localStorage check:', {
-          token: localStorage.getItem('token'),
-          user: localStorage.getItem('user')
+          user: localStorage.getItem('user'),
+          userType: localStorage.getItem('userType')
         });
       } else {
         console.error('❌ No token found in login result:', result);
@@ -144,6 +185,7 @@ export const useAuth = () => {
       throw error;
     }
   };
+
 
   const register = async (credentials: RegisterCredentials) => {
     try {
@@ -160,26 +202,32 @@ export const useAuth = () => {
       console.log('🚪 Logout attempt...');
       await dispatch(logoutUser()).unwrap();
       
+      // Clear wishlist state
+      dispatch(clearWishlist());
+      
       // Clear all auth data from localStorage
       localStorage.removeItem('token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user');
+      localStorage.removeItem('userType');
       
       // Clear Redux Persist storage
       if (typeof window !== 'undefined') {
         localStorage.removeItem('persist:root');
       }
       
-      console.log('✅ All auth data cleared from localStorage and Redux Persist');
+      console.log('✅ All auth data and wishlist cleared from localStorage and Redux Persist');
       console.log('🔄 Redirecting to home...');
       
       router.push('/');
     } catch (error) {
       console.error('❌ Logout error:', error);
       // Even if logout fails, clear localStorage and redirect
+      dispatch(clearWishlist());
       localStorage.removeItem('token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user');
+      localStorage.removeItem('userType');
       if (typeof window !== 'undefined') {
         localStorage.removeItem('persist:root');
       }
@@ -220,11 +268,12 @@ export const useAuth = () => {
   };
 
   // Role checking functions
-  const checkRole = (role: UserRole) => hasRole(user, role);
-  const checkAnyRole = (roles: UserRole[]) => hasAnyRole(user, roles);
+  const checkRole = (role: UserRole | AdminRole) => hasRole(user, role);
+  const checkAnyRole = (roles: (UserRole | AdminRole)[]) => hasAnyRole(user, roles);
 
   return {
     user,
+    userType,
     token,
     isAuthenticated: actualIsAuthenticated,
     isLoading,
@@ -238,6 +287,12 @@ export const useAuth = () => {
     // Role checking functions
     hasRole: checkRole,
     hasAnyRole: checkAnyRole,
+    // Type checking functions
+    isAdmin: () => isAdmin(user),
+    isVendor: () => isVendor(user),
+    isStaff: () => isStaff(user),
+    isCustomer: () => isCustomer(user),
+    getUserType: () => getUserType(user),
   };
 };
 
