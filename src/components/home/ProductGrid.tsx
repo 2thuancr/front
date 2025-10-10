@@ -194,7 +194,7 @@ const ProductGrid: React.FC = () => {
     fetchProducts();
   }, [selectedType, productCount]);
 
-  const toggleWishlist = (productId: number) => {
+  const toggleLocalWishlist = (productId: number) => {
     setWishlist(prev =>
       prev.includes(productId)
         ? prev.filter(id => id !== productId)
@@ -266,7 +266,7 @@ const ProductGrid: React.FC = () => {
 
     try {
       console.log("🔄 Gọi Redux toggleWishlist");
-      const result = await dispatch(toggleWishlist(productId)).unwrap();
+      const result = await dispatch(toggleWishlist(productId)).unwrap() as any;
       console.log("✅ Toggle wishlist result:", result);
       
       if (result.action === 'added') {

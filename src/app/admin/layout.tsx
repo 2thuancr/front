@@ -28,7 +28,7 @@ import {
 interface SidebarItem {
   name: string;
   href: string;
-  icon: React.ComponentType<any>;
+  icon?: React.ComponentType<any>;
   children?: SidebarItem[];
   badge?: string;
   badgeColor?: string;
@@ -154,7 +154,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
               }`}
             >
               <div className="flex items-center">
-                <item.icon className="w-5 h-5 mr-3" />
+                {item.icon && <item.icon className="w-5 h-5 mr-3" />}
                 <span className={isCollapsed ? 'hidden' : ''}>{item.name}</span>
               </div>
               <div className="flex items-center">
@@ -179,7 +179,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                   : 'text-gray-300 hover:text-white hover:bg-gray-700'
               }`}
             >
-              <item.icon className="w-5 h-5 mr-3" />
+              {item.icon && <item.icon className="w-5 h-5 mr-3" />}
               <span className={isCollapsed ? 'hidden' : ''}>{item.name}</span>
               {item.badge && (
                 <span className={`text-xs px-2 py-1 rounded-full text-white ${item.badgeColor} ml-auto ${isCollapsed ? 'hidden' : ''}`}>

@@ -22,6 +22,7 @@ export interface UpdateProfileData {
   lastName?: string;
   phone?: string;
   address?: string;
+  city?: string;
   bio?: string;
   dateOfBirth?: string;
   gender?: 'male' | 'female' | 'other';

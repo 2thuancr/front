@@ -145,7 +145,7 @@ export default function StaffDashboard() {
               <div>
                 <label className="block text-sm font-medium text-gray-700">Lần đăng nhập cuối</label>
                 <p className="text-gray-900">
-                  {staff?.lastLoginAt ? new Date(staff.lastLoginAt).toLocaleString('vi-VN') : 'Chưa có'}
+                  {(staff as any)?.lastLoginAt ? new Date((staff as any).lastLoginAt).toLocaleString('vi-VN') : 'Chưa có'}
                 </p>
               </div>
             </div>

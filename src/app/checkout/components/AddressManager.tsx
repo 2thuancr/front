@@ -105,6 +105,8 @@ export function AddressManager({ isOpen, onClose, onSelectAddress }: AddressMana
         localStorage.setItem(`addresses_${userProfile.id}`, JSON.stringify(updatedAddresses));
       }
       
+      // Chọn địa chỉ đã cập nhật
+      handleSelectAddress(updatedAddress);
       setEditingAddress(null);
     } else {
       // Tạo địa chỉ mới
@@ -121,7 +123,7 @@ export function AddressManager({ isOpen, onClose, onSelectAddress }: AddressMana
       };
       
       // Nếu đây là địa chỉ đầu tiên được tạo (thay thế địa chỉ tạm thời từ user profile)
-      const updatedAddresses = addresses.length === 1 && addresses[0].id === 1 
+      const updatedAddresses = addresses.length === 1 && addresses[0]?.id === 1 
         ? [newAddress] // Thay thế địa chỉ tạm thời
         : [...addresses, newAddress]; // Thêm vào danh sách
       
@@ -131,10 +133,12 @@ export function AddressManager({ isOpen, onClose, onSelectAddress }: AddressMana
       if (userProfile) {
         localStorage.setItem(`addresses_${userProfile.id}`, JSON.stringify(updatedAddresses));
       }
+      
+      // Chọn địa chỉ vừa tạo
+      handleSelectAddress(newAddress);
     }
     
     setShowAddForm(false);
-    handleSelectAddress(address);
   };
 
   const handleUpdateAddress = (addressId: number) => {

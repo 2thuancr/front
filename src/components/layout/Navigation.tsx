@@ -31,7 +31,7 @@ const Navigation: React.FC = () => {
   console.log('🔍 Navigation: Current state:', {
     pathname,
     isAuthenticated,
-    user: user?.firstName + ' ' + user?.lastName,
+    user: (user as any)?.firstName + ' ' + (user as any)?.lastName,
     currentPath: window.location.pathname
   });
   const navigation = [
@@ -191,12 +191,12 @@ const Navigation: React.FC = () => {
                     <div className="px-3 py-2 bg-gray-50 rounded-md">
                       <div className="flex items-center space-x-3">
                         <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                          {user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                          {(user as any)?.firstName?.charAt(0) || user?.email?.charAt(0) || 'U'}
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-900">
-                            {user?.firstName && user?.lastName 
-                              ? `${user.firstName} ${user.lastName}` 
+                            {(user as any)?.firstName && (user as any)?.lastName 
+                              ? `${(user as any).firstName} ${(user as any).lastName}` 
                               : user?.email?.split('@')[0] || 'User'
                             }
                           </p>

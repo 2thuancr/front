@@ -225,7 +225,7 @@ export default function AdminReports() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {currentReport.data.map((item, index) => {
-                const prevValue = index > 0 ? currentReport.data[index - 1].value : item.value;
+                const prevValue = index > 0 ? currentReport.data[index - 1]?.value ?? item.value : item.value;
                 const change = item.value - prevValue;
                 const changePercent = prevValue > 0 ? ((change / prevValue) * 100).toFixed(1) : 0;
                 

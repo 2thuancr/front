@@ -132,17 +132,16 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
         }
       }
       
-      // Prepare update data with only allowed fields
-      const updateData = {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        phone: data.phone,
-        address: data.address,
-        city: data.city,
-        gender: data.gender,
-        dateOfBirth: data.dateOfBirth,
-        // Note: avatar will be updated via upload-avatar API
-      };
+      // Prepare update data with only allowed fields, filtering out undefined
+      const updateData: UpdateProfileData = {};
+      if (data.firstName !== undefined) updateData.firstName = data.firstName;
+      if (data.lastName !== undefined) updateData.lastName = data.lastName;
+      if (data.phone !== undefined) updateData.phone = data.phone;
+      if (data.address !== undefined) updateData.address = data.address;
+      if (data.city !== undefined) updateData.city = data.city;
+      if (data.gender !== undefined) updateData.gender = data.gender;
+      if (data.dateOfBirth !== undefined) updateData.dateOfBirth = data.dateOfBirth;
+      if (data.bio !== undefined) updateData.bio = data.bio;
       
       // Update profile data
       await onUpdate(updateData);
@@ -193,6 +192,7 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
   const maskEmail = (email: string) => {
     if (!email) return '';
     const [username, domain] = email.split('@');
+    if (!username || !domain) return email;
     const maskedUsername = username.length > 2 
       ? username.substring(0, 2) + '*'.repeat(username.length - 2)
       : username;

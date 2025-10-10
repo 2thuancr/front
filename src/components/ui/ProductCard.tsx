@@ -14,7 +14,7 @@ import {
   Clock,
   TrendingUp
 } from 'lucide-react';
-import { LegacyProduct } from '@/types/product';
+import { LegacyProduct } from '@/types/api';
 import { useToastSuccess, useToastError } from './Toast';
 import { useUserId } from '@/hooks/useUserId';
 import { cartApi } from '@/lib/api';
