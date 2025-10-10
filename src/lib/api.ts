@@ -153,6 +153,55 @@ export const userAPI = {
   getUsersStats: () => api.get('/users/stats'),
 };
 
+// Admin Customer Management API
+export const adminCustomerAPI = {
+  getAllCustomers: () => api.get('/admin/customers'),
+  
+  getCustomerById: (customerId: number) => 
+    api.get(`/admin/customers/${customerId}`),
+  
+  updateCustomer: (customerId: number, data: any) =>
+    api.put(`/admin/customers/${customerId}`, data),
+  
+  toggleCustomerActive: (customerId: number) =>
+    api.patch(`/admin/customers/${customerId}/toggle-active`),
+  
+  deleteCustomer: (customerId: number) =>
+    api.delete(`/admin/customers/${customerId}`),
+  
+  getCustomerStats: () => api.get('/admin/customers/stats'),
+};
+
+// Admin Product Management API
+export const adminProductAPI = {
+  getAllProducts: (page: number = 1, limit: number = 10) => api.get('/products', { 
+    params: { 
+      page,
+      limit
+    } 
+  }),
+  
+  getProductById: (productId: number) => 
+    api.get(`/products/${productId}`),
+  
+  createProduct: (data: any) =>
+    api.post('/products', data),
+  
+  updateProduct: (productId: number, data: any) =>
+    api.put(`/products/${productId}`, data),
+  
+  deleteProduct: (productId: number) =>
+    api.delete(`/products/${productId}`),
+  
+  toggleProductActive: (productId: number) =>
+    api.patch(`/products/${productId}/toggle-active`),
+  
+  updateProductStock: (productId: number, stock: number) =>
+    api.patch(`/products/${productId}/stock`, { stock }),
+  
+  getProductStats: () => api.get('/admin/products/stats'),
+};
+
 export const productAPI = {
   getAll: (params?: any) => api.get("/products", { params }),
   getProductById: (id: number) => api.get(`/products/${id}`),

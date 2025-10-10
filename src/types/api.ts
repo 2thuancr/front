@@ -189,3 +189,17 @@ export interface RatingStatsResponse {
   message?: string;
 }
 
+// Products list response interface
+export interface ProductsResponse {
+  products: Product[];
+}
+
+// Admin Product Stats interface
+export interface AdminProductStats {
+  total: number;
+  active: number;
+  lowStock: number;
+  outOfStock: number;
+  totalValue: number;
+}
+
