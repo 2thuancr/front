@@ -106,51 +106,51 @@ export default function AdminVendors() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Tổng nhà cung cấp</p>
-              <p className="text-2xl font-bold text-gray-900">156</p>
+              <p className="text-xs font-medium text-gray-600">Tổng nhà cung cấp</p>
+              <p className="text-xl font-bold text-gray-900">156</p>
             </div>
-            <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
-              <Store className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+              <Store className="w-5 h-5 text-white" />
             </div>
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Đang hoạt động</p>
-              <p className="text-2xl font-bold text-gray-900">134</p>
+              <p className="text-xs font-medium text-gray-600">Đang hoạt động</p>
+              <p className="text-xl font-bold text-gray-900">134</p>
             </div>
-            <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 text-white" />
             </div>
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Chờ duyệt</p>
-              <p className="text-2xl font-bold text-gray-900">15</p>
+              <p className="text-xs font-medium text-gray-600">Chờ duyệt</p>
+              <p className="text-xl font-bold text-gray-900">15</p>
             </div>
-            <div className="w-12 h-12 bg-yellow-500 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 bg-yellow-500 rounded-lg flex items-center justify-center">
+              <Clock className="w-5 h-5 text-white" />
             </div>
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Không hoạt động</p>
-              <p className="text-2xl font-bold text-gray-900">7</p>
+              <p className="text-xs font-medium text-gray-600">Không hoạt động</p>
+              <p className="text-xl font-bold text-gray-900">7</p>
             </div>
-            <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center">
-              <XCircle className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center">
+              <XCircle className="w-5 h-5 text-white" />
             </div>
           </div>
         </div>
@@ -158,8 +158,8 @@ export default function AdminVendors() {
 
       {/* Filters and Search */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0 md:space-x-4">
-          <div className="flex-1">
+        <div className="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
+          <div className="md:w-80">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
@@ -172,7 +172,7 @@ export default function AdminVendors() {
             </div>
           </div>
           
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
@@ -184,14 +184,14 @@ export default function AdminVendors() {
               <option value="inactive">Không hoạt động</option>
             </select>
             
-            <button className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+            <button className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
               <Filter className="w-4 h-4" />
               <span>Lọc</span>
             </button>
             
-            <button className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+            <button className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
               <Download className="w-4 h-4" />
-              <span>Xuất file</span>
+              <span>Xuất</span>
             </button>
           </div>
         </div>
@@ -206,22 +206,22 @@ export default function AdminVendors() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Nhà cung cấp
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
                   Liên hệ
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-64">
                   Địa chỉ
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                   Sản phẩm
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                   Trạng thái
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                   Ngày tham gia
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                   Thao tác
                 </th>
               </tr>
@@ -242,26 +242,28 @@ export default function AdminVendors() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{vendor.email}</div>
+                    <td className="px-6 py-4 whitespace-nowrap w-48">
+                      <div className="text-sm text-gray-900 truncate" title={vendor.email}>{vendor.email}</div>
                       <div className="text-sm text-gray-500">{vendor.phone}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {vendor.address}
+                    <td className="px-6 py-4 text-sm text-gray-900 w-64">
+                      <div className="truncate" title={vendor.address}>
+                        {vendor.address}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 w-32">
                       {vendor.products} sản phẩm
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap w-32">
                       <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(vendor.status)}`}>
                         <StatusIcon className="w-3 h-3 mr-1" />
                         {getStatusText(vendor.status)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 w-32">
                       {new Date(vendor.joinDate).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium w-32">
                       <div className="flex items-center justify-end space-x-2">
                         <button className="text-gray-400 hover:text-gray-600">
                           <Eye className="w-4 h-4" />

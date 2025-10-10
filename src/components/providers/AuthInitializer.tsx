@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/store';
 import { fetchUserProfile } from '@/store/userSlice';
+import { clearWishlist } from '@/store/wishlistSlice';
 import { isTokenValid } from '@/lib/auth';
 
 /**
@@ -56,15 +57,23 @@ export const AuthInitializer: React.FC = () => {
             console.log('🔒 AuthInitializer: Token expired, clearing auth data...');
             console.log('🔍 AuthInitializer: Current path:', window.location.pathname);
             
-            // Don't clear auth data if we're on login page
-            if (window.location.pathname !== '/login') {
+            // Don't clear auth data if we're on public pages
+            const publicPaths = ['/', '/products', '/about', '/contact', '/login'];
+            const isPublicPage = publicPaths.includes(window.location.pathname);
+            
+            if (!isPublicPage) {
               console.log('🔄 AuthInitializer: Clearing auth data');
               localStorage.removeItem('token');
               localStorage.removeItem('refresh_token');
               localStorage.removeItem('user');
               localStorage.removeItem('userId');
             } else {
-              console.log('🔍 AuthInitializer: On login page, not clearing auth data');
+              console.log('🔍 AuthInitializer: On public page, clearing auth data but not redirecting');
+              localStorage.removeItem('token');
+              localStorage.removeItem('refresh_token');
+              localStorage.removeItem('user');
+              localStorage.removeItem('userId');
+              dispatch(clearWishlist());
             }
           }
         }

@@ -11,6 +11,7 @@ import {
   resendOTP,
 } from '@/store/authSlice';
 import { fetchUserProfile } from '@/store/userSlice';
+import { clearWishlist } from '@/store/wishlistSlice';
 import { 
   LoginCredentials, 
   RegisterCredentials, 
@@ -68,8 +69,11 @@ export const useAuth = () => {
           console.log('🔒 Token is expired or invalid, clearing auth data...');
           console.log('🔍 useAuth: Current path:', window.location.pathname);
           
-          // Don't redirect if we're already on login page
-          if (window.location.pathname !== '/login') {
+          // Don't redirect if we're on public pages (home, products, about, contact)
+          const publicPaths = ['/', '/products', '/about', '/contact', '/login'];
+          const isPublicPage = publicPaths.includes(window.location.pathname);
+          
+          if (!isPublicPage) {
             console.log('🔄 useAuth: Redirecting to login');
             localStorage.removeItem('token');
             localStorage.removeItem('refresh_token');
@@ -77,7 +81,12 @@ export const useAuth = () => {
             dispatch(logoutUser());
             router.push('/login');
           } else {
-            console.log('🔍 useAuth: Already on login page, not redirecting');
+            console.log('🔍 useAuth: On public page, clearing auth data but not redirecting');
+            localStorage.removeItem('token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user');
+            dispatch(clearWishlist());
+            dispatch(logoutUser());
           }
           return;
         }
@@ -193,6 +202,9 @@ export const useAuth = () => {
       console.log('🚪 Logout attempt...');
       await dispatch(logoutUser()).unwrap();
       
+      // Clear wishlist state
+      dispatch(clearWishlist());
+      
       // Clear all auth data from localStorage
       localStorage.removeItem('token');
       localStorage.removeItem('refresh_token');
@@ -204,13 +216,14 @@ export const useAuth = () => {
         localStorage.removeItem('persist:root');
       }
       
-      console.log('✅ All auth data cleared from localStorage and Redux Persist');
+      console.log('✅ All auth data and wishlist cleared from localStorage and Redux Persist');
       console.log('🔄 Redirecting to home...');
       
       router.push('/');
     } catch (error) {
       console.error('❌ Logout error:', error);
       // Even if logout fails, clear localStorage and redirect
+      dispatch(clearWishlist());
       localStorage.removeItem('token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user');

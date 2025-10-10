@@ -16,6 +16,7 @@ import {
 } from '@/types/auth';
 import { authAPI, adminAuthAPI, vendorAuthAPI, staffAuthAPI } from '@/lib/api';
 import { clearAuthData } from '@/lib/auth';
+import { clearWishlist } from './wishlistSlice';
 
 // Initial state
 const initialState: AuthState = {
@@ -144,9 +145,13 @@ export const resendOTP = createAsyncThunk(
 
 export const logoutUser = createAsyncThunk(
   'auth/logout',
-  async () => {
+  async (_, { dispatch }) => {
     // Clear auth data from localStorage
     clearAuthData();
+    
+    // Clear wishlist state
+    dispatch(clearWishlist());
+    
     return null;
   }
 );
