@@ -19,10 +19,12 @@ import { PaymentMethodSelector } from "./components/PaymentMethodSelector";
 import { CheckoutSuccess } from "./components/CheckoutSuccess";
 import { ShippingInfo } from "@/types/order";
 import { useUserId } from "@/hooks/useUserId";
+import { useToastSuccess } from "@/components/ui/Toast";
 
 export default function CheckoutPage() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
+  const showSuccessToast = useToastSuccess();
   
   // Redux state
   const { data: cart, loading: cartLoading } = useSelector((state: RootState) => state.cart);
@@ -179,16 +181,22 @@ export default function CheckoutPage() {
       // Clear checkout items from localStorage after successful order
       localStorage.removeItem('checkoutItems');
       
-      // If payment method is COD, show success immediately
+      // Show success toast
+      showSuccessToast(
+        'Đặt hàng thành công!',
+        `Đơn hàng #${result.order?.orderId || ''} đã được tạo thành công`
+      );
+      
+      // If payment method is COD, redirect to orders page
       const paymentMethod = paymentMethods.find(pm => pm.id === selectedPaymentMethod);
       if (paymentMethod?.code === 'COD') {
-        setCurrentStep(4);
+        router.push('/orders');
       } else {
         // For e-wallet payments, process payment
         if (result.paymentUrl) {
           window.location.href = result.paymentUrl;
         } else {
-          setCurrentStep(4);
+          router.push('/orders');
         }
       }
     } catch (error) {
