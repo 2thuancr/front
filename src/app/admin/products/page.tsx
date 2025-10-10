@@ -20,6 +20,7 @@ import {
 import { adminProductAPI } from '@/lib/api';
 import { Product, ProductsResponse } from '@/types/api';
 import { useToastSuccess, useToastError } from '@/components/ui/Toast';
+import ProductForm from '@/components/admin/ProductForm';
 
 export default function AdminProducts() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -31,6 +32,7 @@ export default function AdminProducts() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [limit] = useState(10);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   
   const toastSuccess = useToastSuccess();
   const toastError = useToastError();
@@ -119,6 +121,11 @@ export default function AdminProducts() {
     setCurrentPage(page);
   };
 
+  const handleFormSuccess = () => {
+    // Refresh the products list after successful creation
+    fetchProducts(currentPage);
+  };
+
   const handleToggleActive = async (productId: number) => {
     try {
       await adminProductAPI.toggleProductActive(productId);
@@ -159,7 +166,10 @@ export default function AdminProducts() {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             <span>Làm mới</span>
           </button>
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2">
+          <button 
+            onClick={() => setIsFormOpen(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+          >
             <Plus className="w-4 h-4" />
             <span>Thêm sản phẩm</span>
           </button>
@@ -517,6 +527,13 @@ export default function AdminProducts() {
           </div>
         </div>
       )}
+
+      {/* Product Form Modal */}
+      <ProductForm
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSuccess={handleFormSuccess}
+      />
     </div>
   );
 }

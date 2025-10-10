@@ -184,8 +184,12 @@ export const adminProductAPI = {
   getProductById: (productId: number) => 
     api.get(`/products/${productId}`),
   
-  createProduct: (data: any) =>
-    api.post('/products', data),
+  createProduct: (data: FormData) =>
+    api.post('/products', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }),
   
   updateProduct: (productId: number, data: any) =>
     api.put(`/products/${productId}`, data),
@@ -200,6 +204,30 @@ export const adminProductAPI = {
     api.patch(`/products/${productId}/stock`, { stock }),
   
   getProductStats: () => api.get('/admin/products/stats'),
+};
+
+// Admin Category Management API
+export const adminCategoryAPI = {
+  getAllCategories: (page: number = 1, limit: number = 10) => api.get('/categories', { 
+    params: { 
+      page,
+      limit
+    } 
+  }),
+  
+  getCategoryById: (categoryId: number) => 
+    api.get(`/categories/${categoryId}`),
+  
+  createCategory: (data: any) =>
+    api.post('/categories', data),
+  
+  updateCategory: (categoryId: number, data: any) =>
+    api.put(`/categories/${categoryId}`, data),
+  
+  deleteCategory: (categoryId: number) =>
+    api.delete(`/categories/${categoryId}`),
+  
+  getCategoryStats: () => api.get('/admin/categories/stats'),
 };
 
 export const productAPI = {

@@ -22,7 +22,8 @@ import {
   ChevronDown,
   ChevronRight,
   LogOut,
-  User
+  User,
+  FolderOpen
 } from 'lucide-react';
 
 interface SidebarItem {
@@ -96,6 +97,11 @@ const adminMenuItems: SidebarItem[] = [
     name: 'Sản phẩm',
     href: '/admin/products',
     icon: Package
+  },
+  {
+    name: 'Danh mục',
+    href: '/admin/categories',
+    icon: FolderOpen
   },
   {
     name: 'Đơn hàng',

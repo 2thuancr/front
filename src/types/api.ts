@@ -203,3 +203,20 @@ export interface AdminProductStats {
   totalValue: number;
 }
 
+// Category interfaces
+export interface Category {
+  categoryId: number;
+  categoryName: string;
+  description: string;
+  productCount: number;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface CategoriesResponse {
+  categories: Category[];
+  total: number;
+  page: string;
+  limit: string;
+}
+
