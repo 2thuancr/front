@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Card } from 'primereact/card';
 import { Button } from 'primereact/button';
@@ -44,6 +45,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const userId = useUserId();
   const toastSuccess = useToastSuccess();
   const toastError = useToastError();
+  const router = useRouter();
   
   const dispatch = useDispatch<AppDispatch>();
   const { checkedItems } = useSelector((state: RootState) => state.wishlist);
@@ -119,6 +121,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const handleAddToCart = async () => {
     console.log("🔥 handleAddToCart được gọi từ ProductCard!", { product, onAddToCart });
+
+    // Redirect to login if not authenticated
+    if (!userId || userId <= 0 || !isAuthenticated || !authToken) {
+      console.log("🔒 User not authenticated - redirecting to login");
+      router.push('/login');
+      return;
+    }
 
     setIsAddingToCart(true);
     try {

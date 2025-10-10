@@ -14,7 +14,8 @@ import { CartItem } from "@/types/cart";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUserId } from "@/hooks/useUserId";
 import Image from "next/image";
-import { Check, Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
+import { Check, Minus, Plus, Trash2, ShoppingBag, LogIn, User } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface CartItemWithImage extends CartItem {
   imageUrl?: string;
@@ -26,15 +27,20 @@ export default function CartPage() {
     (state: RootState) => state.cart
   );
   const userId = useUserId();
+  const router = useRouter();
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [cartItemsWithImages, setCartItemsWithImages] = useState<CartItemWithImage[]>([]);
+  
+  // Check authentication status from Redux
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const authToken = useSelector((state: RootState) => state.auth.token);
   const [loadingImages, setLoadingImages] = useState(false);
 
   useEffect(() => {
-    if (userId) {
+    if (userId && isAuthenticated && authToken) {
       dispatch(fetchCart(userId));
     }
-  }, [dispatch, userId]);
+  }, [dispatch, userId, isAuthenticated, authToken]);
 
   // Fetch product images when cart items change (not quantity changes)
   useEffect(() => {
@@ -163,6 +169,33 @@ export default function CartPage() {
     (sum: number, item: CartItemWithImage) => sum + item.quantity,
     0
   );
+
+  // Show login form for guest users
+  if (!userId || !isAuthenticated || !authToken) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <ShoppingBag className="mx-auto h-12 w-12 text-gray-400" />
+            <h2 className="mt-4 text-2xl font-bold text-gray-900">
+              Vui lòng đăng nhập
+            </h2>
+            <p className="mt-2 text-gray-600">
+              Bạn cần đăng nhập để xem giỏ hàng của mình
+            </p>
+            <div className="mt-6">
+              <Link
+                href="/login"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              >
+                Đăng nhập
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading || loadingImages)
     return (

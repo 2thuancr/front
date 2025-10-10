@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { productAPI, cartApi, productStatsApi, isCartEndpointAvailable } from '@/lib/api';
 import { viewTracker } from '@/lib/viewTracker';
 import Link from 'next/link';
@@ -19,6 +19,7 @@ import { useUserId } from '@/hooks/useUserId';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
+  const router = useRouter();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
@@ -165,10 +166,14 @@ export default function ProductDetailPage() {
       toastError("Lỗi sản phẩm", "Không tìm thấy sản phẩm");
       return;
     }
-    if (!userId || userId <= 0) {
-      toastError("Lỗi đăng nhập", "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
+    
+    // Redirect to login if not authenticated
+    if (!userId || userId <= 0 || !isAuthenticated || !authToken) {
+      console.log("🔒 User not authenticated - redirecting to login");
+      router.push('/login');
       return;
     }
+    
     if (!cartId) {
       toastError("Lỗi giỏ hàng", "Không tìm thấy giỏ hàng. Vui lòng đăng nhập để sử dụng giỏ hàng.");
       return;

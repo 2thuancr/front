@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, Eye as EyeIcon, Percent, Clock } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { Dropdown } from 'primereact/dropdown';
 import { Button } from 'primereact/button';
 import { motion } from 'framer-motion';
@@ -30,6 +31,7 @@ const ProductGrid: React.FC = () => {
   const userId = useUserId();
   const toastSuccess = useToastSuccess();
   const toastError = useToastError();
+  const router = useRouter();
   
   // Check authentication status from Redux
   const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
@@ -233,11 +235,13 @@ const ProductGrid: React.FC = () => {
   const handleAddToCart = async (productId: number) => {
     console.log("🔥 handleAddToCart được gọi từ ProductGrid!", { productId, cartId, userId });
 
-    if (!userId || userId <= 0) {
-      console.log("❌ Không có userId:", userId);
-      toastError("Lỗi đăng nhập", "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
+    // Redirect to login if not authenticated
+    if (!userId || userId <= 0 || !isAuthenticated || !authToken) {
+      console.log("🔒 User not authenticated - redirecting to login");
+      router.push('/login');
       return;
     }
+    
     if (!cartId) {
       console.log("❌ Không có cartId:", cartId);
       toastError("Lỗi giỏ hàng", "Không tìm thấy giỏ hàng. Vui lòng đăng nhập để sử dụng giỏ hàng.");
