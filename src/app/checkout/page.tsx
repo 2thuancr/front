@@ -37,6 +37,9 @@ export default function CheckoutPage() {
   
   const userId = useUserId();
   
+  // Local state for checkout items
+  const [checkoutItems, setCheckoutItems] = useState<any[]>([]);
+  
   // Local state
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<number | null>(null);
@@ -52,6 +55,20 @@ export default function CheckoutPage() {
   });
 
 
+  // Load checkout items from localStorage on mount
+  useEffect(() => {
+    const savedCheckoutItems = localStorage.getItem('checkoutItems');
+    if (savedCheckoutItems) {
+      try {
+        const items = JSON.parse(savedCheckoutItems);
+        setCheckoutItems(items);
+        console.log('✅ Loaded checkout items from localStorage:', items);
+      } catch (error) {
+        console.error('❌ Failed to parse checkout items:', error);
+      }
+    }
+  }, []);
+
   // Load data on mount
   useEffect(() => {
     if (userId) {
@@ -61,17 +78,18 @@ export default function CheckoutPage() {
     }
   }, [dispatch, userId]);
 
-  // Redirect if no cart or empty cart (only after loading is complete)
+  // Redirect if no checkout items
   useEffect(() => {
-    // Thêm delay nhỏ để đảm bảo cart đã load xong
+    // Thêm delay nhỏ để đảm bảo checkout items đã load xong
     const timer = setTimeout(() => {
-      if (!cartLoading && cart && cart.cartItems.length === 0) {
+      if (checkoutItems.length === 0) {
+        console.log('❌ No checkout items found, redirecting to cart');
         router.push("/cart");
       }
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [cart, cartLoading, router]);
+  }, [checkoutItems, router]);
 
   // Reset checkout state when component unmounts
   useEffect(() => {
@@ -131,7 +149,7 @@ export default function CheckoutPage() {
     if (!voucherCode) return;
     // Demo rules: CODE10 => 10% off; CODE50K => 50,000₫ off; max to subtotal
     const code = voucherCode.trim().toUpperCase();
-    const subtotal = cart?.cartItems.reduce((s, i) => s + i.price * i.quantity, 0) || 0;
+    const subtotal = checkoutItems.reduce((s, i) => s + i.price * i.quantity, 0);
     let discount = 0;
     if (code === 'CODE10') discount = Math.round(subtotal * 0.1);
     else if (code === 'CODE50K') discount = 50000;
@@ -140,17 +158,26 @@ export default function CheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
-    if (!cart || !userId || !selectedPaymentMethod) return;
+    if (!checkoutItems.length || !userId || !selectedPaymentMethod) return;
 
     try {
       const checkoutData = {
-        cartId: cart.cartId,
+        cartId: checkoutItems[0]?.cartId || null, // Use cartId from first item
         shippingInfo,
         paymentMethodId: selectedPaymentMethod,
-        notes: shippingInfo.notes ?? ""
+        notes: shippingInfo.notes ?? "",
+        selectedItems: checkoutItems.map(item => ({
+          cartItemId: item.cartItemId,
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price
+        }))
       };
 
       const result = await dispatch(createOrder(checkoutData)).unwrap();
+      
+      // Clear checkout items from localStorage after successful order
+      localStorage.removeItem('checkoutItems');
       
       // If payment method is COD, show success immediately
       const paymentMethod = paymentMethods.find(pm => pm.id === selectedPaymentMethod);
@@ -169,7 +196,7 @@ export default function CheckoutPage() {
     }
   };
 
-  if (cartLoading || paymentMethodsLoading) {
+  if (paymentMethodsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <motion.div
@@ -181,7 +208,7 @@ export default function CheckoutPage() {
     );
   }
 
-  if (!cart || cart.cartItems.length === 0) {
+  if (checkoutItems.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <motion.div
@@ -379,7 +406,7 @@ export default function CheckoutPage() {
 
           {/* Order Summary Sidebar */}
           <div className="lg:col-span-1">
-            <OrderSummary cart={cart} discountAmount={discountAmount} voucherCode={voucherCode} />
+            <OrderSummary checkoutItems={checkoutItems} discountAmount={discountAmount} voucherCode={voucherCode} />
           </div>
         </div>
       </div>

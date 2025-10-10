@@ -6,13 +6,13 @@ import { Cart } from "@/types/cart";
 import { CartItem } from "@/types/order";
 
 interface OrderSummaryProps {
-  cart: Cart;
+  checkoutItems: any[];
   discountAmount?: number;
   voucherCode?: string | null;
 }
 
-export function OrderSummary({ cart, discountAmount = 0, voucherCode }: OrderSummaryProps) {
-  const subtotal = cart.cartItems.reduce(
+export function OrderSummary({ checkoutItems, discountAmount = 0, voucherCode }: OrderSummaryProps) {
+  const subtotal = checkoutItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
@@ -33,7 +33,7 @@ export function OrderSummary({ cart, discountAmount = 0, voucherCode }: OrderSum
 
       {/* Cart Items */}
       <div className="space-y-4 mb-6">
-        {cart.cartItems.map((item: CartItem) => (
+        {checkoutItems.map((item: any) => (
           <motion.div
             key={item.cartItemId}
             initial={{ opacity: 0, x: -20 }}
