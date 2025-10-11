@@ -273,6 +273,25 @@ export const adminOrderAPI = {
   getOrderStats: () => api.get('/admin/orders/stats'),
 };
 
+// Vendor Order Management API
+export const vendorOrderAPI = {
+  getAllOrders: (page: number = 1, limit: number = 10) => 
+    api.get('/orders', { 
+      params: { 
+        page,
+        limit
+      } 
+    }),
+  
+  getOrderById: (orderId: number) => 
+    api.get(`/orders/${orderId}`),
+  
+  updateOrderStatus: (orderId: number, status: string) =>
+    api.patch(`/orders/${orderId}/status`, { status }),
+  
+  getOrderStats: () => api.get('/orders/stats'),
+};
+
 export const productAPI = {
   getAll: (params?: any) => api.get("/products", { params }),
   getProductById: (id: number) => api.get(`/products/${id}`),
@@ -619,6 +638,14 @@ export const reviewApi = {
     api.get(`/product-reviews/user/${userId}/product/${productId}`).then((res) => res.data),
 };
 
+// Category API
+export const categoryAPI = {
+  getAll: (params?: any) => api.get("/categories", { params }),
+  getById: (id: number) => api.get(`/categories/${id}`),
+  create: (data: any) => api.post("/categories", data),
+  update: (id: number, data: any) => api.put(`/categories/${id}`, data),
+  delete: (id: number) => api.delete(`/categories/${id}`),
+};
 
 export default api;
 

@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useCategories } from '@/hooks/useCategories';
+import { Category } from '@/types/api';
 import { 
   FolderOpen, 
   Plus, 
@@ -15,7 +17,9 @@ import {
   TrendingUp,
   TrendingDown,
   Calendar,
-  FileText
+  FileText,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 export default function VendorCategoriesPage() {
@@ -23,95 +27,32 @@ export default function VendorCategoriesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
 
-  // Mock data - replace with real API calls
-  const categories = [
-    {
-      id: 1,
-      name: 'Điện thoại',
-      description: 'Các sản phẩm điện thoại thông minh từ các thương hiệu hàng đầu',
-      productCount: 25,
-      status: 'active',
-      createdAt: '2024-01-15T10:30:00Z',
-      updatedAt: '2024-01-20T14:20:00Z',
-      image: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500',
-      parentId: null,
-      level: 0,
-      sortOrder: 1
-    },
-    {
-      id: 2,
-      name: 'Laptop',
-      description: 'Máy tính xách tay cho công việc và giải trí',
-      productCount: 18,
-      status: 'active',
-      createdAt: '2024-01-10T09:15:00Z',
-      updatedAt: '2024-01-19T16:45:00Z',
-      image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500',
-      parentId: null,
-      level: 0,
-      sortOrder: 2
-    },
-    {
-      id: 3,
-      name: 'Máy tính bảng',
-      description: 'iPad, tablet Android và các thiết bị máy tính bảng khác',
-      productCount: 12,
-      status: 'active',
-      createdAt: '2024-01-05T11:20:00Z',
-      updatedAt: '2024-01-18T10:30:00Z',
-      image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=500',
-      parentId: null,
-      level: 0,
-      sortOrder: 3
-    },
-    {
-      id: 4,
-      name: 'Phụ kiện',
-      description: 'Các phụ kiện điện tử, tai nghe, sạc, ốp lưng',
-      productCount: 35,
-      status: 'active',
-      createdAt: '2024-01-12T14:30:00Z',
-      updatedAt: '2024-01-20T09:15:00Z',
-      image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500',
-      parentId: null,
-      level: 0,
-      sortOrder: 4
-    },
-    {
-      id: 5,
-      name: 'Đồng hồ thông minh',
-      description: 'Smartwatch, đồng hồ thông minh, fitness tracker',
-      productCount: 8,
-      status: 'inactive',
-      createdAt: '2024-01-18T16:00:00Z',
-      updatedAt: '2024-01-19T12:00:00Z',
-      image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500',
-      parentId: null,
-      level: 0,
-      sortOrder: 5
-    },
-    {
-      id: 6,
-      name: 'Tivi & Âm thanh',
-      description: 'Smart TV, loa, tai nghe, hệ thống âm thanh',
-      productCount: 15,
-      status: 'active',
-      createdAt: '2024-01-20T08:00:00Z',
-      updatedAt: '2024-01-20T15:30:00Z',
-      image: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=500',
-      parentId: null,
-      level: 0,
-      sortOrder: 6
-    }
-  ];
+  // Use categories hook to fetch real data
+  const {
+    categories,
+    loading,
+    error,
+    total,
+    page,
+    limit,
+    totalPages,
+    refetch,
+    setSearch,
+    handlePageChange
+  } = useCategories({
+    limit: 10, // Show 10 categories per page
+    search: searchTerm
+  });
 
   const statuses = ['all', 'active', 'inactive'];
 
+  // Filter categories based on search and status
   const filteredCategories = categories.filter(category => {
     const matchesSearch = 
-      category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      category.categoryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       category.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = selectedStatus === 'all' || category.status === selectedStatus;
+    // Since API doesn't have status field, we'll show all as active
+    const matchesStatus = selectedStatus === 'all' || selectedStatus === 'active';
     return matchesSearch && matchesStatus;
   });
 
@@ -141,6 +82,17 @@ export default function VendorCategoriesPage() {
     return level * 20; // 20px per level
   };
 
+  // Helper function to format date
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('vi-VN');
+  };
+
+  // Handle search with debounce
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setSearch(value);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -148,7 +100,7 @@ export default function VendorCategoriesPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Quản lý danh mục</h1>
           <p className="text-gray-600 mt-1">
-            Quản lý danh mục sản phẩm và phân loại
+            Quản lý danh mục sản phẩm và phân loại ({total} danh mục)
           </p>
         </div>
         <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center">
@@ -166,7 +118,7 @@ export default function VendorCategoriesPage() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Tổng danh mục</p>
-              <p className="text-2xl font-bold text-gray-900">{categories.length}</p>
+              <p className="text-2xl font-bold text-gray-900">{total}</p>
             </div>
           </div>
         </div>
@@ -178,9 +130,7 @@ export default function VendorCategoriesPage() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Đang hoạt động</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {categories.filter(c => c.status === 'active').length}
-              </p>
+              <p className="text-2xl font-bold text-gray-900">{total}</p>
             </div>
           </div>
         </div>
@@ -192,9 +142,7 @@ export default function VendorCategoriesPage() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Tạm dừng</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {categories.filter(c => c.status === 'inactive').length}
-              </p>
+              <p className="text-2xl font-bold text-gray-900">0</p>
             </div>
           </div>
         </div>
@@ -224,7 +172,7 @@ export default function VendorCategoriesPage() {
                 type="text"
                 placeholder="Tìm kiếm danh mục..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -257,149 +205,211 @@ export default function VendorCategoriesPage() {
           </h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Danh mục
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Mô tả
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Sản phẩm
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Trạng thái
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Thứ tự
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ngày tạo
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Cập nhật
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Thao tác
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredCategories.map((category) => (
-                <tr key={category.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-12 w-12">
-                        <img
-                          className="h-12 w-12 rounded-lg object-cover"
-                          src={category.image}
-                          alt={category.name}
-                        />
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {category.name}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          ID: #{category.id}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900 max-w-xs">
-                      <div className="truncate" title={category.description}>
-                        {category.description}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <Package className="w-4 h-4 text-gray-400 mr-2" />
-                      <span className="text-sm font-medium text-gray-900">
-                        {category.productCount}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(category.status)}`}>
-                      {getStatusText(category.status)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {category.sortOrder}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <div className="flex items-center">
-                      <Calendar className="w-3 h-3 mr-1" />
-                      {new Date(category.createdAt).toLocaleDateString('vi-VN')}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <div className="flex items-center">
-                      <Calendar className="w-3 h-3 mr-1" />
-                      {new Date(category.updatedAt).toLocaleDateString('vi-VN')}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end space-x-2">
-                      <button className="text-blue-600 hover:text-blue-900 p-1">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button className="text-green-600 hover:text-green-900 p-1">
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button className="text-red-600 hover:text-red-900 p-1">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                      <button className="text-gray-600 hover:text-gray-900 p-1">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <span className="ml-2 text-gray-600">Đang tải danh mục...</span>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="text-red-600 mb-2">❌ {error}</div>
+                <button 
+                  onClick={refetch}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Thử lại
+                </button>
+              </div>
+            </div>
+          ) : (
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Danh mục
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Mô tả
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Sản phẩm
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Trạng thái
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ngày tạo
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Thao tác
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredCategories.map((category) => (
+                  <tr key={category.categoryId} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-12 w-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                          <FolderOpen className="w-6 h-6 text-gray-400" />
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {category.categoryName}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            ID: #{category.categoryId}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900 max-w-xs">
+                        <div className="truncate" title={category.description}>
+                          {category.description}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <Package className="w-4 h-4 text-gray-400 mr-2" />
+                        <span className="text-sm font-medium text-gray-900">
+                          {category.productCount}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor('active')}`}>
+                        {getStatusText('active')}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <div className="flex items-center">
+                        <Calendar className="w-3 h-3 mr-1" />
+                        {formatDate(category.createdAt)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end space-x-2">
+                        <button className="text-blue-600 hover:text-blue-900 p-1">
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button className="text-green-600 hover:text-green-900 p-1">
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button className="text-red-600 hover:text-red-900 p-1">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        <button className="text-gray-600 hover:text-gray-900 p-1">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
-      {/* Category Hierarchy */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Cấu trúc danh mục</h3>
-        </div>
-        <div className="p-6">
-          <div className="space-y-2">
-            {filteredCategories.map((category) => (
-              <div 
-                key={category.id} 
-                className="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100"
-                style={{ paddingLeft: `${getLevelIndent(category.level) + 12}px` }}
+      {/* Pagination */}
+      {!loading && !error && totalPages > 1 && (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button
+                onClick={() => handlePageChange(page - 1)}
+                disabled={page === 1}
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <FolderOpen className="w-4 h-4 text-gray-400 mr-3" />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-sm font-medium text-gray-900">
-                        {category.name}
-                      </span>
-                      <span className="text-xs text-gray-500 ml-2">
-                        ({category.productCount} sản phẩm)
-                      </span>
-                    </div>
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(category.status)}`}>
-                      {getStatusText(category.status)}
-                    </span>
-                  </div>
-                </div>
+                Trước
+              </button>
+              <button
+                onClick={() => handlePageChange(page + 1)}
+                disabled={page === totalPages}
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Sau
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Hiển thị{' '}
+                  <span className="font-medium">{(page - 1) * limit + 1}</span>
+                  {' '}đến{' '}
+                  <span className="font-medium">
+                    {Math.min(page * limit, total)}
+                  </span>
+                  {' '}trong tổng số{' '}
+                  <span className="font-medium">{total}</span> danh mục
+                </p>
               </div>
-            ))}
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <button
+                    onClick={() => handlePageChange(page - 1)}
+                    disabled={page === 1}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  
+                  {/* Page numbers */}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                    const shouldShow = 
+                      pageNum === 1 || 
+                      pageNum === totalPages || 
+                      Math.abs(pageNum - page) <= 1;
+                    
+                    if (!shouldShow) {
+                      if (pageNum === 2 && page > 4) {
+                        return (
+                          <span key={pageNum} className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                            ...
+                          </span>
+                        );
+                      }
+                      if (pageNum === totalPages - 1 && page < totalPages - 3) {
+                        return (
+                          <span key={pageNum} className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                            ...
+                          </span>
+                        );
+                      }
+                      return null;
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          pageNum === page
+                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                  
+                  <button
+                    onClick={() => handlePageChange(page + 1)}
+                    disabled={page === totalPages}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </nav>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -30,7 +30,7 @@ interface ProductFormData {
   productName: string;
   description: string;
   price: string;
-  discountPercent: string;
+  discountPercent?: string;
   stockQuantity: string;
   categoryId: string;
 }
@@ -45,7 +45,7 @@ const schema = yup.object({
   productName: yup.string().required('Tên sản phẩm là bắt buộc'),
   description: yup.string().required('Mô tả sản phẩm là bắt buộc'),
   price: yup.string().required('Giá sản phẩm là bắt buộc').matches(/^\d+$/, 'Giá phải là số'),
-  discountPercent: yup.string().matches(/^\d*\.?\d*$/, 'Phần trăm giảm giá không hợp lệ'),
+  discountPercent: yup.string().optional().matches(/^\d*\.?\d*$/, 'Phần trăm giảm giá không hợp lệ'),
   stockQuantity: yup.string().required('Số lượng tồn kho là bắt buộc').matches(/^\d+$/, 'Số lượng phải là số'),
   categoryId: yup.string().required('Danh mục là bắt buộc'),
 });
@@ -66,7 +66,7 @@ export default function ProductForm({ isOpen, onClose, onSuccess }: ProductFormP
     watch,
     setValue
   } = useForm<ProductFormData>({
-    resolver: yupResolver(schema),
+    resolver: yupResolver(schema) as any,
     defaultValues: {
       productName: '',
       description: '',
@@ -74,7 +74,7 @@ export default function ProductForm({ isOpen, onClose, onSuccess }: ProductFormP
       discountPercent: '0',
       stockQuantity: '',
       categoryId: '',
-    }
+    } as ProductFormData
   });
 
   // Mock categories - thay thế bằng API call thực tế
@@ -113,7 +113,7 @@ export default function ProductForm({ isOpen, onClose, onSuccess }: ProductFormP
     setImages(prev => {
       const newImages = prev.filter((_, i) => i !== index);
       // If we removed the primary image, make the first remaining image primary
-      if (prev[index].isPrimary && newImages.length > 0) {
+      if (prev[index]?.isPrimary && newImages.length > 0 && newImages[0]) {
         newImages[0].isPrimary = true;
       }
       return newImages;
@@ -193,7 +193,7 @@ export default function ProductForm({ isOpen, onClose, onSuccess }: ProductFormP
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit(onSubmit as any)} className="p-6 space-y-6">
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Product Name */}
