@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useStaff } from '@/hooks/useStaff';
 import { 
   Users, 
   Plus, 
@@ -17,95 +18,52 @@ import {
   Phone,
   Calendar,
   Shield,
-  Clock
+  Clock,
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
+import { useToastSuccess, useToastError } from '@/components/ui/Toast';
+import StaffForm from '@/components/vendor/StaffForm';
 
 export default function VendorStaffPage() {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
-  // Mock data - replace with real API calls
-  const staff = [
-    {
-      id: 1,
-      firstName: 'Nguyễn',
-      lastName: 'Văn A',
-      email: 'nguyenvana@email.com',
-      phone: '0123456789',
-      role: 'manager',
-      status: 'active',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=500',
-      joinDate: '2024-01-15T10:30:00Z',
-      lastLogin: '2024-01-20T14:20:00Z',
-      permissions: ['products', 'orders', 'staff', 'analytics']
-    },
-    {
-      id: 2,
-      firstName: 'Trần',
-      lastName: 'Thị B',
-      email: 'tranthib@email.com',
-      phone: '0987654321',
-      role: 'staff',
-      status: 'active',
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=500',
-      joinDate: '2024-01-10T09:15:00Z',
-      lastLogin: '2024-01-19T16:45:00Z',
-      permissions: ['products', 'orders']
-    },
-    {
-      id: 3,
-      firstName: 'Lê',
-      lastName: 'Văn C',
-      email: 'levanc@email.com',
-      phone: '0369852147',
-      role: 'staff',
-      status: 'inactive',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500',
-      joinDate: '2024-01-05T11:20:00Z',
-      lastLogin: '2024-01-18T10:30:00Z',
-      permissions: ['products']
-    },
-    {
-      id: 4,
-      firstName: 'Phạm',
-      lastName: 'Thị D',
-      email: 'phamthid@email.com',
-      phone: '0741258963',
-      role: 'staff',
-      status: 'active',
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=500',
-      joinDate: '2024-01-12T14:30:00Z',
-      lastLogin: '2024-01-20T09:15:00Z',
-      permissions: ['orders', 'analytics']
-    },
-    {
-      id: 5,
-      firstName: 'Hoàng',
-      lastName: 'Văn E',
-      email: 'hoangvane@email.com',
-      phone: '0852147369',
-      role: 'staff',
-      status: 'pending',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500',
-      joinDate: '2024-01-18T16:00:00Z',
-      lastLogin: null,
-      permissions: ['products']
-    }
-  ];
+  // Use staff hook to fetch real data
+  const {
+    staff = [],
+    loading = false,
+    error = null,
+    refetch
+  } = useStaff();
+
+  const toastSuccess = useToastSuccess();
+  const toastError = useToastError();
 
   const roles = ['all', 'manager', 'staff'];
-  const statuses = ['all', 'active', 'inactive', 'pending'];
+  const statuses = ['all', 'active', 'inactive'];
 
   const filteredStaff = staff.filter(member => {
     const matchesSearch = 
       `${member.firstName} ${member.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = selectedRole === 'all' || member.role === selectedRole;
-    const matchesStatus = selectedStatus === 'all' || member.status === selectedStatus;
+    const matchesStatus = selectedStatus === 'all' || (selectedStatus === 'active' ? member.isActive : !member.isActive);
     return matchesSearch && matchesRole && matchesStatus;
   });
+
+  const handleRefresh = async () => {
+    await refetch();
+    toastSuccess('Thành công', 'Đã làm mới danh sách nhân viên');
+  };
+
+  const handleFormSuccess = async () => {
+    await refetch();
+    toastSuccess('Thành công', 'Đã thêm nhân viên mới');
+  };
 
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -129,43 +87,20 @@ export default function VendorStaffPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'inactive':
-        return 'bg-red-100 text-red-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  const getStatusColor = (isActive: boolean) => {
+    return isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'Hoạt động';
-      case 'inactive':
-        return 'Tạm dừng';
-      case 'pending':
-        return 'Chờ duyệt';
-      default:
-        return 'Không xác định';
-    }
+  const getStatusText = (isActive: boolean) => {
+    return isActive ? 'Hoạt động' : 'Tạm dừng';
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <UserCheck className="w-4 h-4" />;
-      case 'inactive':
-        return <UserX className="w-4 h-4" />;
-      case 'pending':
-        return <Clock className="w-4 h-4" />;
-      default:
-        return <UserCheck className="w-4 h-4" />;
-    }
+  const getStatusIcon = (isActive: boolean) => {
+    return isActive ? <UserCheck className="w-4 h-4" /> : <UserX className="w-4 h-4" />;
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('vi-VN');
   };
 
   const getPermissionText = (permissions: string[]) => {
@@ -187,13 +122,26 @@ export default function VendorStaffPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Quản lý nhân viên</h1>
           <p className="text-gray-600 mt-1">
-            Quản lý nhân viên và phân quyền truy cập
+            Quản lý nhân viên và phân quyền truy cập ({staff.length} nhân viên)
           </p>
         </div>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center">
-          <Plus className="w-4 h-4 mr-2" />
-          Thêm nhân viên
-        </button>
+        <div className="flex items-center space-x-3">
+          <button 
+            onClick={handleRefresh}
+            disabled={loading}
+            className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span>Làm mới</span>
+          </button>
+          <button 
+            onClick={() => setIsFormOpen(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Thêm nhân viên
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -218,7 +166,7 @@ export default function VendorStaffPage() {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Đang hoạt động</p>
               <p className="text-2xl font-bold text-gray-900">
-                {staff.filter(s => s.status === 'active').length}
+                {staff.filter(s => s.isActive).length}
               </p>
             </div>
           </div>
@@ -244,9 +192,9 @@ export default function VendorStaffPage() {
               <Clock className="w-6 h-6 text-yellow-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Chờ duyệt</p>
+              <p className="text-sm font-medium text-gray-600">Nhân viên</p>
               <p className="text-2xl font-bold text-gray-900">
-                {staff.filter(s => s.status === 'pending').length}
+                {staff.filter(s => s.role === 'staff').length}
               </p>
             </div>
           </div>
@@ -299,13 +247,35 @@ export default function VendorStaffPage() {
         </div>
       </div>
 
-      {/* Staff Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Danh sách nhân viên ({filteredStaff.length})
-          </h3>
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-3">
+          <AlertCircle className="w-5 h-5 text-red-500" />
+          <div>
+            <p className="text-sm font-medium text-red-800">Lỗi tải dữ liệu</p>
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
         </div>
+      )}
+
+      {/* Loading State */}
+      {loading && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+          <div className="flex items-center justify-center">
+            <RefreshCw className="w-6 h-6 animate-spin text-gray-500" />
+            <span className="ml-2 text-gray-500">Đang tải danh sách nhân viên...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Staff Table */}
+      {!loading && !error && (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Danh sách nhân viên ({filteredStaff.length})
+            </h3>
+          </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -323,7 +293,7 @@ export default function VendorStaffPage() {
                   Trạng thái
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Quyền truy cập
+                  Xác thực
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Ngày tham gia
@@ -337,93 +307,105 @@ export default function VendorStaffPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredStaff.map((member) => (
-                <tr key={member.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-12 w-12">
-                        <img
-                          className="h-12 w-12 rounded-full object-cover"
-                          src={member.avatar}
-                          alt={`${member.firstName} ${member.lastName}`}
-                        />
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {member.firstName} {member.lastName}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          ID: #{member.id}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm text-gray-900 flex items-center">
-                        <Mail className="w-3 h-3 mr-1" />
-                        {member.email}
-                      </div>
-                      <div className="text-sm text-gray-500 flex items-center">
-                        <Phone className="w-3 h-3 mr-1" />
-                        {member.phone}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(member.role)}`}>
-                      {getRoleText(member.role)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(member.status)}`}>
-                      {getStatusIcon(member.status)}
-                      <span className="ml-1">{getStatusText(member.status)}</span>
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <div className="max-w-xs truncate" title={getPermissionText(member.permissions)}>
-                      {getPermissionText(member.permissions)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <div className="flex items-center">
-                      <Calendar className="w-3 h-3 mr-1" />
-                      {new Date(member.joinDate).toLocaleDateString('vi-VN')}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {member.lastLogin ? (
-                      <div className="flex items-center">
-                        <Clock className="w-3 h-3 mr-1" />
-                        {new Date(member.lastLogin).toLocaleDateString('vi-VN')}
-                      </div>
-                    ) : (
-                      <span className="text-gray-400">Chưa đăng nhập</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end space-x-2">
-                      <button className="text-blue-600 hover:text-blue-900 p-1">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button className="text-green-600 hover:text-green-900 p-1">
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button className="text-red-600 hover:text-red-900 p-1">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                      <button className="text-gray-600 hover:text-gray-900 p-1">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>
-                    </div>
+              {filteredStaff.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
+                    Không tìm thấy nhân viên nào
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredStaff.map((member) => (
+                  <tr key={member.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-12 w-12 bg-gray-200 rounded-full flex items-center justify-center">
+                          <Users className="w-6 h-6 text-gray-400" />
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {member.firstName} {member.lastName}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            ID: #{member.id}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="text-sm text-gray-900 flex items-center">
+                          <Mail className="w-3 h-3 mr-1" />
+                          {member.email}
+                        </div>
+                        <div className="text-sm text-gray-500 flex items-center">
+                          <Phone className="w-3 h-3 mr-1" />
+                          {member.phone || 'Chưa cập nhật'}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(member.role)}`}>
+                        {getRoleText(member.role)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(member.isActive)}`}>
+                        {getStatusIcon(member.isActive)}
+                        <span className="ml-1">{getStatusText(member.isActive)}</span>
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <div className="max-w-xs truncate">
+                        {member.isVerified ? 'Đã xác thực' : 'Chưa xác thực'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <div className="flex items-center">
+                        <Calendar className="w-3 h-3 mr-1" />
+                        {formatDate(member.createdAt)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {member.lastLoginAt ? (
+                        <div className="flex items-center">
+                          <Clock className="w-3 h-3 mr-1" />
+                          {formatDate(member.lastLoginAt)}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">Chưa đăng nhập</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end space-x-2">
+                        <button className="text-blue-600 hover:text-blue-900 p-1">
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button className="text-green-600 hover:text-green-900 p-1">
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button className="text-red-600 hover:text-red-900 p-1">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        <button className="text-gray-600 hover:text-gray-900 p-1">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
-      </div>
+        </div>
+      )}
+
+      {/* Staff Form Modal */}
+      <StaffForm
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSuccess={handleFormSuccess}
+      />
     </div>
   );
 }
