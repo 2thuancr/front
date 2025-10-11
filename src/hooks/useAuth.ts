@@ -171,17 +171,24 @@ export const useAuth = () => {
         }
         
         if (userData) {
+          console.log('👤 User data to save:', userData);
           localStorage.setItem('user', JSON.stringify(userData));
           localStorage.setItem('userType', result.userType);
           
           // Set userId based on user type
+          let userIdToSave = null;
           if (userData.id) {
+            userIdToSave = userData.id;
             localStorage.setItem('userId', JSON.stringify(userData.id));
           } else if (userData.adminId) {
+            userIdToSave = userData.adminId;
             localStorage.setItem('userId', JSON.stringify(userData.adminId));
           } else if (userData.vendorId) {
+            userIdToSave = userData.vendorId;
             localStorage.setItem('userId', JSON.stringify(userData.vendorId));
           }
+          
+          console.log('👤 User ID saved to localStorage:', userIdToSave);
         }
         
         console.log('✅ Auth data saved to localStorage');
