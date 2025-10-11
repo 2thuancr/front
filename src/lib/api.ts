@@ -273,6 +273,35 @@ export const adminOrderAPI = {
   getOrderStats: () => api.get('/admin/orders/stats'),
 };
 
+// Vendor Order Management API
+export const vendorOrderAPI = {
+  getAllOrders: (page: number = 1, limit: number = 10) => 
+    api.get('/orders', { 
+      params: { 
+        page,
+        limit
+      } 
+    }),
+  
+  getOrderById: (orderId: number) => 
+    api.get(`/orders/${orderId}`),
+  
+  updateOrderStatus: (orderId: number, status: string) =>
+    api.patch(`/orders/${orderId}/status`, { status }),
+  
+  getOrderStats: () => api.get('/orders/stats'),
+};
+
+// Staff Management API
+export const staffAPI = {
+  getAll: () => api.get('/staff'),
+  getById: (id: number) => api.get(`/staff/${id}`),
+  create: (data: any) => api.post('/staff', data),
+  update: (id: number, data: any) => api.patch(`/staff/${id}`, data),
+  delete: (id: number) => api.delete(`/staff/${id}`),
+};
+
+
 export const productAPI = {
   getAll: (params?: any) => api.get("/products", { params }),
   getProductById: (id: number) => api.get(`/products/${id}`),
@@ -501,57 +530,353 @@ export const paymentApi = {
     api.post(`/payments/webhook/${gateway}`, data).then((res) => res.data),
 };
 
-// WISHLIST API
+// Helper function to get consistent user ID
+const getUserId = () => {
+  // Try multiple sources in priority order
+  const userIdFromStorage = localStorage.getItem('userId');
+  const userFromStorage = localStorage.getItem('user');
+  
+  if (userIdFromStorage) {
+    try {
+      const parsed = JSON.parse(userIdFromStorage);
+      
+      // Auto-fix if user object exists and has different ID
+      if (userFromStorage) {
+        const parsedUser = JSON.parse(userFromStorage);
+        if (parsedUser.id && parsedUser.id !== parsed) {
+          localStorage.setItem('userId', JSON.stringify(parsedUser.id));
+          return parsedUser.id;
+        }
+      }
+      
+      return parsed;
+    } catch (error) {
+      console.error('❌ Error parsing userId from localStorage:', error);
+    }
+  }
+  
+  if (userFromStorage) {
+    try {
+      const parsed = JSON.parse(userFromStorage);
+      
+      // Auto-sync userId if missing
+      if (parsed.id && !userIdFromStorage) {
+        localStorage.setItem('userId', JSON.stringify(parsed.id));
+      }
+      
+      return parsed.id;
+    } catch (error) {
+      console.error('❌ Error parsing user from localStorage:', error);
+    }
+  }
+  
+  return null;
+};
+
+// WISHLIST API - Hybrid: localStorage + backend sync
 export const wishlistApi = {
-  // Wishlist Management - Temporarily disabled until backend API is ready
-  addToWishlist: (productId: number) => {
-    console.warn('⚠️ Wishlist API not implemented yet');
-    return Promise.resolve({ success: true, message: 'Wishlist feature coming soon' });
+  // Get wishlist from backend (with localStorage fallback)
+  getWishlist: async () => {
+    try {
+      // Get userId using consistent helper
+      const userId = getUserId();
+      
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+
+      // Try backend first with user-specific endpoint
+      const timestamp = Date.now();
+      const response = await api.get(`/wishlist/user/${userId}?page=1&limit=100&t=${timestamp}`);
+      
+      // Backend returns { wishlists: [...], total: 1, page: "1", limit: "10" }
+      return {
+        wishlist: response.data.wishlists || [],
+        total: response.data.total || 0,
+        page: response.data.page || "1",
+        limit: response.data.limit || "100"
+      };
+    } catch (error: any) {
+      // Fallback to localStorage
+      try {
+        const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        return { wishlist };
+      } catch (localError) {
+        console.error('❌ Error getting wishlist from localStorage:', localError);
+        return { wishlist: [] };
+      }
+    }
   },
 
-  getWishlist: () => {
-    console.warn('⚠️ Wishlist API not implemented yet');
-    return Promise.resolve({ wishlist: [] });
+  // Add product to wishlist (backend + localStorage)
+  addToWishlist: async (productId: number) => {
+    try {
+      // Get userId using consistent helper
+      const userId = getUserId();
+      
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+
+      // Try backend first with correct format
+      const response = await api.post('/wishlist', { 
+        productId: Number(productId), 
+        userId: Number(userId) 
+      });
+      
+      // Also save to localStorage for offline support
+      const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+      const existingItem = wishlist.find((item: any) => item.productId === productId);
+      
+      if (!existingItem) {
+        const newItem = {
+          wishlistId: response.data.wishlistId || response.data.id || Date.now(),
+          productId,
+          userId: Number(userId),
+          createdAt: new Date().toISOString()
+        };
+        wishlist.push(newItem);
+        localStorage.setItem('wishlist', JSON.stringify(wishlist));
+      }
+      
+      return response.data;
+    } catch (error: any) {
+      console.warn('⚠️ Backend wishlist not available, using localStorage only:', error.message);
+      
+      // Fallback to localStorage only
+      try {
+        const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        
+        // Check if product already exists
+        const existingItem = wishlist.find((item: any) => item.productId === productId);
+        if (existingItem) {
+          return { 
+            success: true, 
+            message: 'Product already in wishlist',
+            alreadyExists: true 
+          };
+        }
+
+        // Add new item
+        const userId = getUserId();
+        const newItem = {
+          wishlistId: Date.now(),
+          productId,
+          userId: userId ? Number(userId) : null,
+          createdAt: new Date().toISOString()
+        };
+        
+        wishlist.push(newItem);
+        localStorage.setItem('wishlist', JSON.stringify(wishlist));
+        
+        console.log('✅ Added to localStorage wishlist:', newItem);
+        return { 
+          success: true, 
+          message: 'Added to wishlist',
+          wishlistItem: newItem 
+        };
+      } catch (localError) {
+        console.error('❌ Error adding to localStorage wishlist:', localError);
+        return Promise.reject(localError);
+      }
+    }
   },
 
-  getUserWishlist: (userId: number) => {
-    console.warn('⚠️ Wishlist API not implemented yet');
-    return Promise.resolve({ wishlist: [] });
+  // Remove product from wishlist (backend + localStorage)
+  removeProductFromWishlist: async (productId: number) => {
+    try {
+      // Get userId using consistent helper
+      const userId = getUserId();
+      
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+
+      // Try backend first - try different possible endpoints
+      let response;
+      try {
+        // Try DELETE with productId and userId
+        response = await api.delete(`/wishlist/product/${productId}`, {
+          data: { userId: Number(userId) }
+        });
+      } catch (deleteError) {
+        // Try alternative endpoint format
+        response = await api.delete(`/wishlist`, {
+          data: { productId: Number(productId), userId: Number(userId) }
+        });
+      }
+      
+      console.log('🗑️ Removed from backend wishlist:', response.data);
+      
+      // Also remove from localStorage
+      const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+      const filteredWishlist = wishlist.filter((item: any) => item.productId !== productId);
+      localStorage.setItem('wishlist', JSON.stringify(filteredWishlist));
+      console.log('💾 Also removed from localStorage:', productId);
+      
+      return response.data;
+    } catch (error: any) {
+      console.warn('⚠️ Backend wishlist not available, using localStorage only:', error.message);
+      
+      // Fallback to localStorage only
+      try {
+        const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        const filteredWishlist = wishlist.filter((item: any) => item.productId !== productId);
+        
+        localStorage.setItem('wishlist', JSON.stringify(filteredWishlist));
+        
+        console.log('🗑️ Removed from localStorage wishlist:', productId);
+        return { success: true, message: 'Removed from wishlist' };
+      } catch (localError) {
+        console.error('❌ Error removing from localStorage wishlist:', localError);
+        return Promise.reject(localError);
+      }
+    }
   },
 
-  getProductWishlist: (productId: number) => {
-    console.warn('⚠️ Wishlist API not implemented yet');
-    return Promise.resolve({ wishlist: [] });
+  // Check if product is in wishlist (backend + localStorage)
+  checkInWishlist: async (productId: number) => {
+    try {
+      // Get userId using consistent helper
+      const userId = getUserId();
+      
+      if (!userId) {
+        return { exists: false };
+      }
+
+      // Try backend first
+      const response = await api.get(`/wishlist/check/${productId}?userId=${userId}`);
+      console.log('🔍 Checked backend wishlist:', { productId, exists: response.data.exists });
+      return response.data;
+    } catch (error: any) {
+      console.warn('⚠️ Backend wishlist not available, using localStorage only:', error.message);
+      
+      // Fallback to localStorage
+      try {
+        const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        const exists = wishlist.some((item: any) => item.productId === productId);
+        
+        console.log('🔍 Checked localStorage wishlist:', { productId, exists });
+        return { exists };
+      } catch (localError) {
+        console.error('❌ Error checking localStorage wishlist:', localError);
+        return { exists: false };
+      }
+    }
   },
 
-  getWishlistCount: (productId: number) => {
-    console.warn('⚠️ Wishlist API not implemented yet');
-    return Promise.resolve({ count: 0 });
+  // Get wishlist count (backend + localStorage)
+  getWishlistCount: async (productId?: number) => {
+    try {
+      // Try backend first
+      const endpoint = productId ? `/wishlist/count/${productId}` : '/wishlist/count';
+      const response = await api.get(endpoint);
+      console.log('📊 Backend wishlist count:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.warn('⚠️ Backend wishlist not available, using localStorage only');
+      
+      // Fallback to localStorage
+      try {
+        const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        const count = productId 
+          ? wishlist.filter((item: any) => item.productId === productId).length
+          : wishlist.length;
+        
+        console.log('📊 LocalStorage wishlist count:', { productId, count });
+        return { count };
+      } catch (localError) {
+        console.error('❌ Error getting localStorage wishlist count:', localError);
+        return { count: 0 };
+      }
+    }
   },
 
-  getUserWishlistCount: (userId: number) => {
-    console.warn('⚠️ Wishlist API not implemented yet');
-    return Promise.resolve({ count: 0 });
+  // Get user wishlist (backend + localStorage)
+  getUserWishlist: async (userId: number) => {
+    try {
+      const response = await api.get(`/wishlist/user/${userId}`);
+      console.log('👤 User wishlist from backend:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.warn('⚠️ Backend user wishlist not available, using localStorage');
+      return wishlistApi.getWishlist();
+    }
   },
 
-  getMostWishlisted: (limit?: number) => {
-    console.warn('⚠️ Wishlist API not implemented yet');
-    return Promise.resolve({ products: [] });
+  // Get product wishlist info (backend + localStorage)
+  getProductWishlist: async (productId: number) => {
+    try {
+      const response = await api.get(`/wishlist/product/${productId}`);
+      console.log('🛍️ Product wishlist from backend:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.warn('⚠️ Backend product wishlist not available, using localStorage');
+      
+      try {
+        const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        const productWishlist = wishlist.filter((item: any) => item.productId === productId);
+        return { wishlist: productWishlist };
+      } catch (localError) {
+        console.error('❌ Error getting localStorage product wishlist:', localError);
+        return { wishlist: [] };
+      }
+    }
   },
 
-  checkInWishlist: (productId: number) => {
-    console.warn('⚠️ Wishlist API not implemented yet');
-    return Promise.resolve({ exists: false });
+  // Get user wishlist count (backend + localStorage)
+  getUserWishlistCount: async (userId: number) => {
+    try {
+      const response = await api.get(`/wishlist/user/${userId}/count`);
+      console.log('👤 User wishlist count from backend:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.warn('⚠️ Backend user wishlist count not available, using localStorage');
+      return wishlistApi.getWishlistCount();
+    }
   },
 
-  removeFromWishlist: (wishlistId: number) => {
-    console.warn('⚠️ Wishlist API not implemented yet');
-    return Promise.resolve({ success: true });
+  // Get most wishlisted products (backend + localStorage)
+  getMostWishlisted: async (limit?: number) => {
+    try {
+      const response = await api.get(`/wishlist/most-wishlisted?limit=${limit || 10}`);
+      console.log('⭐ Most wishlisted from backend:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.warn('⚠️ Backend most wishlisted not available');
+      return { products: [] };
+    }
   },
 
-  removeProductFromWishlist: (productId: number) => {
-    console.warn('⚠️ Wishlist API not implemented yet');
-    return Promise.resolve({ success: true });
+  // Remove by wishlist ID (backend + localStorage)
+  removeFromWishlist: async (wishlistId: number) => {
+    try {
+      const response = await api.delete(`/wishlist/${wishlistId}`);
+      console.log('🗑️ Removed wishlist item from backend:', response.data);
+      
+      // Also remove from localStorage
+      const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+      const filteredWishlist = wishlist.filter((item: any) => item.wishlistId !== wishlistId);
+      localStorage.setItem('wishlist', JSON.stringify(filteredWishlist));
+      console.log('💾 Also removed from localStorage:', wishlistId);
+      
+      return response.data;
+    } catch (error: any) {
+      console.warn('⚠️ Backend wishlist not available, using localStorage only');
+      
+      try {
+        const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        const filteredWishlist = wishlist.filter((item: any) => item.wishlistId !== wishlistId);
+        
+        localStorage.setItem('wishlist', JSON.stringify(filteredWishlist));
+        
+        console.log('🗑️ Removed from localStorage wishlist:', wishlistId);
+        return { success: true, message: 'Removed from wishlist' };
+      } catch (localError) {
+        console.error('❌ Error removing from localStorage wishlist:', localError);
+        return Promise.reject(localError);
+      }
+    }
   },
 };
 
@@ -619,6 +944,14 @@ export const reviewApi = {
     api.get(`/product-reviews/user/${userId}/product/${productId}`).then((res) => res.data),
 };
 
+// Category API
+export const categoryAPI = {
+  getAll: (params?: any) => api.get("/categories", { params }),
+  getById: (id: number) => api.get(`/categories/${id}`),
+  create: (data: any) => api.post("/categories", data),
+  update: (id: number, data: any) => api.put(`/categories/${id}`, data),
+  delete: (id: number) => api.delete(`/categories/${id}`),
+};
 
 export default api;
 

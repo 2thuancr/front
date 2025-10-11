@@ -19,6 +19,7 @@ const Header: React.FC = () => {
     { name: 'Đăng nhập', href: '/login', icon: LogIn, showWhen: !isAuthenticated },
     { name: 'Đăng ký', href: '/register', icon: UserPlus, showWhen: !isAuthenticated },
     { name: 'Quên mật khẩu', href: '/forgot-password', icon: Key, showWhen: !isAuthenticated },
+    { name: 'Nhân viên', href: '/staff-login', icon: User, showWhen: !isAuthenticated },
     { name: 'Hồ sơ', href: '/profile', icon: User, showWhen: isAuthenticated },
   ].filter(item => item.showWhen !== false);
 

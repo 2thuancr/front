@@ -17,6 +17,7 @@ const WishlistPage: React.FC = () => {
   const { items: wishlistItems, loading, error } = useSelector((state: RootState) => state.wishlist);
   const hasFetched = useRef(false);
 
+
   useEffect(() => {
     if (isAuthenticated && user && !hasFetched.current) {
       hasFetched.current = true;
@@ -31,6 +32,8 @@ const WishlistPage: React.FC = () => {
       // Error handled by Redux
     }
   };
+
+
 
   const formatPrice = (price: string): string => {
     return new Intl.NumberFormat('vi-VN', {
@@ -156,17 +159,19 @@ const WishlistPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Danh sách yêu thích
-          </h1>
-          <p className="mt-2 text-gray-600">
-            {wishlistItems.length} sản phẩm trong danh sách yêu thích của bạn
-          </p>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Danh sách yêu thích
+            </h1>
+            <p className="mt-2 text-gray-600">
+              {wishlistItems.length} sản phẩm trong danh sách yêu thích của bạn
+            </p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {wishlistItems.map((item: WishlistItem) => (
-            <div key={item.wishlistId} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+          {wishlistItems.map((item: WishlistItem, index: number) => (
+            <div key={item.wishlistId || item.productId || `wishlist-${index}`} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
               <Link href={`/products/${item.productId}`}>
                 <div className="relative aspect-square overflow-hidden rounded-t-lg">
                   <Image

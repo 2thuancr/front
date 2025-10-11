@@ -44,23 +44,36 @@ export const loginUser = createAsyncThunk(
       const isEmail = credentials.username.includes('@');
       
       if (isEmail) {
-        // Try customer login first
+        // Try staff login first for email addresses
         try {
-          response = await authAPI.login({
+          response = await staffAuthAPI.login({
             email: credentials.username,
             password: credentials.password
           });
-          userType = 'customer';
-        } catch (customerError) {
-          // If customer login fails, try staff login
+          userType = 'staff';
+          console.log('🔐 Staff login successful - response:', response.data);
+          console.log('🔐 Staff login successful - userType:', userType);
+        } catch (staffError) {
+          console.log('🔐 Staff login failed, trying customer login:', staffError);
+          // If staff login fails, try customer login
           try {
-            response = await staffAuthAPI.login({
+            response = await authAPI.login({
               email: credentials.username,
               password: credentials.password
             });
-            userType = 'staff';
-          } catch (staffError) {
-            throw customerError; // Throw original customer error
+            
+            // Check if this is actually a staff user by checking role in response
+            if (response.data.user && response.data.user.role === 'staff') {
+              console.log('🔐 Customer API returned staff user, treating as staff');
+              console.log('🔐 Staff user data:', response.data.user);
+              userType = 'staff';
+            } else {
+              console.log('🔐 Customer API returned regular customer');
+              userType = 'customer';
+            }
+          } catch (customerError) {
+            console.log('🔐 Customer login also failed:', customerError);
+            throw customerError;
           }
         }
       } else {
@@ -86,7 +99,25 @@ export const loginUser = createAsyncThunk(
       }
       
       console.log('🔐 loginUser thunk - API response:', response.data);
-      return { ...response.data, userType };
+      console.log('🔐 loginUser thunk - userType:', userType);
+      console.log('🔐 loginUser thunk - response structure:', {
+        hasUser: !!response.data.user,
+        hasStaff: !!response.data.staff,
+        hasAdmin: !!response.data.admin,
+        hasVendor: !!response.data.vendor,
+        userRole: response.data.user?.role,
+        staffRole: response.data.staff?.role
+      });
+      
+      // Additional role checking for staff
+      if (userType === 'staff' && response.data.staff) {
+        console.log('🔐 Staff login detected - staff data:', response.data.staff);
+        console.log('🔐 Staff role:', response.data.staff.role);
+      }
+      
+      const result = { ...response.data, userType };
+      console.log('🔐 loginUser thunk - returning:', result);
+      return result;
     } catch (error: any) {
       console.error('🔐 loginUser thunk - error:', error);
       return rejectWithValue(error.response?.data?.message || 'Login failed');
@@ -198,7 +229,12 @@ const authSlice = createSlice({
         } else if (action.payload.userType === 'vendor') {
           state.user = action.payload.vendor;
         } else if (action.payload.userType === 'staff') {
-          state.user = action.payload.staff;
+          // Handle staff data from both customer API and staff API
+          if (action.payload.staff) {
+            state.user = action.payload.staff;
+          } else if (action.payload.user && action.payload.user.role === 'staff') {
+            state.user = action.payload.user;
+          }
         } else {
           state.user = action.payload.user;
         }

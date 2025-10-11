@@ -1,7 +1,10 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
+import { useVendorStats } from '@/hooks/useVendorStats';
+import { vendorOrderAPI } from '@/lib/api';
 import { Vendor, VendorStatus } from '@/types/auth';
 import { 
   Package, 
@@ -19,6 +22,11 @@ import {
 export default function VendorDashboard() {
   const { user } = useAuth();
   const vendor = user as Vendor;
+  const stats = useVendorStats();
+  
+  // State for recent orders
+  const [recentOrders, setRecentOrders] = React.useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = React.useState(true);
 
   const getStatusColor = (status: VendorStatus) => {
     switch (status) {
@@ -65,14 +73,91 @@ export default function VendorDashboard() {
     }
   };
 
-  // Mock data - replace with real API calls
-  const stats = {
-    totalProducts: 45,
-    totalOrders: 128,
-    totalRevenue: 12500000,
-    totalCustomers: 89,
-    averageRating: 4.7,
-    pendingOrders: 12
+  // Fetch recent orders
+  React.useEffect(() => {
+    const fetchRecentOrders = async () => {
+      try {
+        setOrdersLoading(true);
+        const response = await vendorOrderAPI.getAllOrders(1, 3); // Get only 3 most recent
+        const orders = response.data?.orders || [];
+        
+        console.log('📦 Recent orders data:', orders);
+        console.log('📦 First order structure:', orders[0]);
+        
+        // Sort by createdAt date (most recent first)
+        const sortedOrders = orders.sort((a: any, b: any) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        
+        setRecentOrders(sortedOrders.slice(0, 3)); // Take only 3
+      } catch (error) {
+        console.error('Error fetching recent orders:', error);
+        setRecentOrders([]);
+      } finally {
+        setOrdersLoading(false);
+      }
+    };
+
+    fetchRecentOrders();
+  }, []);
+
+  // Helper functions for order status
+  const getOrderStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-blue-100 text-blue-800';
+      case 'processing':
+        return 'bg-blue-100 text-blue-800';
+      case 'shipped':
+        return 'bg-purple-100 text-purple-800';
+      case 'delivered':
+        return 'bg-green-100 text-green-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getOrderStatusText = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'Mới';
+      case 'processing':
+        return 'Đang xử lý';
+      case 'shipped':
+        return 'Đang giao';
+      case 'delivered':
+        return 'Đã giao';
+      case 'cancelled':
+        return 'Đã hủy';
+      default:
+        return status;
+    }
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(price);
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'N/A';
+      return date.toLocaleDateString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return 'N/A';
+    }
   };
 
   return (
@@ -125,7 +210,9 @@ export default function VendorDashboard() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Tổng sản phẩm</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalProducts}</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {stats.loading ? '...' : stats.totalProducts}
+              </p>
             </div>
           </div>
         </div>
@@ -137,7 +224,9 @@ export default function VendorDashboard() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Tổng đơn hàng</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalOrders}</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {stats.loading ? '...' : stats.totalOrders}
+              </p>
             </div>
           </div>
         </div>
@@ -150,7 +239,7 @@ export default function VendorDashboard() {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Doanh thu</p>
               <p className="text-2xl font-bold text-gray-900">
-                {stats.totalRevenue.toLocaleString('vi-VN')}đ
+                {stats.loading ? '...' : `${stats.totalRevenue.toLocaleString('vi-VN')}đ`}
               </p>
             </div>
           </div>
@@ -163,11 +252,26 @@ export default function VendorDashboard() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Khách hàng</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalCustomers}</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {stats.loading ? '...' : stats.totalCustomers}
+              </p>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Error State */}
+      {stats.error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <AlertCircle className="w-5 h-5 text-red-600 mr-3" />
+            <div>
+              <h3 className="text-sm font-medium text-red-800">Lỗi tải dữ liệu</h3>
+              <p className="text-sm text-red-700 mt-1">{stats.error}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -177,48 +281,56 @@ export default function VendorDashboard() {
             <h3 className="text-lg font-semibold text-gray-900">Đơn hàng gần đây</h3>
           </div>
           <div className="p-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900">#ORD-001</p>
-                  <p className="text-sm text-gray-600">Nguyễn Văn A</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium text-gray-900">1,250,000đ</p>
-                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                    Chờ xử lý
-                  </span>
-                </div>
+            {ordersLoading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg animate-pulse">
+                    <div>
+                      <div className="h-4 bg-gray-300 rounded w-20 mb-2"></div>
+                      <div className="h-3 bg-gray-300 rounded w-24"></div>
+                    </div>
+                    <div className="text-right">
+                      <div className="h-4 bg-gray-300 rounded w-16 mb-2"></div>
+                      <div className="h-6 bg-gray-300 rounded w-20"></div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900">#ORD-002</p>
-                  <p className="text-sm text-gray-600">Trần Thị B</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium text-gray-900">890,000đ</p>
-                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                    Đã giao
-                  </span>
-                </div>
+            ) : recentOrders.length > 0 ? (
+              <div className="space-y-4">
+                {recentOrders.map((order, index) => (
+                  <div key={order.orderId || order.id || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-blue-100 rounded-lg">
+                        <ShoppingCart className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">#{order.orderId || order.id || 'N/A'}</p>
+                        <p className="text-sm text-gray-600">{order.customerName || order.user?.name || order.userName || 'Khách hàng'}</p>
+                        <p className="text-xs text-gray-500">Khách hàng</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getOrderStatusColor(order.status)}`}>
+                        <Clock className="w-3 h-3 mr-1" />
+                        {getOrderStatusText(order.status)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900">#ORD-003</p>
-                  <p className="text-sm text-gray-600">Lê Văn C</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium text-gray-900">2,100,000đ</p>
-                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                    Đang giao
-                  </span>
-                </div>
+            ) : (
+              <div className="text-center py-8">
+                <ShoppingCart className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">Chưa có đơn hàng nào</p>
               </div>
-            </div>
+            )}
             <div className="mt-4">
-              <button className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                Xem tất cả đơn hàng
-              </button>
+              <Link href="/vendor/orders">
+                <button className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                  Xem tất cả đơn hàng
+                </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -235,14 +347,18 @@ export default function VendorDashboard() {
                   <Star className="w-5 h-5 text-yellow-500 mr-2" />
                   <span className="text-gray-700">Đánh giá trung bình</span>
                 </div>
-                <span className="text-lg font-semibold text-gray-900">{stats.averageRating}/5</span>
+                <span className="text-lg font-semibold text-gray-900">
+                  {stats.loading ? '...' : `${stats.averageRating}/5`}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <Clock className="w-5 h-5 text-orange-500 mr-2" />
                   <span className="text-gray-700">Đơn hàng chờ xử lý</span>
                 </div>
-                <span className="text-lg font-semibold text-gray-900">{stats.pendingOrders}</span>
+                <span className="text-lg font-semibold text-gray-900">
+                  {stats.loading ? '...' : stats.pendingOrders}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -305,3 +421,4 @@ export default function VendorDashboard() {
     </div>
   );
 }
+

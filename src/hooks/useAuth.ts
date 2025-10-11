@@ -33,6 +33,20 @@ import {
 import { isTokenValid } from '@/lib/auth';
 import { useEffect, useRef } from 'react';
 
+// Helper function to get redirect path based on user type
+const getRedirectPath = (userType: string) => {
+  switch (userType) {
+    case 'admin':
+      return '/admin/dashboard';
+    case 'vendor':
+      return '/vendor/dashboard';
+    case 'staff':
+      return '/staff/dashboard';
+    default:
+      return '/'; // Customer
+  }
+};
+
 export const useAuth = () => {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
@@ -91,7 +105,7 @@ export const useAuth = () => {
           return;
         }
 
-        // If we have valid token but no userProfile data, fetch user profile (only once)
+        // Re-enable auto-fetch profile with better logic
         if (token && !userProfile && !didFetchProfile.current && isTokenValid()) {
           isCheckingAuth.current = true;
           didFetchProfile.current = true;
@@ -157,17 +171,24 @@ export const useAuth = () => {
         }
         
         if (userData) {
+          console.log('👤 User data to save:', userData);
           localStorage.setItem('user', JSON.stringify(userData));
           localStorage.setItem('userType', result.userType);
           
           // Set userId based on user type
+          let userIdToSave = null;
           if (userData.id) {
+            userIdToSave = userData.id;
             localStorage.setItem('userId', JSON.stringify(userData.id));
           } else if (userData.adminId) {
+            userIdToSave = userData.adminId;
             localStorage.setItem('userId', JSON.stringify(userData.adminId));
           } else if (userData.vendorId) {
+            userIdToSave = userData.vendorId;
             localStorage.setItem('userId', JSON.stringify(userData.vendorId));
           }
+          
+          console.log('👤 User ID saved to localStorage:', userIdToSave);
         }
         
         console.log('✅ Auth data saved to localStorage');
@@ -176,6 +197,17 @@ export const useAuth = () => {
           user: localStorage.getItem('user'),
           userType: localStorage.getItem('userType')
         });
+        
+        // Auto-redirect based on user type
+        const redirectPath = getRedirectPath(result.userType);
+        console.log('🔄 Auto-redirecting to:', redirectPath);
+        console.log('🔍 Current path before redirect:', window.location.pathname);
+        
+        // Force redirect using window.location.href (like vendor login)
+        setTimeout(() => {
+          console.log('🔄 Executing redirect to:', redirectPath);
+          window.location.href = redirectPath;
+        }, 100);
       } else {
         console.error('❌ No token found in login result:', result);
       }
