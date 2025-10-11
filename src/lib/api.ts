@@ -301,6 +301,43 @@ export const staffAPI = {
   delete: (id: number) => api.delete(`/staff/${id}`),
 };
 
+// Staff Order Management API
+export const staffOrderAPI = {
+  getAllOrders: (page: number = 1, limit: number = 10) =>
+    api.get('/orders', { 
+      params: { 
+        page,
+        limit
+      }
+    }),
+  
+  getOrderById: (orderId: number) => 
+    api.get(`/orders/${orderId}`),
+  
+  updateOrderStatus: (orderId: number, status: string) =>
+    api.patch(`/orders/${orderId}/status`, { status }),
+  
+  updatePaymentStatus: (orderId: number, paymentStatus: string) =>
+    api.patch(`/orders/${orderId}/payment-status`, { paymentStatus }),
+  
+  getOrderStats: () => api.get('/orders/stats'),
+};
+
+// Staff Customer Management API
+export const staffCustomerAPI = {
+  getAllCustomers: () =>
+    api.get('/users/getAll'),
+  
+  getCustomerById: (customerId: number) => 
+    api.get(`/users/${customerId}`),
+  
+  // Note: Backend doesn't have update customer status endpoint yet
+  // updateCustomerStatus: (customerId: number, isActive: boolean) =>
+  //   api.patch(`/users/${customerId}/status`, { isActive }),
+  
+  getCustomerStats: () => api.get('/users/stats'),
+};
+
 
 export const productAPI = {
   getAll: (params?: any) => api.get("/products", { params }),

@@ -5,6 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/store';
 import { fetchUserProfile } from '@/store/userSlice';
 import { clearWishlist } from '@/store/wishlistSlice';
+import { restoreAuth } from '@/store/authSlice';
 import { isTokenValid } from '@/lib/auth';
 
 /**
@@ -15,6 +16,7 @@ export const AuthInitializer: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const userProfile = useSelector((state: RootState) => state.user?.profile);
   const userProfileLoading = useSelector((state: RootState) => state.user?.isLoading);
+  const authState = useSelector((state: RootState) => state.auth);
   const didInitialize = useRef(false);
 
   useEffect(() => {
@@ -30,6 +32,39 @@ export const AuthInitializer: React.FC = () => {
       if (didInitialize.current || userProfileLoading) {
         console.log('🔍 AuthInitializer: Skipping - already initialized or loading');
         return;
+      }
+
+      // First, try to restore auth state from localStorage if not already authenticated
+      if (!authState.isAuthenticated) {
+        const token = localStorage.getItem('token');
+        const user = localStorage.getItem('user');
+        const userType = localStorage.getItem('userType');
+        
+        console.log('🔍 AuthInitializer: Restoring auth state:', {
+          tokenExists: !!token,
+          userExists: !!user,
+          userType,
+          isTokenValid: token ? isTokenValid() : false
+        });
+        
+        if (token && user && userType && isTokenValid()) {
+          try {
+            const userData = JSON.parse(user);
+            console.log('🔄 AuthInitializer: Restoring auth state from localStorage');
+            dispatch(restoreAuth({
+              user: userData,
+              token,
+              userType
+            }));
+            console.log('✅ AuthInitializer: Auth state restored successfully');
+          } catch (error) {
+            console.error('❌ AuthInitializer: Failed to restore auth state:', error);
+            // Clear invalid data
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('userType');
+          }
+        }
       }
 
       // Check if we have a token but no user profile
