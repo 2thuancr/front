@@ -45,6 +45,7 @@ export interface ProductImage {
 export interface Product {
   productId: number;
   categoryId: number;
+  vendorId?: number | null;
   productName: string;
   description?: string;
   price: string; // API returns as string
@@ -54,6 +55,7 @@ export interface Product {
   updatedAt: string;
   category: Category;
   images: ProductImage[];
+  reviews?: ProductReview[];
 }
 
 // Legacy interface for backward compatibility
