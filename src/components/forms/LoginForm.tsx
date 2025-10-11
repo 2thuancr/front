@@ -50,6 +50,19 @@ const onSubmit = async (data: LoginCredentials) => {
     
     if (result?.access_token) {
       console.log("✅ Đăng nhập thành công, userType:", result.userType);
+      console.log("✅ Full result object:", result);
+      
+      // Check role for different user types
+      if (result.userType === 'staff' && result.staff) {
+        console.log("✅ Staff role detected:", result.staff.role);
+        console.log("✅ Staff data:", result.staff);
+      } else if (result.userType === 'admin' && result.admin) {
+        console.log("✅ Admin role detected:", result.admin.role);
+      } else if (result.userType === 'vendor' && result.vendor) {
+        console.log("✅ Vendor role detected:", result.vendor.role);
+      } else if (result.userType === 'customer' && result.user) {
+        console.log("✅ Customer role detected:", result.user.role);
+      }
       
       // Redirect based on user type
       let redirectPath = '/';
@@ -65,15 +78,15 @@ const onSubmit = async (data: LoginCredentials) => {
       
       console.log("🔄 Redirecting to:", redirectPath);
       
+      // Fallback redirect in case useAuth redirect fails
       setTimeout(() => {
-        try {
+        if (window.location.pathname === '/login' || window.location.pathname === '/') {
+          console.log("⚠️ Still on login/home page, forcing redirect to:", redirectPath);
           window.location.href = redirectPath;
-          console.log("✅ Redirect successful to:", redirectPath);
-        } catch (error) {
-          console.error("❌ Redirect error:", error);
-          router.push(redirectPath);
         }
-      }, 100);
+      }, 2000);
+      
+      console.log("✅ Login successful, redirect will be handled by useAuth hook");
     } else {
       console.warn("⚠️ Login successful but no token received");
     }

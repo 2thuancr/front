@@ -33,6 +33,20 @@ import {
 import { isTokenValid } from '@/lib/auth';
 import { useEffect, useRef } from 'react';
 
+// Helper function to get redirect path based on user type
+const getRedirectPath = (userType: string) => {
+  switch (userType) {
+    case 'admin':
+      return '/admin/dashboard';
+    case 'vendor':
+      return '/vendor/dashboard';
+    case 'staff':
+      return '/staff/dashboard';
+    default:
+      return '/'; // Customer
+  }
+};
+
 export const useAuth = () => {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
@@ -91,7 +105,7 @@ export const useAuth = () => {
           return;
         }
 
-        // If we have valid token but no userProfile data, fetch user profile (only once)
+        // Re-enable auto-fetch profile with better logic
         if (token && !userProfile && !didFetchProfile.current && isTokenValid()) {
           isCheckingAuth.current = true;
           didFetchProfile.current = true;
@@ -176,6 +190,17 @@ export const useAuth = () => {
           user: localStorage.getItem('user'),
           userType: localStorage.getItem('userType')
         });
+        
+        // Auto-redirect based on user type
+        const redirectPath = getRedirectPath(result.userType);
+        console.log('🔄 Auto-redirecting to:', redirectPath);
+        console.log('🔍 Current path before redirect:', window.location.pathname);
+        
+        // Force redirect using window.location.href (like vendor login)
+        setTimeout(() => {
+          console.log('🔄 Executing redirect to:', redirectPath);
+          window.location.href = redirectPath;
+        }, 100);
       } else {
         console.error('❌ No token found in login result:', result);
       }

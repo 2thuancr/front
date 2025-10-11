@@ -301,6 +301,7 @@ export const staffAPI = {
   delete: (id: number) => api.delete(`/staff/${id}`),
 };
 
+
 export const productAPI = {
   getAll: (params?: any) => api.get("/products", { params }),
   getProductById: (id: number) => api.get(`/products/${id}`),

@@ -142,6 +142,26 @@ const Hero: React.FC = () => {
                   />
                 </Link>
               ))}
+              
+              {/* Test Buttons */}
+              <button
+                onClick={() => {
+                  console.log('🧪 Test redirect to staff dashboard');
+                  window.location.href = '/staff/dashboard';
+                }}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+              >
+                Test Staff Dashboard
+              </button>
+              <button
+                onClick={() => {
+                  console.log('🧪 Test redirect to vendor dashboard');
+                  window.location.href = '/vendor/dashboard';
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+              >
+                Test Vendor Dashboard
+              </button>
             </div>
           </motion.div>
 

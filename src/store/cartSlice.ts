@@ -18,7 +18,7 @@ const initialState: CartState = {
 export const fetchCart = createAsyncThunk("cart/fetchCart", async (userId: number) => {
   try {
     // Check if user is authenticated before making API call
-    const authToken = localStorage.getItem('authToken') || localStorage.getItem('accessToken');
+    const authToken = localStorage.getItem('token') || localStorage.getItem('authToken') || localStorage.getItem('accessToken');
     if (!authToken) {
       console.log("🔒 User not authenticated - skipping cart fetch");
       throw new Error("User not authenticated");
