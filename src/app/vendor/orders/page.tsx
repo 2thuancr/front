@@ -31,6 +31,7 @@ export default function VendorOrders() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [orders, setOrders] = useState<Order[]>([]);
+  const [allOrders, setAllOrders] = useState<Order[]>([]); // For stats calculation
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalOrders, setTotalOrders] = useState(0);
@@ -41,7 +42,19 @@ export default function VendorOrders() {
   const toastSuccess = useToastSuccess();
   const toastError = useToastError();
 
-  // Fetch orders from API
+  // Fetch all orders for stats
+  const fetchAllOrders = async () => {
+    try {
+      const response = await vendorOrderAPI.getAllOrders(1, 1000); // Get all orders
+      if (response.data && response.data.orders) {
+        setAllOrders(response.data.orders);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching all orders for stats:', error);
+    }
+  };
+
+  // Fetch orders from API for pagination
   const fetchOrders = async () => {
     try {
       setLoading(true);
@@ -85,6 +98,7 @@ export default function VendorOrders() {
 
   useEffect(() => {
     fetchOrders();
+    fetchAllOrders(); // Fetch all orders for stats
   }, [currentPage]);
 
   const getStatusColor = (status: string) => {
@@ -232,7 +246,7 @@ export default function VendorOrders() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Tổng đơn hàng</p>
-              <p className="text-2xl font-bold text-gray-900">{totalOrders}</p>
+              <p className="text-2xl font-bold text-gray-900">{allOrders.length}</p>
             </div>
             <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
               <ShoppingCart className="w-6 h-6 text-white" />
@@ -245,7 +259,7 @@ export default function VendorOrders() {
             <div>
               <p className="text-sm font-medium text-gray-600">Đơn hàng mới</p>
               <p className="text-2xl font-bold text-gray-900">
-                {orders.filter(o => o.status === 'NEW').length}
+                {allOrders.filter(o => o.status === 'NEW').length}
               </p>
             </div>
             <div className="w-12 h-12 bg-yellow-500 rounded-lg flex items-center justify-center">
@@ -259,7 +273,7 @@ export default function VendorOrders() {
             <div>
               <p className="text-sm font-medium text-gray-600">Đang giao</p>
               <p className="text-2xl font-bold text-gray-900">
-                {orders.filter(o => o.status === 'SHIPPING').length}
+                {allOrders.filter(o => o.status === 'SHIPPING').length}
               </p>
             </div>
             <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
@@ -273,7 +287,7 @@ export default function VendorOrders() {
             <div>
               <p className="text-sm font-medium text-gray-600">Đã giao</p>
               <p className="text-2xl font-bold text-gray-900">
-                {orders.filter(o => o.status === 'DELIVERED').length}
+                {allOrders.filter(o => o.status === 'DELIVERED').length}
               </p>
             </div>
             <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">

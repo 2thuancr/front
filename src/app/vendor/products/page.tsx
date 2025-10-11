@@ -45,13 +45,23 @@ export default function VendorProductsPage() {
     category: selectedCategory === 'all' ? '' : selectedCategory
   });
 
+  // Get all products for stats calculation
+  const { 
+    products: allProducts,
+    loading: statsLoading
+  } = useProducts({
+    limit: 1000, // Get all products for stats
+    search: '',
+    category: ''
+  });
+
   // Get unique categories from products
   const categories = ['all', ...Array.from(new Set(products.map(p => p.category.categoryName)))];
 
-  // Calculate stats from real data
-  const activeProducts = products.filter(p => p.stockQuantity > 0);
-  const outOfStockProducts = products.filter(p => p.stockQuantity === 0);
-  const totalStock = products.reduce((sum, p) => sum + p.stockQuantity, 0);
+  // Calculate stats from all products data
+  const activeProducts = allProducts.filter(p => p.stockQuantity > 0);
+  const outOfStockProducts = allProducts.filter(p => p.stockQuantity === 0);
+  const totalStock = allProducts.reduce((sum, p) => sum + p.stockQuantity, 0);
 
   // Calculate average rating from reviews
   const getAverageRating = (product: Product) => {
@@ -143,7 +153,7 @@ export default function VendorProductsPage() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Tổng sản phẩm</p>
-              <p className="text-2xl font-bold text-gray-900">{products.length}</p>
+              <p className="text-2xl font-bold text-gray-900">{allProducts.length}</p>
             </div>
           </div>
         </div>
