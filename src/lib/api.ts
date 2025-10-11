@@ -292,6 +292,15 @@ export const vendorOrderAPI = {
   getOrderStats: () => api.get('/orders/stats'),
 };
 
+// Staff Management API
+export const staffAPI = {
+  getAll: () => api.get('/staff'),
+  getById: (id: number) => api.get(`/staff/${id}`),
+  create: (data: any) => api.post('/staff', data),
+  update: (id: number, data: any) => api.patch(`/staff/${id}`, data),
+  delete: (id: number) => api.delete(`/staff/${id}`),
+};
+
 export const productAPI = {
   getAll: (params?: any) => api.get("/products", { params }),
   getProductById: (id: number) => api.get(`/products/${id}`),

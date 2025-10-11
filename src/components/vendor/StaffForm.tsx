@@ -21,11 +21,14 @@ import {
   Camera
 } from 'lucide-react';
 import { useToastSuccess, useToastError } from '@/components/ui/Toast';
+import { staffAPI } from '@/lib/api';
 
 interface StaffFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  staffData?: any; // Staff data for edit mode
+  mode?: 'create' | 'view' | 'edit'; // Form mode
 }
 
 interface StaffFormData {
@@ -40,6 +43,8 @@ interface StaffFormData {
   role: string;
   isActive: boolean;
   avatar: FileList | null;
+  password?: string; // For create mode and password update
+  confirmPassword?: string; // For create mode and password update
 }
 
 const schema = yup.object({
@@ -53,6 +58,19 @@ const schema = yup.object({
   dateOfBirth: yup.string(),
   role: yup.string().required('Vai trò là bắt buộc'),
   isActive: yup.boolean(),
+  password: yup.string().when('mode', {
+    is: 'create',
+    then: (schema) => schema.required('Mật khẩu là bắt buộc').min(6, 'Mật khẩu tối thiểu 6 ký tự'),
+    otherwise: (schema) => schema.optional().test('min-length', 'Mật khẩu tối thiểu 6 ký tự', function(value) {
+      if (!value || value.length === 0) return true; // Không bắt buộc nếu để trống
+      return value.length >= 6;
+    })
+  }),
+  confirmPassword: yup.string().when('password', {
+    is: (password: string) => password && password.length > 0,
+    then: (schema) => schema.required('Xác nhận mật khẩu là bắt buộc').oneOf([yup.ref('password')], 'Mật khẩu không khớp'),
+    otherwise: (schema) => schema.optional()
+  }),
   avatar: yup.mixed().test('fileSize', 'File quá lớn (tối đa 5MB)', (value) => {
     if (!value || value.length === 0) return true;
     return value[0]?.size <= 5 * 1024 * 1024;
@@ -62,7 +80,7 @@ const schema = yup.object({
   }),
 });
 
-export default function StaffForm({ isOpen, onClose, onSuccess }: StaffFormProps) {
+export default function StaffForm({ isOpen, onClose, onSuccess, staffData, mode = 'create' }: StaffFormProps) {
   const [loading, setLoading] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   
@@ -79,21 +97,42 @@ export default function StaffForm({ isOpen, onClose, onSuccess }: StaffFormProps
   } = useForm<StaffFormData>({
     resolver: yupResolver(schema),
     defaultValues: {
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      address: '',
-      city: '',
-      gender: '',
-      dateOfBirth: '',
-      role: 'staff',
-      isActive: true,
+      firstName: staffData?.firstName || '',
+      lastName: staffData?.lastName || '',
+      email: staffData?.email || '',
+      phone: staffData?.phone || '',
+      address: staffData?.address || '',
+      city: staffData?.city || '',
+      gender: staffData?.gender || '',
+      dateOfBirth: staffData?.dateOfBirth || '',
+      role: staffData?.role || 'staff',
+      isActive: staffData?.isActive ?? true,
       avatar: null,
     }
   });
 
   const avatarFile = watch('avatar');
+
+  // Load staff data when component mounts or staffData changes
+  React.useEffect(() => {
+    if (staffData) {
+      setValue('firstName', staffData.firstName || '');
+      setValue('lastName', staffData.lastName || '');
+      setValue('email', staffData.email || '');
+      setValue('phone', staffData.phone || '');
+      setValue('address', staffData.address || '');
+      setValue('city', staffData.city || '');
+      setValue('gender', staffData.gender || '');
+      setValue('dateOfBirth', staffData.dateOfBirth || '');
+      setValue('role', staffData.role || 'staff');
+      setValue('isActive', staffData.isActive ?? true);
+      
+      // Set preview image if staff has avatar
+      if (staffData.avatar) {
+        setPreviewImage(staffData.avatar);
+      }
+    }
+  }, [staffData, setValue]);
 
   // Handle avatar preview
   React.useEffect(() => {
@@ -104,10 +143,10 @@ export default function StaffForm({ isOpen, onClose, onSuccess }: StaffFormProps
         setPreviewImage(e.target?.result as string);
       };
       reader.readAsDataURL(file);
-    } else {
+    } else if (!staffData?.avatar) {
       setPreviewImage(null);
     }
-  }, [avatarFile]);
+  }, [avatarFile, staffData?.avatar]);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -119,6 +158,10 @@ export default function StaffForm({ isOpen, onClose, onSuccess }: StaffFormProps
   const removeAvatar = () => {
     setValue('avatar', null);
     setPreviewImage(null);
+  };
+
+  const getInputClassName = (baseClass: string) => {
+    return `${baseClass} ${mode === 'view' ? 'bg-gray-50 text-gray-500' : ''}`;
   };
 
   const roles = [
@@ -202,19 +245,47 @@ export default function StaffForm({ isOpen, onClose, onSuccess }: StaffFormProps
     try {
       setLoading(true);
       
-      // TODO: Replace with actual API call
-      console.log('📝 Staff form data:', data);
+      // Prepare data for API
+      const requestData = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone || '',
+        address: data.address || '',
+        city: data.city || '',
+        gender: data.gender || '',
+        dateOfBirth: data.dateOfBirth || '',
+        role: data.role,
+        isActive: data.isActive,
+      };
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Add password for create mode or when updating password
+      if (data.password && data.password.trim() !== '') {
+        requestData.password = data.password;
+      }
       
-      toastSuccess('Thành công', 'Đã thêm nhân viên mới');
+      console.log('📝 Staff form data:', {
+        mode,
+        staffId: staffData?.id,
+        requestData
+      });
+      
+      // Call API
+      if (mode === 'create') {
+        await staffAPI.create(requestData);
+      } else if (mode === 'edit') {
+        await staffAPI.update(staffData.id, requestData);
+      }
+      
+      const successMessage = mode === 'create' ? 'Đã thêm nhân viên mới' : 'Đã cập nhật thông tin nhân viên';
+      toastSuccess('Thành công', successMessage);
       handleClose();
       onSuccess();
       
     } catch (error: any) {
-      console.error('❌ Error creating staff:', error);
-      toastError('Lỗi', error.response?.data?.message || 'Không thể tạo nhân viên mới');
+      console.error('❌ Error saving staff:', error);
+      const errorMessage = mode === 'create' ? 'Không thể tạo nhân viên mới' : 'Không thể cập nhật thông tin nhân viên';
+      toastError('Lỗi', error.response?.data?.message || errorMessage);
     } finally {
       setLoading(false);
     }
@@ -235,7 +306,11 @@ export default function StaffForm({ isOpen, onClose, onSuccess }: StaffFormProps
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
             <User className="w-6 h-6 text-blue-600" />
-            <h2 className="text-xl font-semibold text-gray-900">Thêm nhân viên mới</h2>
+            <h2 className="text-xl font-semibold text-gray-900">
+              {mode === 'create' && 'Thêm nhân viên mới'}
+              {mode === 'view' && 'Thông tin nhân viên'}
+              {mode === 'edit' && 'Chỉnh sửa nhân viên'}
+            </h2>
           </div>
           <button
             onClick={handleClose}
@@ -285,18 +360,25 @@ export default function StaffForm({ isOpen, onClose, onSuccess }: StaffFormProps
                   Chọn ảnh đại diện
                 </label>
                 <div className="flex items-center space-x-3">
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarChange}
-                      className="hidden"
-                    />
-                    <div className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                      <Upload className="w-4 h-4" />
-                      <span className="text-sm text-gray-700">Chọn ảnh</span>
+                  {mode !== 'view' ? (
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                        className="hidden"
+                      />
+                      <div className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        <Upload className="w-4 h-4" />
+                        <span className="text-sm text-gray-700">Chọn ảnh</span>
+                      </div>
+                    </label>
+                  ) : (
+                    <div className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
+                      <Image className="w-4 h-4" />
+                      <span className="text-sm">Chỉ xem</span>
                     </div>
-                  </label>
+                  )}
                   <span className="text-xs text-gray-500">
                     JPG, PNG, GIF (tối đa 5MB)
                   </span>
@@ -327,7 +409,10 @@ export default function StaffForm({ isOpen, onClose, onSuccess }: StaffFormProps
                 <input
                   {...register('firstName')}
                   type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={mode === 'view'}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    mode === 'view' ? 'bg-gray-50 text-gray-500' : ''
+                  }`}
                   placeholder="Nhập tên"
                 />
                 {errors.firstName && (
@@ -430,7 +515,10 @@ export default function StaffForm({ isOpen, onClose, onSuccess }: StaffFormProps
                 <input
                   {...register('dateOfBirth')}
                   type="date"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={mode === 'view'}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    mode === 'view' ? 'bg-gray-50 text-gray-500' : ''
+                  }`}
                 />
                 {errors.dateOfBirth && (
                   <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -441,6 +529,67 @@ export default function StaffForm({ isOpen, onClose, onSuccess }: StaffFormProps
               </div>
             </div>
           </div>
+
+       {/* Password Section - For create mode and password update */}
+       {(mode === 'create' || mode === 'edit') && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                <Shield className="w-5 h-5 mr-2" />
+                Thông tin đăng nhập
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Password */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Mật khẩu {mode === 'create' ? '*' : ''}
+                  </label>
+                  <input
+                    {...register('password')}
+                    type="password"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder={mode === 'create' ? "Nhập mật khẩu" : "Để trống nếu không muốn thay đổi"}
+                  />
+                  {errors.password && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      {errors.password.message}
+                    </p>
+                  )}
+                  {mode === 'edit' && (
+                    <p className="mt-1 text-xs text-gray-500">
+                      Chỉ điền khi cần đổi mật khẩu cho nhân viên (ví dụ: nhân viên quên mật khẩu)
+                    </p>
+                  )}
+                </div>
+
+                {/* Confirm Password */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Xác nhận mật khẩu {mode === 'create' ? '*' : ''}
+                  </label>
+                  <input
+                    {...register('confirmPassword')}
+                    type="password"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder={mode === 'create' ? "Nhập lại mật khẩu" : "Xác nhận mật khẩu mới"}
+                    disabled={mode === 'view'}
+                  />
+                  {errors.confirmPassword && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      {errors.confirmPassword.message}
+                    </p>
+                  )}
+                  {mode === 'edit' && (
+                    <p className="mt-1 text-xs text-gray-500">
+                      Chỉ cần nhập khi muốn thay đổi mật khẩu
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Address Information */}
           <div className="space-y-4">
@@ -569,25 +718,27 @@ export default function StaffForm({ isOpen, onClose, onSuccess }: StaffFormProps
               onClick={handleClose}
               className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              Hủy
+              {mode === 'view' ? 'Đóng' : 'Hủy'}
             </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
-            >
-              {loading ? (
-                <>
-                  <Loader className="w-4 h-4 animate-spin" />
-                  <span>Đang tạo...</span>
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  <span>Tạo nhân viên</span>
-                </>
-              )}
-            </button>
+            {mode !== 'view' && (
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    <span>{mode === 'edit' ? 'Đang cập nhật...' : 'Đang tạo...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    <span>{mode === 'edit' ? 'Cập nhật' : 'Tạo nhân viên'}</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </form>
       </div>

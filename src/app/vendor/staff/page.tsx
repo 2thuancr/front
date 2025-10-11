@@ -31,6 +31,8 @@ export default function VendorStaffPage() {
   const [selectedRole, setSelectedRole] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState<any>(null);
+  const [formMode, setFormMode] = useState<'create' | 'view' | 'edit'>('create');
 
   // Use staff hook to fetch real data
   const {
@@ -63,6 +65,30 @@ export default function VendorStaffPage() {
   const handleFormSuccess = async () => {
     await refetch();
     toastSuccess('Thành công', 'Đã thêm nhân viên mới');
+  };
+
+  const handleViewStaff = (staff: any) => {
+    setSelectedStaff(staff);
+    setFormMode('view');
+    setIsFormOpen(true);
+  };
+
+  const handleEditStaff = (staff: any) => {
+    setSelectedStaff(staff);
+    setFormMode('edit');
+    setIsFormOpen(true);
+  };
+
+  const handleCreateStaff = () => {
+    setSelectedStaff(null);
+    setFormMode('create');
+    setIsFormOpen(true);
+  };
+
+  const handleCloseForm = () => {
+    setIsFormOpen(false);
+    setSelectedStaff(null);
+    setFormMode('create');
   };
 
   const getRoleColor = (role: string) => {
@@ -135,7 +161,7 @@ export default function VendorStaffPage() {
             <span>Làm mới</span>
           </button>
           <button 
-            onClick={() => setIsFormOpen(true)}
+            onClick={handleCreateStaff}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -377,10 +403,18 @@ export default function VendorStaffPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
-                        <button className="text-blue-600 hover:text-blue-900 p-1">
+                        <button 
+                          onClick={() => handleViewStaff(member)}
+                          className="text-blue-600 hover:text-blue-900 p-1"
+                          title="Xem chi tiết"
+                        >
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button className="text-green-600 hover:text-green-900 p-1">
+                        <button 
+                          onClick={() => handleEditStaff(member)}
+                          className="text-green-600 hover:text-green-900 p-1"
+                          title="Chỉnh sửa"
+                        >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button className="text-red-600 hover:text-red-900 p-1">
@@ -403,8 +437,10 @@ export default function VendorStaffPage() {
       {/* Staff Form Modal */}
       <StaffForm
         isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
+        onClose={handleCloseForm}
         onSuccess={handleFormSuccess}
+        staffData={selectedStaff}
+        mode={formMode}
       />
     </div>
   );

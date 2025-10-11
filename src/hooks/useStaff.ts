@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '@/lib/api';
+import { staffAPI } from '@/lib/api';
 
 interface Staff {
   id: number;
@@ -41,7 +41,7 @@ export const useStaff = (): UseStaffReturn => {
       
       // Try to fetch from API first
       try {
-        const response = await api.get('/staff');
+        const response = await staffAPI.getAll();
         
         console.log('✅ Staff API response:', response.data);
 
