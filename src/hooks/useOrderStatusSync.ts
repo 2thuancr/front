@@ -12,6 +12,9 @@ interface OrderStatusUpdate {
   vendorId?: number;
   staffId?: number;
   timestamp: string;
+  oldStatus?: string;
+  updatedBy?: number;
+  updatedByUsername?: string;
 }
 
 interface UseOrderStatusSyncOptions {
@@ -66,7 +69,7 @@ export const useStaffOrderSync = ({ onStatusUpdate, showNotifications = true }: 
     onOrderStatusUpdate: handleOrderStatusUpdate,
     onNewOrder: handleNewOrder,
     onOrderCancelled: handleOrderCancelled,
-    autoConnect: false // Disabled until backend Socket.IO server is ready
+    autoConnect: true // Enable real-time sync
   });
 
   return {
@@ -122,7 +125,7 @@ export const useVendorOrderSync = ({ onStatusUpdate, showNotifications = true }:
     onOrderStatusUpdate: handleOrderStatusUpdate,
     onNewOrder: handleNewOrder,
     onOrderCancelled: handleOrderCancelled,
-    autoConnect: false // Disabled until backend Socket.IO server is ready
+    autoConnect: true // Enable real-time sync
   });
 
   return {
@@ -166,6 +169,13 @@ export const useCustomerOrderSync = ({ onStatusUpdate, showNotifications = true 
 
   const handleOrderCancelled = useCallback((data: OrderStatusUpdate) => {
     console.log('❌ Customer received order cancellation:', data);
+    console.log('❌ Customer cancellation details:', {
+      orderId: data.orderId,
+      status: data.status,
+      userId: data.userId,
+      timestamp: data.timestamp,
+      updatedBy: data.updatedBy
+    });
     
     if (showNotifications) {
       toastError(`Đơn hàng #${data.orderId} đã bị hủy`);
@@ -178,7 +188,7 @@ export const useCustomerOrderSync = ({ onStatusUpdate, showNotifications = true 
     onOrderStatusUpdate: handleOrderStatusUpdate,
     onNewOrder: handleNewOrder,
     onOrderCancelled: handleOrderCancelled,
-    autoConnect: false // Disabled until backend Socket.IO server is ready
+    autoConnect: true // Enable real-time sync
   });
 
   return {

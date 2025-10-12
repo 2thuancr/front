@@ -41,40 +41,128 @@ export default function StaffOrders() {
   const [totalPages, setTotalPages] = useState(0);
   const [limit] = useState(10);
   const [updatingStatus, setUpdatingStatus] = useState<number | null>(null);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   
   const toastSuccess = useToastSuccess();
   const toastError = useToastError();
+
+  // Function to update status counts
+  const updateStatusCounts = (orders: Order[]) => {
+    const counts: Record<string, number> = {};
+    const allStatuses = ['NEW', 'CONFIRMED', 'PREPARING', 'SHIPPING', 'DELIVERED', 'CANCELLED', 'CANCELLATION_REQUESTED'];
+    
+    allStatuses.forEach(status => {
+      counts[status] = orders.filter(o => o.status === status).length;
+    });
+    
+    setStatusCounts(counts);
+    console.log('📊 Staff status counts updated:', counts);
+  };
 
   // Real-time order status sync
   const { isConnected, connectionError } = useStaffOrderSync({
     onStatusUpdate: (update) => {
       console.log('📦 Staff received order update:', update);
+      console.log('📦 Staff order update details:', {
+        orderId: update.orderId,
+        oldStatus: update.oldStatus,
+        newStatus: update.status,
+        updatedBy: update.updatedBy,
+        timestamp: update.timestamp
+      });
       
       // Update orders in real-time
-      setOrders(prevOrders => 
-        prevOrders.map(order => 
+      setOrders(prevOrders => {
+        const updatedOrders = prevOrders.map(order => 
           order.orderId === update.orderId 
             ? { ...order, status: update.status }
             : order
-        )
-      );
+        );
+        console.log('🔄 Staff orders updated:', updatedOrders);
+        return updatedOrders;
+      });
       
-      setAllOrders(prevOrders => 
-        prevOrders.map(order => 
-          order.orderId === update.orderId 
-            ? { ...order, status: update.status }
-            : order
-        )
-      );
+      setAllOrders(prevOrders => {
+        const updatedAllOrders = prevOrders.map(order => {
+          if (order.orderId === update.orderId) {
+            // Normalize cancelled status to CANCELLED
+            let normalizedStatus = update.status as any;
+            if ((update.status as string) === 'CANCELED' || (update.status as string) === 'CANCEL') {
+              normalizedStatus = 'CANCELLED';
+            }
+            return { ...order, status: normalizedStatus };
+          }
+          return order;
+        });
+        
+        // Update status counts
+        updateStatusCounts(updatedAllOrders);
+        
+        return updatedAllOrders;
+      });
     }
   });
+
+  // Fallback polling mechanism if Socket.IO is not working
+  useEffect(() => {
+    if (!isConnected && allOrders.length > 0) {
+      console.log('🔄 Socket.IO not connected, starting fallback polling...');
+      
+      const pollInterval = setInterval(async () => {
+        try {
+          const response = await staffOrderAPI.getAllOrders(1, 1000);
+          if (response.data && response.data.orders) {
+            const fetchedOrders = response.data.orders;
+            
+            // Normalize cancelled status to CANCELLED
+            const normalizedOrders = fetchedOrders.map((order: any) => {
+              if (order.status === 'CANCELED' || order.status === 'CANCEL') {
+                return { ...order, status: 'CANCELLED' };
+              }
+              return order;
+            });
+            
+            const currentOrderIds = allOrders.map(o => o.orderId).sort();
+            const fetchedOrderIds = normalizedOrders.map((o: any) => o.orderId).sort();
+            
+            // Check if orders have changed
+            if (JSON.stringify(currentOrderIds) !== JSON.stringify(fetchedOrderIds)) {
+              console.log('🔄 Staff polling detected order changes, updating...');
+              setAllOrders(normalizedOrders);
+              updateStatusCounts(normalizedOrders);
+            }
+          }
+        } catch (error) {
+          console.error('❌ Staff polling error:', error);
+        }
+      }, 5000); // Poll every 5 seconds
+      
+      return () => clearInterval(pollInterval);
+    }
+  }, [isConnected, allOrders]);
 
   // Fetch all orders for stats
   const fetchAllOrders = async () => {
     try {
       const response = await staffOrderAPI.getAllOrders(1, 1000); // Get all orders
       if (response.data && response.data.orders) {
-        setAllOrders(response.data.orders);
+        const fetchedOrders = response.data.orders;
+        
+        // Normalize cancelled status to CANCELLED
+        const normalizedOrders = fetchedOrders.map((order: any) => {
+          if (order.status === 'CANCELED' || order.status === 'CANCEL') {
+            return { ...order, status: 'CANCELLED' };
+          }
+          return order;
+        });
+        
+        console.log('📦 Staff fetched orders from API:', fetchedOrders);
+        console.log('📦 Staff normalized orders:', normalizedOrders);
+        
+        setAllOrders(normalizedOrders);
+        
+        // Update status counts after fetching
+        updateStatusCounts(normalizedOrders);
       }
     } catch (error) {
       console.error('❌ Error fetching all orders for stats:', error);
@@ -90,7 +178,17 @@ export default function StaffOrders() {
       const response = await staffOrderAPI.getAllOrders(currentPage, limit);
       
       if (response.data && response.data.orders) {
-        setOrders(response.data.orders);
+        const fetchedOrders = response.data.orders;
+        
+        // Normalize cancelled status to CANCELLED
+        const normalizedOrders = fetchedOrders.map((order: any) => {
+          if (order.status === 'CANCELED' || order.status === 'CANCEL') {
+            return { ...order, status: 'CANCELLED' };
+          }
+          return order;
+        });
+        
+        setOrders(normalizedOrders);
         
         // Use total from backend response, fallback to orders.length
         const total = response.data.total || response.data.orders.length;
@@ -131,6 +229,11 @@ export default function StaffOrders() {
   }, [currentPage]);
 
   const getStatusColor = (status: string) => {
+    // Handle CANCEL vs CANCELLED inconsistency
+    if (status === 'CANCEL' || status === 'CANCELED') {
+      return 'bg-red-100 text-red-800';
+    }
+    
     const statusColors: Record<string, string> = {
       'NEW': 'bg-yellow-100 text-yellow-800',
       'CONFIRMED': 'bg-blue-100 text-blue-800',
@@ -149,6 +252,11 @@ export default function StaffOrders() {
   };
 
   const getStatusIcon = (status: string) => {
+    // Handle CANCEL vs CANCELLED inconsistency
+    if (status === 'CANCEL' || status === 'CANCELED') {
+      return XCircle;
+    }
+    
     switch (status) {
       case 'NEW': return Clock;
       case 'CONFIRMED': return CheckCircle;
@@ -253,7 +361,15 @@ export default function StaffOrders() {
         )
       );
 
-      // Note: Real-time sync will be handled by WebSocket when backend is ready
+      console.log('📡 Waiting for Socket.IO event from backend...');
+      console.log('📡 Expected event: order_status_update with orderId:', orderId, 'status:', newStatus);
+      console.log('📡 Backend should emit to customer room for order owner');
+      
+      // Check if backend emits event after 2 seconds
+      setTimeout(() => {
+        console.log('⏰ 2 seconds passed - checking if Socket.IO event was received...');
+        console.log('⏰ If no event received, backend may not be emitting Socket.IO events');
+      }, 2000);
       
       // Verify the update by fetching the order again
       setTimeout(async () => {
@@ -275,12 +391,23 @@ export default function StaffOrders() {
       toastSuccess('Thành công!', `Đã cập nhật trạng thái đơn hàng #${orderId}`);
     } catch (error: any) {
       console.error('❌ Error updating order status:', error);
+      console.error('❌ Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+        orderId,
+        newStatus
+      });
       
       // Handle specific error cases
       if (error.response?.status === 401) {
         toastError('Lỗi!', 'Bạn không có quyền cập nhật trạng thái đơn hàng');
       } else if (error.response?.status === 400) {
         toastError('Lỗi!', 'Dữ liệu không hợp lệ');
+      } else if (error.response?.status === 500) {
+        const errorMessage = error.response?.data?.message || 'Lỗi server';
+        toastError('Lỗi Server!', `Không thể cập nhật trạng thái đơn hàng: ${errorMessage}`);
       } else {
         toastError('Lỗi!', 'Không thể cập nhật trạng thái đơn hàng');
       }
@@ -314,6 +441,11 @@ export default function StaffOrders() {
 
   // Get status display name
   const getStatusDisplayName = (status: string) => {
+    // Handle CANCEL vs CANCELLED inconsistency
+    if (status === 'CANCEL' || status === 'CANCELED') {
+      return 'Đã hủy';
+    }
+    
     const statusNames: Record<string, string> = {
       'NEW': 'Mới',
       'CONFIRMED': 'Đã xác nhận',
@@ -392,7 +524,7 @@ export default function StaffOrders() {
             <div>
               <p className="text-sm font-medium text-gray-600">Đã xác nhận</p>
               <p className="text-2xl font-bold text-gray-900">
-                {allOrders.filter(o => o.status === 'CONFIRMED').length}
+                {statusCounts.CONFIRMED || 0}
               </p>
             </div>
             <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
@@ -406,7 +538,7 @@ export default function StaffOrders() {
             <div>
               <p className="text-sm font-medium text-gray-600">Shop đang chuẩn bị hàng</p>
               <p className="text-2xl font-bold text-gray-900">
-                {allOrders.filter(o => o.status === 'PREPARING').length}
+                {statusCounts.PREPARING || 0}
               </p>
             </div>
             <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
@@ -420,7 +552,7 @@ export default function StaffOrders() {
             <div>
               <p className="text-sm font-medium text-gray-600">Đang giao hàng</p>
               <p className="text-2xl font-bold text-gray-900">
-                {allOrders.filter(o => o.status === 'SHIPPING').length}
+                {statusCounts.SHIPPING || 0}
               </p>
             </div>
             <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center">
@@ -434,7 +566,7 @@ export default function StaffOrders() {
             <div>
               <p className="text-sm font-medium text-gray-600">Đã giao hàng</p>
               <p className="text-2xl font-bold text-gray-900">
-                {allOrders.filter(o => o.status === 'DELIVERED').length}
+                {statusCounts.DELIVERED || 0}
               </p>
             </div>
             <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
@@ -448,7 +580,7 @@ export default function StaffOrders() {
             <div>
               <p className="text-sm font-medium text-gray-600">Đã hủy</p>
               <p className="text-2xl font-bold text-gray-900">
-                {allOrders.filter(o => o.status === 'CANCELLED').length}
+                {statusCounts.CANCELLED || 0}
               </p>
             </div>
             <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center">
@@ -462,7 +594,7 @@ export default function StaffOrders() {
             <div>
               <p className="text-sm font-medium text-gray-600">Yêu cầu hủy</p>
               <p className="text-2xl font-bold text-gray-900">
-                {allOrders.filter(o => o.status === 'CANCELLATION_REQUESTED').length}
+                {statusCounts.CANCELLATION_REQUESTED || 0}
               </p>
             </div>
             <div className="w-12 h-12 bg-gray-500 rounded-lg flex items-center justify-center">
@@ -476,7 +608,7 @@ export default function StaffOrders() {
             <div>
               <p className="text-sm font-medium text-gray-600">Đơn hàng mới</p>
               <p className="text-2xl font-bold text-gray-900">
-                {allOrders.filter(o => o.status === 'NEW').length}
+                {statusCounts.NEW || 0}
               </p>
             </div>
             <div className="w-12 h-12 bg-yellow-500 rounded-lg flex items-center justify-center">

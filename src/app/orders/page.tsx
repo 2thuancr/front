@@ -21,8 +21,8 @@ const statusConfig = {
   PREPARING: { label: 'Shop đang chuẩn bị hàng', color: 'bg-purple-100 text-purple-800', icon: Package },
   SHIPPING: { label: 'Đang giao hàng', color: 'bg-indigo-100 text-indigo-800', icon: Truck },
   DELIVERED: { label: 'Đã giao hàng', color: 'bg-green-100 text-green-800', icon: CheckCircle },
-  CANCELED: { label: 'Đã hủy', color: 'bg-red-100 text-red-800', icon: XCircle },
-  CANCEL_REQUESTED: { label: 'Yêu cầu hủy', color: 'bg-orange-100 text-orange-800', icon: Clock },
+  CANCELLED: { label: 'Đã hủy', color: 'bg-red-100 text-red-800', icon: XCircle },
+  CANCELLATION_REQUESTED: { label: 'Yêu cầu hủy', color: 'bg-orange-100 text-orange-800', icon: Clock },
 };
 
 // Helper function to get user ID based on user type
@@ -40,25 +40,98 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [loading, setLoading] = useState(false);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const hasFetchedRef = useRef(false);
+
+  // Function to update status counts
+  const updateStatusCounts = (orders: any[]) => {
+    const counts: Record<string, number> = {};
+    Object.keys(statusConfig).forEach(status => {
+      counts[status] = orders.filter(o => o.status === status).length;
+    });
+    
+    setStatusCounts(counts);
+    console.log('📊 Status counts updated:', counts);
+    console.log('📊 Total orders:', orders.length);
+    console.log('📊 Orders with CANCELLED status:', orders.filter(o => o.status === 'CANCELLED'));
+  };
 
   // Real-time order status sync for customers
   const { isConnected, connectionError } = useCustomerOrderSync({
     onStatusUpdate: (update) => {
       console.log('📦 Customer received order update:', update);
-      
-      // Note: Real-time sync will be handled by WebSocket when backend is ready
+      console.log('📦 Update details:', {
+        orderId: update.orderId,
+        oldStatus: orders.find(o => o.orderId === update.orderId)?.status,
+        newStatus: update.status
+      });
       
       // Update orders in real-time
-      setOrders(prevOrders => 
-        prevOrders.map(order => 
-          order.orderId === update.orderId 
-            ? { ...order, status: update.status }
-            : order
-        )
-      );
+      setOrders(prevOrders => {
+        const updatedOrders = prevOrders.map(order => {
+          if (order.orderId === update.orderId) {
+            // Normalize cancelled status to CANCELLED
+            let normalizedStatus = update.status;
+            if (update.status === 'CANCELED' || update.status === 'CANCEL') {
+              normalizedStatus = 'CANCELLED';
+            }
+            return { ...order, status: normalizedStatus };
+          }
+          return order;
+        });
+        console.log('🔄 Customer orders updated:', updatedOrders);
+        console.log('🔄 Filtered orders count:', updatedOrders.filter(o => o.status === selectedStatus).length);
+        
+        // Update status counts
+        updateStatusCounts(updatedOrders);
+        
+        return updatedOrders;
+      });
     }
   });
+
+  // Fallback polling mechanism if Socket.IO is not working
+  useEffect(() => {
+    if (!isConnected && orders.length > 0) {
+      console.log('🔄 Socket.IO not connected, starting fallback polling...');
+      
+      const pollInterval = setInterval(async () => {
+        try {
+          if (!user) return;
+          const userId = getUserId(user);
+          if (!userId) return;
+          
+          const res = await axios.get(`${API_BASE}/orders/user/${userId}?page=1&limit=10`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          
+          const fetchedOrders = res.data.orders || [];
+          
+          // Normalize cancelled status to CANCELLED
+          const normalizedOrders = fetchedOrders.map((order: any) => {
+            if (order.status === 'CANCELED' || order.status === 'CANCEL') {
+              return { ...order, status: 'CANCELLED' };
+            }
+            return order;
+          });
+          
+          const currentOrderIds = orders.map(o => o.orderId).sort();
+          const fetchedOrderIds = normalizedOrders.map((o: any) => o.orderId).sort();
+          
+          // Check if orders have changed
+          if (JSON.stringify(currentOrderIds) !== JSON.stringify(fetchedOrderIds)) {
+            console.log('🔄 Polling detected order changes, updating...');
+            setOrders(normalizedOrders);
+            updateStatusCounts(normalizedOrders);
+          }
+        } catch (error) {
+          console.error('❌ Polling error:', error);
+        }
+      }, 5000); // Poll every 5 seconds
+      
+      return () => clearInterval(pollInterval);
+    }
+  }, [isConnected, orders, user, token]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -88,7 +161,31 @@ export default function OrdersPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       
-      setOrders(res.data.orders || []);
+      const fetchedOrders = res.data.orders || [];
+      console.log('📦 Fetched orders from API:', fetchedOrders);
+      console.log('📦 Orders by status:', fetchedOrders.reduce((acc: any, order: any) => {
+        acc[order.status] = (acc[order.status] || 0) + 1;
+        return acc;
+      }, {}));
+      
+      // Normalize cancelled status to CANCELLED
+      const normalizedOrders = fetchedOrders.map((order: any) => {
+        if (order.status === 'CANCELED' || order.status === 'CANCEL') {
+          return { ...order, status: 'CANCELLED' };
+        }
+        return order;
+      });
+      
+      console.log('📦 Normalized orders:', normalizedOrders);
+      console.log('📦 Orders by status after normalization:', normalizedOrders.reduce((acc: any, order: any) => {
+        acc[order.status] = (acc[order.status] || 0) + 1;
+        return acc;
+      }, {}));
+      
+      setOrders(normalizedOrders);
+      
+      // Update status counts after fetching
+      updateStatusCounts(normalizedOrders);
     } catch (err) {
       console.error('Lỗi load orders', err);
     } finally {
@@ -99,11 +196,25 @@ export default function OrdersPage() {
   // Hủy đơn
   const cancelOrder = async (orderId: string) => {
     try {
-      await axios.patch(`${API_BASE}/orders/${orderId}/cancel`, {}, {
+      console.log('🔄 Customer cancelling order:', orderId);
+      const response = await axios.patch(`${API_BASE}/orders/${orderId}/cancel`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      console.log('✅ Customer order cancellation successful:', response.data);
+      
+      // Wait for Socket.IO event from backend
+      console.log('📡 Waiting for Socket.IO event from backend...');
+      console.log('📡 Expected event: order_cancelled or order_status_update');
+      console.log('📡 Backend should emit to staff room for real-time sync');
+      
       fetchOrders(true); // Force refresh sau khi cancel
     } catch (err: any) {
+      console.error('❌ Customer order cancellation failed:', err);
+      console.error('❌ Error details:', {
+        status: err.response?.status,
+        message: err.response?.data?.message,
+        orderId
+      });
       alert(err.response?.data?.message || 'Không thể hủy đơn');
     }
   };
@@ -167,7 +278,8 @@ export default function OrdersPage() {
             Tất cả ({orders.length})
           </button>
           {Object.entries(statusConfig).map(([status, config]) => {
-            const count = orders.filter((o) => o.status === status).length;
+            const count = statusCounts[status] || 0;
+            console.log(`📊 Tab ${status}: count = ${count}, label = ${config.label}`);
             return (
               <button
                 key={status}
