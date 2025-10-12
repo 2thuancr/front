@@ -47,7 +47,13 @@ api.interceptors.response.use(
       '/auth/forgot-password'
     ];
     
-    const shouldSkipLogging = skipLoggingEndpoints.some(endpoint => url.includes(endpoint));
+    const shouldSkipLogging = skipLoggingEndpoints.some(endpoint => {
+      if (endpoint.includes('.*')) {
+        const regex = new RegExp(endpoint);
+        return regex.test(url);
+      }
+      return url.includes(endpoint);
+    });
     
     if (!shouldSkipLogging) {
       console.error('❌ API Error:', status, url, error.response?.data);
@@ -265,7 +271,7 @@ export const adminOrderAPI = {
     api.get(`/orders/${orderId}`),
   
   updateOrderStatus: (orderId: number, status: string) =>
-    api.patch(`/orders/${orderId}/status`, { status }),
+    api.put(`/orders/${orderId}/status`, { status }),
   
   updatePaymentStatus: (orderId: number, paymentStatus: string) =>
     api.patch(`/orders/${orderId}/payment-status`, { paymentStatus }),
@@ -287,7 +293,7 @@ export const vendorOrderAPI = {
     api.get(`/orders/${orderId}`),
   
   updateOrderStatus: (orderId: number, status: string) =>
-    api.patch(`/orders/${orderId}/status`, { status }),
+    api.put(`/orders/${orderId}/status`, { status }),
   
   getOrderStats: () => api.get('/orders/stats'),
 };
@@ -315,7 +321,7 @@ export const staffOrderAPI = {
     api.get(`/orders/${orderId}`),
   
   updateOrderStatus: (orderId: number, status: string) =>
-    api.patch(`/orders/${orderId}/status`, { status }),
+    api.put(`/orders/${orderId}/status`, { status }),
   
   updatePaymentStatus: (orderId: number, paymentStatus: string) =>
     api.patch(`/orders/${orderId}/payment-status`, { paymentStatus }),

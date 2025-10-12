@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import Link from 'next/link';
+import { useCustomerOrderSync } from '@/hooks/useOrderStatusSync';
 
 // API base URL
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -41,6 +42,24 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(false);
   const hasFetchedRef = useRef(false);
 
+  // Real-time order status sync for customers
+  const { isConnected, connectionError } = useCustomerOrderSync({
+    onStatusUpdate: (update) => {
+      console.log('📦 Customer received order update:', update);
+      
+      // Note: Real-time sync will be handled by WebSocket when backend is ready
+      
+      // Update orders in real-time
+      setOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.orderId === update.orderId 
+            ? { ...order, status: update.status }
+            : order
+        )
+      );
+    }
+  });
+
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/login');
@@ -68,6 +87,7 @@ export default function OrdersPage() {
       const res = await axios.get(`${API_BASE}/orders/user/${userId}?page=1&limit=10`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      
       setOrders(res.data.orders || []);
     } catch (err) {
       console.error('Lỗi load orders', err);
@@ -124,6 +144,16 @@ export default function OrdersPage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Đơn hàng của tôi</h1>
           <p className="text-gray-600">Theo dõi và quản lý các đơn hàng của bạn</p>
+          {/* Socket.IO Connection Status */}
+          <div className="flex items-center justify-center space-x-2 mt-2">
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+            <span className="text-xs text-gray-500">
+              {isConnected ? 'Cập nhật thời gian thực' : 'Chế độ tải thủ công'}
+            </span>
+            {connectionError && (
+              <span className="text-xs text-red-500">({connectionError})</span>
+            )}
+          </div>
         </div>
 
         {/* Filter Tabs */}

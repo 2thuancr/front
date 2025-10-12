@@ -21,11 +21,13 @@ import {
   Truck,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  ChevronDown
 } from 'lucide-react';
 import { useToastSuccess, useToastError } from '@/components/ui/Toast';
 import { staffOrderAPI } from '@/lib/api';
 import { Order, OrdersResponse } from '@/types/api';
+import { useStaffOrderSync } from '@/hooks/useOrderStatusSync';
 
 export default function StaffOrders() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -38,9 +40,34 @@ export default function StaffOrders() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [limit] = useState(10);
+  const [updatingStatus, setUpdatingStatus] = useState<number | null>(null);
   
   const toastSuccess = useToastSuccess();
   const toastError = useToastError();
+
+  // Real-time order status sync
+  const { isConnected, connectionError } = useStaffOrderSync({
+    onStatusUpdate: (update) => {
+      console.log('📦 Staff received order update:', update);
+      
+      // Update orders in real-time
+      setOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.orderId === update.orderId 
+            ? { ...order, status: update.status }
+            : order
+        )
+      );
+      
+      setAllOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.orderId === update.orderId 
+            ? { ...order, status: update.status }
+            : order
+        )
+      );
+    }
+  });
 
   // Fetch all orders for stats
   const fetchAllOrders = async () => {
@@ -73,6 +100,8 @@ export default function StaffOrders() {
         const calculatedTotalPages = Math.ceil(total / limit);
         setTotalPages(calculatedTotalPages);
         
+        setOrders(response.data.orders);
+        
         console.log('📊 Staff Orders loaded:', {
           ordersCount: response.data.orders.length,
           totalFromBackend: response.data.total,
@@ -102,34 +131,32 @@ export default function StaffOrders() {
   }, [currentPage]);
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'NEW': return 'bg-blue-100 text-blue-800';
-      case 'CONFIRMED': return 'bg-yellow-100 text-yellow-800';
-      case 'SHIPPING': return 'bg-purple-100 text-purple-800';
-      case 'DELIVERED': return 'bg-green-100 text-green-800';
-      case 'CANCELLED': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+    const statusColors: Record<string, string> = {
+      'NEW': 'bg-yellow-100 text-yellow-800',
+      'CONFIRMED': 'bg-blue-100 text-blue-800',
+      'PREPARING': 'bg-purple-100 text-purple-800',
+      'SHIPPING': 'bg-orange-100 text-orange-800',
+      'DELIVERED': 'bg-green-100 text-green-800',
+      'CANCELLED': 'bg-red-100 text-red-800',
+      'CANCELLATION_REQUESTED': 'bg-gray-100 text-gray-800'
+    };
+    
+    return statusColors[status] || 'bg-gray-100 text-gray-800';
   };
 
   const getStatusText = (status: string) => {
-    switch (status) {
-      case 'NEW': return 'Mới';
-      case 'CONFIRMED': return 'Đã xác nhận';
-      case 'SHIPPING': return 'Đang giao';
-      case 'DELIVERED': return 'Đã giao';
-      case 'CANCELLED': return 'Đã hủy';
-      default: return status;
-    }
+    return getStatusDisplayName(status);
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'NEW': return Clock;
       case 'CONFIRMED': return CheckCircle;
+      case 'PREPARING': return Package;
       case 'SHIPPING': return Truck;
       case 'DELIVERED': return CheckCircle;
       case 'CANCELLED': return XCircle;
+      case 'CANCELLATION_REQUESTED': return AlertCircle;
       default: return Clock;
     }
   };
@@ -194,10 +221,22 @@ export default function StaffOrders() {
   };
 
   const handleStatusChange = async (orderId: number, newStatus: string) => {
+    setUpdatingStatus(orderId);
     try {
-      await staffOrderAPI.updateOrderStatus(orderId, newStatus);
+      console.log('🔄 Updating order status:', { orderId, newStatus });
       
-      // Update local state
+      // Call API to update order status
+      const response = await staffOrderAPI.updateOrderStatus(orderId, newStatus);
+      console.log('✅ API call successful:', response.data);
+      
+      // Verify the status was actually updated in the response
+      if (response.data && response.data.status) {
+        console.log('✅ Status confirmed in response:', response.data.status);
+      } else {
+        console.warn('⚠️ Status not found in response, checking if update was successful');
+      }
+      
+      // Update local state after successful API call
       setOrders(prevOrders => 
         prevOrders.map(order => 
           order.orderId === orderId 
@@ -206,12 +245,88 @@ export default function StaffOrders() {
         )
       );
       
-      toastSuccess('Thành công', 'Đã cập nhật trạng thái đơn hàng');
+      setAllOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.orderId === orderId 
+            ? { ...order, status: newStatus as any }
+            : order
+        )
+      );
+
+      // Note: Real-time sync will be handled by WebSocket when backend is ready
+      
+      // Verify the update by fetching the order again
+      setTimeout(async () => {
+        try {
+          const verifyResponse = await staffOrderAPI.getOrderById(orderId);
+          console.log('🔍 Verification - Current order status:', verifyResponse.data.status);
+          
+          if (verifyResponse.data.status !== newStatus) {
+            console.warn('⚠️ Status mismatch! Expected:', newStatus, 'Got:', verifyResponse.data.status);
+            toastError('Cảnh báo!', 'Trạng thái có thể chưa được lưu vào database');
+          } else {
+            console.log('✅ Status verified in database:', verifyResponse.data.status);
+          }
+        } catch (verifyError) {
+          console.error('❌ Error verifying order status:', verifyError);
+        }
+      }, 1000);
+      
+      toastSuccess('Thành công!', `Đã cập nhật trạng thái đơn hàng #${orderId}`);
     } catch (error: any) {
       console.error('❌ Error updating order status:', error);
-      toastError('Lỗi', 'Không thể cập nhật trạng thái đơn hàng');
+      
+      // Handle specific error cases
+      if (error.response?.status === 401) {
+        toastError('Lỗi!', 'Bạn không có quyền cập nhật trạng thái đơn hàng');
+      } else if (error.response?.status === 400) {
+        toastError('Lỗi!', 'Dữ liệu không hợp lệ');
+      } else {
+        toastError('Lỗi!', 'Không thể cập nhật trạng thái đơn hàng');
+      }
+    } finally {
+      setUpdatingStatus(null);
     }
   };
+
+  // Get available status options based on current status
+  const getAvailableStatuses = (currentStatus: string) => {
+    const statusFlow: Record<string, string[]> = {
+      'NEW': ['CONFIRMED', 'CANCELLED'],
+      'CONFIRMED': ['PREPARING', 'CANCELLED'],
+      'PREPARING': ['SHIPPING', 'CANCELLED'],
+      'SHIPPING': ['DELIVERED', 'CANCELLED'],
+      'DELIVERED': [], // Final status
+      'CANCELLED': [], // Final status
+      'CANCELLATION_REQUESTED': ['CANCELLED', 'CONFIRMED'] // Can approve cancellation or continue processing
+    };
+    
+    return statusFlow[currentStatus] || [];
+  };
+
+  // Get all possible statuses for staff (more flexible)
+  const getAllStatuses = (currentStatus: string) => {
+    const allStatuses = ['NEW', 'CONFIRMED', 'PREPARING', 'SHIPPING', 'DELIVERED', 'CANCELLED', 'CANCELLATION_REQUESTED'];
+    
+    // Filter out current status and return all others
+    return allStatuses.filter(status => status !== currentStatus);
+  };
+
+  // Get status display name
+  const getStatusDisplayName = (status: string) => {
+    const statusNames: Record<string, string> = {
+      'NEW': 'Mới',
+      'CONFIRMED': 'Đã xác nhận',
+      'PREPARING': 'Shop đang chuẩn bị hàng',
+      'SHIPPING': 'Đang giao hàng',
+      'DELIVERED': 'Đã giao hàng',
+      'CANCELLED': 'Đã hủy',
+      'CANCELLATION_REQUESTED': 'Yêu cầu hủy'
+    };
+    
+    return statusNames[status] || status;
+  };
+
 
   return (
     <div className="space-y-6">
@@ -220,7 +335,17 @@ export default function StaffOrders() {
         <div className="flex items-center space-x-3">
           <ShoppingCart className="w-8 h-8 text-gray-600" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Quản lý đơn hàng</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Quản lý đơn hàng</h1>
+            {/* Socket.IO Connection Status */}
+            <div className="flex items-center space-x-2 mt-1">
+              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+              <span className="text-xs text-gray-500">
+                {isConnected ? 'Kết nối thời gian thực' : 'Chế độ tải thủ công'}
+              </span>
+              {connectionError && (
+                <span className="text-xs text-red-500">({connectionError})</span>
+              )}
+            </div>
             <p className="text-gray-600 text-sm">Quản lý đơn hàng của cửa hàng</p>
           </div>
         </div>
@@ -237,11 +362,19 @@ export default function StaffOrders() {
             <Download className="w-4 h-4" />
             <span>Xuất báo cáo</span>
           </button>
+          <a 
+            href="/debug/socketio"
+            target="_blank"
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
+            <AlertCircle className="w-4 h-4" />
+            <span>Debug Socket.IO</span>
+          </a>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -257,13 +390,13 @@ export default function StaffOrders() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Đơn hàng mới</p>
+              <p className="text-sm font-medium text-gray-600">Đã xác nhận</p>
               <p className="text-2xl font-bold text-gray-900">
-                {allOrders.filter(o => o.status === 'NEW').length}
+                {allOrders.filter(o => o.status === 'CONFIRMED').length}
               </p>
             </div>
-            <div className="w-12 h-12 bg-yellow-500 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
+              <CheckCircle className="w-6 h-6 text-white" />
             </div>
           </div>
         </div>
@@ -271,12 +404,26 @@ export default function StaffOrders() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Đang giao</p>
+              <p className="text-sm font-medium text-gray-600">Shop đang chuẩn bị hàng</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {allOrders.filter(o => o.status === 'PREPARING').length}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
+              <Package className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Đang giao hàng</p>
               <p className="text-2xl font-bold text-gray-900">
                 {allOrders.filter(o => o.status === 'SHIPPING').length}
               </p>
             </div>
-            <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center">
               <Truck className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -285,13 +432,55 @@ export default function StaffOrders() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Đã giao</p>
+              <p className="text-sm font-medium text-gray-600">Đã giao hàng</p>
               <p className="text-2xl font-bold text-gray-900">
                 {allOrders.filter(o => o.status === 'DELIVERED').length}
               </p>
             </div>
             <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
               <CheckCircle className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Đã hủy</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {allOrders.filter(o => o.status === 'CANCELLED').length}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center">
+              <XCircle className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Yêu cầu hủy</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {allOrders.filter(o => o.status === 'CANCELLATION_REQUESTED').length}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-gray-500 rounded-lg flex items-center justify-center">
+              <AlertCircle className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Đơn hàng mới</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {allOrders.filter(o => o.status === 'NEW').length}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-yellow-500 rounded-lg flex items-center justify-center">
+              <Clock className="w-6 h-6 text-white" />
             </div>
           </div>
         </div>
@@ -322,19 +511,21 @@ export default function StaffOrders() {
               <option value="all">Tất cả trạng thái</option>
               <option value="NEW">Mới</option>
               <option value="CONFIRMED">Đã xác nhận</option>
-              <option value="SHIPPING">Đang giao</option>
-              <option value="DELIVERED">Đã giao</option>
+              <option value="PREPARING">Shop đang chuẩn bị hàng</option>
+              <option value="SHIPPING">Đang giao hàng</option>
+              <option value="DELIVERED">Đã giao hàng</option>
               <option value="CANCELLED">Đã hủy</option>
+              <option value="CANCELLATION_REQUESTED">Yêu cầu hủy</option>
             </select>
             
             <button className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
               <Filter className="w-4 h-4" />
               <span>Lọc</span>
-            </button>
+        </button>
           </div>
         </div>
       </div>
-
+      
       {/* Loading State */}
       {loading && (
         <div className="flex items-center justify-center h-64">
@@ -448,10 +639,47 @@ export default function StaffOrders() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
-                        <StatusIcon className="w-3 h-3 mr-1" />
-                        {getStatusText(order.status)}
-                      </span>
+                      <div className="relative">
+                        {/* Status Dropdown with colored badge */}
+                        {getAllStatuses(order.status).length > 0 ? (
+                          <select
+                            value={order.status}
+                            onChange={(e) => {
+                              if (e.target.value && e.target.value !== order.status) {
+                                handleStatusChange(order.orderId, e.target.value);
+                              }
+                            }}
+                            disabled={updatingStatus === order.orderId}
+                            className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px] ${getStatusColor(order.status)}`}
+                            style={{
+                              appearance: 'none',
+                              backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
+                              backgroundPosition: 'right 8px center',
+                              backgroundRepeat: 'no-repeat',
+                              backgroundSize: '16px',
+                              paddingRight: '32px'
+                            }}
+                          >
+                            <option value={order.status} disabled>
+                              {getStatusText(order.status)}
+                            </option>
+                            {getAllStatuses(order.status).map((status: string) => (
+                              <option key={status} value={status}>
+                                {getStatusText(status)}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                            <StatusIcon className="w-3 h-3 mr-1" />
+                            {getStatusText(order.status)}
+                          </span>
+                        )}
+                        
+                        {updatingStatus === order.orderId && (
+                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusColor(order.paymentStatus)}`}>
@@ -498,8 +726,8 @@ export default function StaffOrders() {
                 className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Sau
-              </button>
-            </div>
+        </button>
+      </div>
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700">

@@ -26,6 +26,7 @@ import {
 import { useToastSuccess, useToastError } from '@/components/ui/Toast';
 import { vendorOrderAPI } from '@/lib/api';
 import { Order, OrdersResponse } from '@/types/api';
+import { useVendorOrderSync } from '@/hooks/useOrderStatusSync';
 
 export default function VendorOrders() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,6 +42,30 @@ export default function VendorOrders() {
   
   const toastSuccess = useToastSuccess();
   const toastError = useToastError();
+
+  // Real-time order status sync
+  const { isConnected, connectionError } = useVendorOrderSync({
+    onStatusUpdate: (update) => {
+      console.log('📦 Vendor received order update:', update);
+      
+      // Update orders in real-time
+      setOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.orderId === update.orderId 
+            ? { ...order, status: update.status }
+            : order
+        )
+      );
+      
+      setAllOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.orderId === update.orderId 
+            ? { ...order, status: update.status }
+            : order
+        )
+      );
+    }
+  });
 
   // Fetch all orders for stats
   const fetchAllOrders = async () => {
@@ -221,6 +246,16 @@ export default function VendorOrders() {
           <ShoppingCart className="w-8 h-8 text-gray-600" />
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Quản lý đơn hàng</h1>
+            {/* Socket.IO Connection Status */}
+            <div className="flex items-center space-x-2 mt-1">
+              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+              <span className="text-xs text-gray-500">
+                {isConnected ? 'Kết nối thời gian thực' : 'Chế độ tải thủ công'}
+              </span>
+              {connectionError && (
+                <span className="text-xs text-red-500">({connectionError})</span>
+              )}
+            </div>
             <p className="text-gray-600 text-sm">Quản lý đơn hàng của cửa hàng</p>
           </div>
         </div>

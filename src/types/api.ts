@@ -238,7 +238,7 @@ export interface Order {
   vendorId: number | null;
   orderDate: string;
   totalAmount: string;
-  status: 'NEW' | 'CONFIRMED' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED';
+  status: 'NEW' | 'CONFIRMED' | 'PREPARING' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED' | 'CANCELLATION_REQUESTED';
   paymentMethod: 'COD' | 'BANK_TRANSFER' | 'CREDIT_CARD';
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   shippingAddress: string | null;

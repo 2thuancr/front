@@ -7,6 +7,7 @@ import { ProductCard } from '@/components/ui';
 import { LegacyProduct } from '@/types/api';
 import { useToastSuccess, useToastError } from '@/components/ui/Toast';
 import { useUserId } from '@/hooks/useUserId';
+import { useAuth } from '@/hooks/useAuth';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/store';
 import { toggleWishlist } from '@/store/wishlistSlice';
@@ -20,6 +21,7 @@ export default function ProductsPage() {
   const [cartId, setCartId] = useState<number | null>(null);
   
   const userId = useUserId();
+  const { isAuthenticated, user } = useAuth();
   const toastSuccess = useToastSuccess();
   const toastError = useToastError();
   const dispatch = useDispatch<AppDispatch>();
@@ -63,10 +65,12 @@ export default function ProductsPage() {
     return result;
   };
 
-  // Lấy cartId khi userId thay đổi
+  // Lấy cartId khi userId thay đổi và user đã đăng nhập
   useEffect(() => {
     const fetchCart = async () => {
-      if (!userId || userId <= 0) {
+      // Chỉ fetch cart khi user đã đăng nhập và có userId hợp lệ
+      if (!isAuthenticated || !userId || userId <= 0) {
+        console.log("🔒 User not authenticated or invalid userId, skipping cart fetch");
         setCartId(null);
         return;
       }
@@ -96,15 +100,24 @@ export default function ProductsPage() {
           } catch (createError: any) {
             console.error("❌ Failed to create cart:", createError);
           }
+        } else if (error.response?.status === 401) {
+          console.warn("🔒 Unauthorized - user may need to login again");
+          // Không cần xử lý gì thêm, chỉ log warning
         }
       }
     };
 
     fetchCart();
-  }, [userId]);
+  }, [userId, isAuthenticated]);
 
   const handleAddToCart = async (productId: number) => {
     console.log("🔥 handleAddToCart được gọi từ ProductsPage!", { productId, cartId, userId });
+
+    if (!isAuthenticated) {
+      console.log("❌ User not authenticated");
+      toastError("Cần đăng nhập", "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
+      return;
+    }
 
     if (!userId || userId <= 0) {
       console.log("❌ Không có userId:", userId);
@@ -220,6 +233,12 @@ export default function ProductsPage() {
                 onAddToCart={handleAddToCart}
                 onToggleWishlist={async (productId: number) => {
                   console.log("🔥 handleToggleWishlist được gọi từ ProductsPage!", { productId, userId });
+
+                  if (!isAuthenticated) {
+                    console.log("❌ User not authenticated for wishlist");
+                    toastError("Cần đăng nhập", "Vui lòng đăng nhập để sử dụng tính năng yêu thích");
+                    return;
+                  }
 
                   if (!userId || userId <= 0) {
                     toastError("Cần đăng nhập", "Vui lòng đăng nhập để sử dụng tính năng yêu thích");

@@ -23,6 +23,32 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Optimize chunk loading
+  webpack: (config, { dev, isServer }) => {
+    if (!dev && !isServer) {
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        cacheGroups: {
+          default: {
+            minChunks: 2,
+            priority: -20,
+            reuseExistingChunk: true,
+          },
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            priority: -10,
+            chunks: 'all',
+          },
+        },
+      };
+    }
+    return config;
+  },
+  // Increase timeout for chunk loading
+  experimental: {
+    optimizePackageImports: ['@reduxjs/toolkit', 'react-redux'],
+  },
 };
 
 export default nextConfig;
