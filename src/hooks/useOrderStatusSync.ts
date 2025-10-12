@@ -34,9 +34,11 @@ export const useStaffOrderSync = ({ onStatusUpdate, showNotifications = true }: 
       const statusText = {
         'NEW': 'Chờ xác nhận',
         'CONFIRMED': 'Đã xác nhận',
+        'PREPARING': 'Shop đang chuẩn bị hàng',
         'SHIPPING': 'Đang giao hàng',
         'DELIVERED': 'Đã giao hàng',
-        'CANCELLED': 'Đã hủy'
+        'CANCELLED': 'Đã hủy',
+        'CANCELLATION_REQUESTED': 'Yêu cầu hủy'
       }[data.status] || data.status;
       
       toastSuccess(`Đơn hàng #${data.orderId} đã cập nhật: ${statusText}`);
@@ -90,9 +92,11 @@ export const useVendorOrderSync = ({ onStatusUpdate, showNotifications = true }:
       const statusText = {
         'NEW': 'Chờ xác nhận',
         'CONFIRMED': 'Đã xác nhận',
+        'PREPARING': 'Shop đang chuẩn bị hàng',
         'SHIPPING': 'Đang giao hàng',
         'DELIVERED': 'Đã giao hàng',
-        'CANCELLED': 'Đã hủy'
+        'CANCELLED': 'Đã hủy',
+        'CANCELLATION_REQUESTED': 'Yêu cầu hủy'
       }[data.status] || data.status;
       
       toastSuccess(`Đơn hàng #${data.orderId} đã cập nhật: ${statusText}`);
@@ -146,9 +150,11 @@ export const useCustomerOrderSync = ({ onStatusUpdate, showNotifications = true 
       const statusText = {
         'NEW': 'Chờ xác nhận',
         'CONFIRMED': 'Đã xác nhận',
+        'PREPARING': 'Shop đang chuẩn bị hàng',
         'SHIPPING': 'Đang giao hàng',
         'DELIVERED': 'Đã giao hàng',
-        'CANCELLED': 'Đã hủy'
+        'CANCELLED': 'Đã hủy',
+        'CANCELLATION_REQUESTED': 'Yêu cầu hủy'
       }[data.status] || data.status;
       
       toastSuccess(`Đơn hàng #${data.orderId} đã cập nhật: ${statusText}`);

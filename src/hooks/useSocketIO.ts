@@ -96,6 +96,12 @@ export const useSocketIO = ({
         updatedBy: data.updatedBy,
         timestamp: data.timestamp
       });
+      console.log('📦 SocketIO: Current user context:', {
+        userType,
+        userId: 'id' in user ? user.id : null,
+        vendorId: 'vendorId' in user ? user.vendorId : null,
+        staffId: 'id' in user ? user.id : null
+      });
       
       // Transform backend data structure to frontend expected structure
       const transformedData = {
@@ -230,6 +236,43 @@ export const useSocketIO = ({
     // Listen to all events for debugging
     socketRef.current.onAny((eventName, ...args) => {
       console.log('🔍 SocketIO: Received event:', eventName, args);
+      
+      // Special debug for order status updates
+      if (eventName.includes('order') && eventName.includes('status')) {
+        console.log('🔍 SocketIO: Order status event detected:', {
+          eventName,
+          args,
+          userType,
+          userId: 'id' in user ? user.id : null,
+          vendorId: 'vendorId' in user ? user.vendorId : null,
+          staffId: 'id' in user ? user.id : null
+        });
+        
+        // Additional debug for vendor receiving staff updates
+        if (userType === 'vendor' && args && args[0]) {
+          const eventData = args[0];
+          console.log('🔍 SocketIO: Vendor received order status event:', {
+            orderId: eventData.orderId,
+            newStatus: eventData.newStatus,
+            updatedBy: eventData.updatedBy,
+            updatedByUsername: eventData.updatedByUsername,
+            isFromStaff: eventData.updatedByUsername && eventData.updatedByUsername !== 'vendor',
+            timestamp: eventData.timestamp
+          });
+          
+          // Debug: Check if this is from staff
+          if (eventData.updatedByUsername && eventData.updatedByUsername !== 'vendor') {
+            console.log('🎯 SocketIO: Vendor received update from staff/customer:', {
+              eventName,
+              orderId: eventData.orderId,
+              newStatus: eventData.newStatus,
+              updatedByUsername: eventData.updatedByUsername,
+              isRealTime: true,
+              timestamp: eventData.timestamp
+            });
+          }
+        }
+      }
     });
 
     // Join room based on user type
@@ -245,11 +288,24 @@ export const useSocketIO = ({
         socketRef.current.emit('join_room', { room: `vendor_${user.vendorId}`, userId: user.id });
         socketRef.current.emit('join_user_room', { userId: user.id });
       }
+      
+      // Additional room joins for vendor
+      console.log('🔌 SocketIO: Vendor joining additional rooms');
+      socketRef.current.emit('join_room', { room: 'all_vendors', userId: 'id' in user ? user.id : null });
+      socketRef.current.emit('join_room', { room: 'all_staff', userId: 'id' in user ? user.id : null });
+      socketRef.current.emit('join_room', { room: 'all_users', userId: 'id' in user ? user.id : null });
+      
     } else if (userType === 'staff' && 'id' in user && user.id) {
       console.log('🔌 SocketIO: Joining staff room', { staffId: user.id });
       socketRef.current.emit('join_staff_room', { staffId: user.id });
       socketRef.current.emit('join_room', { room: `staff_${user.id}`, userId: user.id });
       socketRef.current.emit('join_user_room', { userId: user.id });
+      
+      // Additional room joins for staff
+      console.log('🔌 SocketIO: Staff joining additional rooms');
+      socketRef.current.emit('join_room', { room: 'all_staff', userId: user.id });
+      socketRef.current.emit('join_room', { room: 'all_vendors', userId: user.id });
+      socketRef.current.emit('join_room', { room: 'all_users', userId: user.id });
     }
 
     // Listen for room join confirmations
@@ -260,6 +316,27 @@ export const useSocketIO = ({
     socketRef.current.on('joined_room', (data) => {
       console.log('🔌 SocketIO: Joined room', data);
     });
+
+    // Debug: Listen for any room-related events
+    socketRef.current.on('room_error', (data) => {
+      console.error('🔌 SocketIO: Room error', data);
+    });
+
+    socketRef.current.on('join_error', (data) => {
+      console.error('🔌 SocketIO: Join error', data);
+    });
+
+    // Debug: Listen for vendor-specific events
+    if (userType === 'vendor') {
+      socketRef.current.on('vendor_room_joined', (data) => {
+        console.log('🔌 SocketIO: Vendor room joined', data);
+      });
+      
+      socketRef.current.on('vendor_room_error', (data) => {
+        console.error('🔌 SocketIO: Vendor room error', data);
+      });
+      
+    }
 
   }, [user, token, userType]);
 

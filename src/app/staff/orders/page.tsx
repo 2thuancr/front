@@ -361,15 +361,7 @@ export default function StaffOrders() {
         )
       );
 
-      console.log('📡 Waiting for Socket.IO event from backend...');
-      console.log('📡 Expected event: order_status_update with orderId:', orderId, 'status:', newStatus);
-      console.log('📡 Backend should emit to customer room for order owner');
       
-      // Check if backend emits event after 2 seconds
-      setTimeout(() => {
-        console.log('⏰ 2 seconds passed - checking if Socket.IO event was received...');
-        console.log('⏰ If no event received, backend may not be emitting Socket.IO events');
-      }, 2000);
       
       // Verify the update by fetching the order again
       setTimeout(async () => {
