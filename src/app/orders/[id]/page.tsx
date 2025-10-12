@@ -170,35 +170,44 @@ export default function OrderDetailPage() {
                 Sản phẩm đã đặt
               </h2>
               <div className="space-y-4">
-                {currentOrder.orderItems.map((item: OrderItem) => (
-                  <div key={item.orderItemId} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
-                    <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                      {item.imageUrl ? (
-                        <img
-                          src={item.imageUrl}
-                          alt={item.productName}
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                      ) : (
-                        <div className="text-gray-400 text-lg">📦</div>
-                      )}
+                {(currentOrder.orderItems || currentOrder.orderDetails || []).map((item: OrderItem) => {
+                  // Handle different field names from backend
+                  const itemId = item.orderItemId || item.orderDetailId || item.productId;
+                  const productName = item.productName || item.product?.productName || 'Sản phẩm';
+                  const price = item.price || item.unitPrice || item.product?.price || 0;
+                  const totalPrice = item.totalPrice || (price * item.quantity);
+                  const imageUrl = item.imageUrl || item.product?.images?.find(img => img.isPrimary)?.imageUrl;
+                  
+                  return (
+                    <div key={itemId} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
+                      <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                        {imageUrl ? (
+                          <img
+                            src={imageUrl}
+                            alt={productName}
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        ) : (
+                          <div className="text-gray-400 text-lg">📦</div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900">{productName}</h3>
+                        <p className="text-sm text-gray-500">
+                          Số lượng: {item.quantity}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium text-gray-900">
+                          {totalPrice.toLocaleString()}₫
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {price.toLocaleString()}₫/sản phẩm
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium text-gray-900">{item.productName}</h3>
-                      <p className="text-sm text-gray-500">
-                        Số lượng: {item.quantity}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium text-gray-900">
-                        {item.totalPrice.toLocaleString()}₫
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {item.price.toLocaleString()}₫/sản phẩm
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </motion.div>
 

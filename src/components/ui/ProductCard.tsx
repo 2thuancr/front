@@ -48,20 +48,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const router = useRouter();
   
   const dispatch = useDispatch<AppDispatch>();
-  const { checkedItems } = useSelector((state: RootState) => state.wishlist);
-  const isWishlisted = checkedItems[product.id] || false;
   
   // Check authentication status from Redux
   const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
   const authToken = useSelector((state: RootState) => state.auth.token);
+  
+  const { checkedItems } = useSelector((state: RootState) => state.wishlist);
+  // Only show as wishlisted if authenticated AND actually in wishlist
+  const isWishlisted = isAuthenticated && (checkedItems[product.id] || false);
 
-  // Kiểm tra trạng thái wishlist khi component mount
+  // Kiểm tra trạng thái wishlist khi component mount (chỉ khi đã đăng nhập)
   useEffect(() => {
-    if (userId && product.id && checkedItems[product.id] === undefined) {
+    if (isAuthenticated && userId && product.id && checkedItems[product.id] === undefined) {
       console.log("🔍 Checking wishlist status for product:", product.id);
       dispatch(checkInWishlist(product.id));
     }
-  }, [dispatch, userId, product.id, checkedItems]);
+  }, [dispatch, isAuthenticated, userId, product.id, checkedItems]);
 
   // Lấy cartId khi userId thay đổi
   useEffect(() => {
@@ -150,6 +152,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const handleToggleWishlist = async () => {
     console.log("🔥 handleToggleWishlist được gọi!", { productId: product.id, isWishlisted, userId });
+
+    if (!isAuthenticated) {
+      console.log("❌ User not authenticated for wishlist");
+      toastError("Cần đăng nhập", "Vui lòng đăng nhập để sử dụng tính năng yêu thích");
+      return;
+    }
 
     if (!userId || userId <= 0) {
       toastError("Cần đăng nhập", "Vui lòng đăng nhập để sử dụng tính năng yêu thích");
@@ -289,21 +297,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   </Link>
                 </motion.div>
                 
-                {/* Wishlist Button */}
+                {/* Wishlist Button - Always show, but only check status when authenticated */}
                 <motion.div
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   <button
                     className={`w-12 h-12 rounded-full transition-all duration-200 border-2 border-white shadow-xl hover:shadow-2xl flex items-center justify-center ${
-                      isWishlisted 
+                      isAuthenticated && isWishlisted 
                         ? 'bg-red-50 hover:bg-red-100 text-red-500' 
                         : 'bg-white hover:bg-red-50 text-gray-700 hover:text-red-500'
                     }`}
-                    title={isWishlisted ? "Bỏ yêu thích" : "Thêm yêu thích"}
+                    title={isAuthenticated ? (isWishlisted ? "Bỏ yêu thích" : "Thêm yêu thích") : "Đăng nhập để sử dụng"}
                     onClick={handleToggleWishlist}
                   >
-                    <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} />
+                    <Heart className={`w-5 h-5 ${isAuthenticated && isWishlisted ? 'fill-current' : ''}`} />
                   </button>
                 </motion.div>
               </div>

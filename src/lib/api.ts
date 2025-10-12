@@ -47,7 +47,13 @@ api.interceptors.response.use(
       '/auth/forgot-password'
     ];
     
-    const shouldSkipLogging = skipLoggingEndpoints.some(endpoint => url.includes(endpoint));
+    const shouldSkipLogging = skipLoggingEndpoints.some(endpoint => {
+      if (endpoint.includes('.*')) {
+        const regex = new RegExp(endpoint);
+        return regex.test(url);
+      }
+      return url.includes(endpoint);
+    });
     
     if (!shouldSkipLogging) {
       console.error('❌ API Error:', status, url, error.response?.data);
@@ -265,7 +271,7 @@ export const adminOrderAPI = {
     api.get(`/orders/${orderId}`),
   
   updateOrderStatus: (orderId: number, status: string) =>
-    api.patch(`/orders/${orderId}/status`, { status }),
+    api.put(`/orders/${orderId}/status`, { status }),
   
   updatePaymentStatus: (orderId: number, paymentStatus: string) =>
     api.patch(`/orders/${orderId}/payment-status`, { paymentStatus }),
@@ -287,7 +293,7 @@ export const vendorOrderAPI = {
     api.get(`/orders/${orderId}`),
   
   updateOrderStatus: (orderId: number, status: string) =>
-    api.patch(`/orders/${orderId}/status`, { status }),
+    api.put(`/orders/${orderId}/status`, { status }),
   
   getOrderStats: () => api.get('/orders/stats'),
 };
@@ -299,6 +305,43 @@ export const staffAPI = {
   create: (data: any) => api.post('/staff', data),
   update: (id: number, data: any) => api.patch(`/staff/${id}`, data),
   delete: (id: number) => api.delete(`/staff/${id}`),
+};
+
+// Staff Order Management API
+export const staffOrderAPI = {
+  getAllOrders: (page: number = 1, limit: number = 10) =>
+    api.get('/orders', { 
+      params: { 
+        page,
+        limit
+      }
+    }),
+  
+  getOrderById: (orderId: number) => 
+    api.get(`/orders/${orderId}`),
+  
+  updateOrderStatus: (orderId: number, status: string) =>
+    api.put(`/orders/${orderId}/status`, { status }),
+  
+  updatePaymentStatus: (orderId: number, paymentStatus: string) =>
+    api.patch(`/orders/${orderId}/payment-status`, { paymentStatus }),
+  
+  getOrderStats: () => api.get('/orders/stats'),
+};
+
+// Staff Customer Management API
+export const staffCustomerAPI = {
+  getAllCustomers: () =>
+    api.get('/users/getAll'),
+  
+  getCustomerById: (customerId: number) => 
+    api.get(`/users/${customerId}`),
+  
+  // Note: Backend doesn't have update customer status endpoint yet
+  // updateCustomerStatus: (customerId: number, isActive: boolean) =>
+  //   api.patch(`/users/${customerId}/status`, { isActive }),
+  
+  getCustomerStats: () => api.get('/users/stats'),
 };
 
 

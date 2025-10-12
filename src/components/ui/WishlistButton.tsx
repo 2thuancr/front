@@ -28,7 +28,8 @@ const WishlistButton: React.FC<WishlistButtonProps> = ({
   const { checkedItems } = useSelector((state: RootState) => state.wishlist);
   
   const [isLoading, setIsLoading] = useState(false);
-  const isInWishlist = checkedItems[productId] || false;
+  // Only show as wishlisted if authenticated AND actually in wishlist
+  const isInWishlist = isAuthenticated && (checkedItems[productId] || false);
   const hasChecked = useRef(false);
 
   // Check wishlist status only once on mount if authenticated
@@ -44,7 +45,7 @@ const WishlistButton: React.FC<WishlistButtonProps> = ({
     e.stopPropagation();
     
     if (!isAuthenticated) {
-      // Redirect to login or show login modal
+      // Redirect to login when guest tries to use wishlist
       window.location.href = '/login';
       return;
     }
@@ -84,6 +85,8 @@ const WishlistButton: React.FC<WishlistButtonProps> = ({
       ? 'text-red-500 hover:bg-red-50'
       : 'text-gray-600 hover:text-red-500 hover:bg-red-50',
   };
+
+  // Always render wishlist button, but only check status when authenticated
 
   return (
     <button

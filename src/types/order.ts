@@ -8,20 +8,34 @@ export interface Order {
   paymentMethod: string;
   paymentStatus: 'pending' | 'completed' | 'failed';
   shippingInfo: ShippingInfo;
-  orderItems: OrderItem[];
+  orderItems?: OrderItem[];
+  orderDetails?: OrderItem[]; // Backend uses this field name
   createdAt: string;
   updatedAt: string;
 }
 
 export interface OrderItem {
-  orderItemId: number;
+  orderItemId?: number;
+  orderDetailId?: number; // Backend uses this field name
   orderId: number;
   productId: number;
-  productName: string;
+  productName?: string;
   quantity: number;
-  price: number;
-  totalPrice: number;
+  price?: number;
+  unitPrice?: number; // Backend uses this field name
+  totalPrice?: number;
   imageUrl?: string;
+  product?: {
+    productId: number;
+    productName: string;
+    price: number;
+    images?: Array<{
+      imageId: number;
+      productId: number;
+      imageUrl: string;
+      isPrimary: boolean;
+    }>;
+  };
 }
 
 export interface ShippingInfo {

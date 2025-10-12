@@ -26,6 +26,18 @@ import {
 import { useToastSuccess, useToastError } from '@/components/ui/Toast';
 import { vendorOrderAPI } from '@/lib/api';
 import { Order, OrdersResponse } from '@/types/api';
+import { useVendorOrderSync } from '@/hooks/useOrderStatusSync';
+
+// Status configuration
+const statusConfig = {
+  NEW: { label: 'Mới', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
+  CONFIRMED: { label: 'Đã xác nhận', color: 'bg-blue-100 text-blue-800', icon: CheckCircle },
+  PREPARING: { label: 'Shop đang chuẩn bị hàng', color: 'bg-purple-100 text-purple-800', icon: Package },
+  SHIPPING: { label: 'Đang giao hàng', color: 'bg-orange-100 text-orange-800', icon: Truck },
+  DELIVERED: { label: 'Đã giao hàng', color: 'bg-green-100 text-green-800', icon: CheckCircle },
+  CANCELLED: { label: 'Đã hủy', color: 'bg-red-100 text-red-800', icon: XCircle },
+  CANCELLATION_REQUESTED: { label: 'Yêu cầu hủy', color: 'bg-gray-100 text-gray-800', icon: AlertCircle },
+};
 
 export default function VendorOrders() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -38,16 +50,109 @@ export default function VendorOrders() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [limit] = useState(10);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const [updatingStatus, setUpdatingStatus] = useState<number | null>(null);
   
   const toastSuccess = useToastSuccess();
   const toastError = useToastError();
+
+  // Update status counts based on orders
+  const updateStatusCounts = (orders: any[]) => {
+    const counts: Record<string, number> = {};
+    Object.keys(statusConfig).forEach(status => {
+      counts[status] = orders.filter(o => o.status === status).length;
+    });
+    setStatusCounts(counts);
+    console.log('📊 Vendor status counts updated:', counts);
+  };
+
+  // Real-time order status sync
+  const { isConnected, connectionError } = useVendorOrderSync({
+    onStatusUpdate: (update) => {
+      console.log('📦 Vendor received order update:', update);
+      console.log('📦 Vendor order update details:', {
+        orderId: update.orderId,
+        oldStatus: update.oldStatus,
+        newStatus: update.status,
+        updatedBy: update.updatedBy,
+        timestamp: update.timestamp
+      });
+      console.log('📦 Vendor update source check:', {
+        updatedBy: update.updatedBy,
+        updatedByUsername: update.updatedByUsername,
+        isFromStaff: update.updatedByUsername && update.updatedByUsername !== 'vendor',
+        isFromCustomer: update.updatedByUsername && update.updatedByUsername !== 'vendor' && update.updatedByUsername !== 'staff'
+      });
+      
+      
+    // Special debug for staff updates
+    if (update.updatedByUsername && update.updatedByUsername !== 'vendor') {
+      console.log('🎯 Vendor received update from staff/customer:', {
+        orderId: update.orderId,
+        oldStatus: update.oldStatus,
+        newStatus: update.status,
+        updatedBy: update.updatedBy,
+        updatedByUsername: update.updatedByUsername,
+        timestamp: update.timestamp,
+        isRealTime: true
+      });
+      
+    }
+      
+      // Update orders in real-time
+      setOrders(prevOrders => {
+        const updatedOrders = prevOrders.map(order => 
+          order.orderId === update.orderId 
+            ? { ...order, status: update.status }
+            : order
+        );
+        console.log('🔄 Vendor orders updated:', updatedOrders);
+        return updatedOrders;
+      });
+      
+      setAllOrders(prevOrders => {
+        const updatedAllOrders = prevOrders.map(order => {
+          if (order.orderId === update.orderId) {
+            // Normalize cancelled status to CANCELLED
+            let normalizedStatus = update.status as any;
+            if ((update.status as string) === 'CANCELED' || (update.status as string) === 'CANCEL') {
+              normalizedStatus = 'CANCELLED';
+            }
+            return { ...order, status: normalizedStatus };
+          }
+          return order;
+        });
+        
+        // Update status counts
+        updateStatusCounts(updatedAllOrders);
+        
+        return updatedAllOrders;
+      });
+    }
+  });
 
   // Fetch all orders for stats
   const fetchAllOrders = async () => {
     try {
       const response = await vendorOrderAPI.getAllOrders(1, 1000); // Get all orders
       if (response.data && response.data.orders) {
-        setAllOrders(response.data.orders);
+        const fetchedOrders = response.data.orders;
+        
+        // Normalize cancelled status to CANCELLED
+        const normalizedOrders = fetchedOrders.map((order: any) => {
+          if (order.status === 'CANCELED' || order.status === 'CANCEL') {
+            return { ...order, status: 'CANCELLED' };
+          }
+          return order;
+        });
+        
+        console.log('📦 Vendor fetched orders from API:', fetchedOrders);
+        console.log('📦 Vendor normalized orders:', normalizedOrders);
+        
+        setAllOrders(normalizedOrders);
+        
+        // Update status counts after fetching
+        updateStatusCounts(normalizedOrders);
       }
     } catch (error) {
       console.error('❌ Error fetching all orders for stats:', error);
@@ -63,7 +168,17 @@ export default function VendorOrders() {
       const response = await vendorOrderAPI.getAllOrders(currentPage, limit);
       
       if (response.data && response.data.orders) {
-        setOrders(response.data.orders);
+        const fetchedOrders = response.data.orders;
+        
+        // Normalize cancelled status to CANCELLED
+        const normalizedOrders = fetchedOrders.map((order: any) => {
+          if (order.status === 'CANCELED' || order.status === 'CANCEL') {
+            return { ...order, status: 'CANCELLED' };
+          }
+          return order;
+        });
+        
+        setOrders(normalizedOrders);
         
         // Use total from backend response, fallback to orders.length
         const total = response.data.total || response.data.orders.length;
@@ -101,37 +216,85 @@ export default function VendorOrders() {
     fetchAllOrders(); // Fetch all orders for stats
   }, [currentPage]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'NEW': return 'bg-blue-100 text-blue-800';
-      case 'CONFIRMED': return 'bg-yellow-100 text-yellow-800';
-      case 'SHIPPING': return 'bg-purple-100 text-purple-800';
-      case 'DELIVERED': return 'bg-green-100 text-green-800';
-      case 'CANCELLED': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+  // Fallback polling mechanism if Socket.IO is not working
+  useEffect(() => {
+    if (!isConnected && allOrders.length > 0) {
+      console.log('🔄 Socket.IO not connected, starting fallback polling...');
+      
+      const pollInterval = setInterval(async () => {
+        try {
+          const response = await vendorOrderAPI.getAllOrders(1, 1000);
+          if (response.data && response.data.orders) {
+            const fetchedOrders = response.data.orders;
+            
+            // Normalize cancelled status to CANCELLED
+            const normalizedOrders = fetchedOrders.map((order: any) => {
+              if (order.status === 'CANCELED' || order.status === 'CANCEL') {
+                return { ...order, status: 'CANCELLED' };
+              }
+              return order;
+            });
+            
+            const currentOrderIds = allOrders.map(o => o.orderId).sort();
+            const fetchedOrderIds = normalizedOrders.map((o: any) => o.orderId).sort();
+            
+            // Check if orders have changed
+            if (JSON.stringify(currentOrderIds) !== JSON.stringify(fetchedOrderIds)) {
+              console.log('🔄 Vendor polling detected order changes, updating...');
+              setAllOrders(normalizedOrders);
+              updateStatusCounts(normalizedOrders);
+            }
+          }
+        } catch (error) {
+          console.error('❌ Vendor polling error:', error);
+        }
+      }, 5000); // Poll every 5 seconds
+      
+      return () => clearInterval(pollInterval);
     }
+  }, [isConnected, allOrders]);
+
+  const getStatusColor = (status: string) => {
+    // Handle CANCEL vs CANCELLED inconsistency
+    if (status === 'CANCEL' || status === 'CANCELED') {
+      return 'bg-red-100 text-red-800';
+    }
+    
+    const config = statusConfig[status as keyof typeof statusConfig];
+    return config?.color || 'bg-gray-100 text-gray-800';
   };
 
   const getStatusText = (status: string) => {
-    switch (status) {
-      case 'NEW': return 'Mới';
-      case 'CONFIRMED': return 'Đã xác nhận';
-      case 'SHIPPING': return 'Đang giao';
-      case 'DELIVERED': return 'Đã giao';
-      case 'CANCELLED': return 'Đã hủy';
-      default: return status;
-    }
+    return getStatusDisplayName(status);
   };
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'NEW': return Clock;
-      case 'CONFIRMED': return CheckCircle;
-      case 'SHIPPING': return Truck;
-      case 'DELIVERED': return CheckCircle;
-      case 'CANCELLED': return XCircle;
-      default: return Clock;
+    // Handle CANCEL vs CANCELLED inconsistency
+    if (status === 'CANCEL' || status === 'CANCELED') {
+      return XCircle;
     }
+    
+    const config = statusConfig[status as keyof typeof statusConfig];
+    return config?.icon || Clock;
+  };
+
+  // Get status display name
+  const getStatusDisplayName = (status: string) => {
+    // Handle CANCEL vs CANCELLED inconsistency
+    if (status === 'CANCEL' || status === 'CANCELED') {
+      return 'Đã hủy';
+    }
+    
+    const config = statusConfig[status as keyof typeof statusConfig];
+    return config?.label || status;
+  };
+
+  // Get all available statuses for dropdown (excluding current status)
+  const getAllStatuses = (currentStatus: string) => {
+    const allStatuses = Object.keys(statusConfig);
+    
+    // Filter out current status and return all others
+    return allStatuses.filter(status => status !== currentStatus);
   };
 
   const getPaymentStatusColor = (status: string) => {
@@ -194,10 +357,23 @@ export default function VendorOrders() {
   };
 
   const handleStatusChange = async (orderId: number, newStatus: string) => {
+    setUpdatingStatus(orderId);
     try {
-      await vendorOrderAPI.updateOrderStatus(orderId, newStatus);
+      console.log('🔄 Vendor updating order status:', { orderId, newStatus });
       
-      // Update local state
+      
+      // Call API to update order status
+      const response = await vendorOrderAPI.updateOrderStatus(orderId, newStatus);
+      console.log('✅ Vendor API call successful:', response.data);
+      
+      // Verify the status was actually updated in the response
+      if (response.data && response.data.status) {
+        console.log('✅ Vendor status confirmed in response:', response.data.status);
+      } else {
+        console.warn('⚠️ Vendor status not found in response, checking if update was successful');
+      }
+      
+      // Update local state after successful API call
       setOrders(prevOrders => 
         prevOrders.map(order => 
           order.orderId === orderId 
@@ -206,10 +382,57 @@ export default function VendorOrders() {
         )
       );
       
-      toastSuccess('Thành công', 'Đã cập nhật trạng thái đơn hàng');
+      setAllOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.orderId === orderId 
+            ? { ...order, status: newStatus as any }
+            : order
+        )
+      );
+      
+      
+      // Verify the update by fetching the order again
+      setTimeout(async () => {
+        try {
+          const verifyResponse = await vendorOrderAPI.getOrderById(orderId);
+          console.log('🔍 Vendor verification - Current order status:', verifyResponse.data.status);
+          
+          if (verifyResponse.data.status !== newStatus) {
+            console.warn('⚠️ Vendor status mismatch! Expected:', newStatus, 'Got:', verifyResponse.data.status);
+            toastError('Cảnh báo!', 'Trạng thái có thể chưa được lưu vào database');
+          } else {
+            console.log('✅ Vendor status verified in database:', verifyResponse.data.status);
+          }
+        } catch (verifyError) {
+          console.error('❌ Vendor error verifying order status:', verifyError);
+        }
+      }, 1000);
+      
+      toastSuccess('Thành công!', `Đã cập nhật trạng thái đơn hàng #${orderId}`);
     } catch (error: any) {
-      console.error('❌ Error updating order status:', error);
-      toastError('Lỗi', 'Không thể cập nhật trạng thái đơn hàng');
+      console.error('❌ Vendor error updating order status:', error);
+      console.error('❌ Vendor error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+        orderId,
+        newStatus
+      });
+      
+      // Handle specific error cases
+      if (error.response?.status === 401) {
+        toastError('Lỗi!', 'Bạn không có quyền cập nhật trạng thái đơn hàng');
+      } else if (error.response?.status === 400) {
+        toastError('Lỗi!', 'Dữ liệu không hợp lệ');
+      } else if (error.response?.status === 500) {
+        const errorMessage = error.response?.data?.message || 'Lỗi server';
+        toastError('Lỗi Server!', `Không thể cập nhật trạng thái đơn hàng: ${errorMessage}`);
+      } else {
+        toastError('Lỗi!', 'Không thể cập nhật trạng thái đơn hàng');
+      }
+    } finally {
+      setUpdatingStatus(null);
     }
   };
 
@@ -221,6 +444,16 @@ export default function VendorOrders() {
           <ShoppingCart className="w-8 h-8 text-gray-600" />
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Quản lý đơn hàng</h1>
+            {/* Socket.IO Connection Status */}
+            <div className="flex items-center space-x-2 mt-1">
+              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+              <span className="text-xs text-gray-500">
+                {isConnected ? 'Kết nối thời gian thực' : 'Chế độ tải thủ công'}
+              </span>
+              {connectionError && (
+                <span className="text-xs text-red-500">({connectionError})</span>
+              )}
+            </div>
             <p className="text-gray-600 text-sm">Quản lý đơn hàng của cửa hàng</p>
           </div>
         </div>
@@ -257,13 +490,11 @@ export default function VendorOrders() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Đơn hàng mới</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {allOrders.filter(o => o.status === 'NEW').length}
-              </p>
+              <p className="text-sm font-medium text-gray-600">Đã xác nhận ({statusCounts.CONFIRMED || 0})</p>
+              <p className="text-2xl font-bold text-gray-900">{statusCounts.CONFIRMED || 0}</p>
             </div>
-            <div className="w-12 h-12 bg-yellow-500 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
+              <CheckCircle className="w-6 h-6 text-white" />
             </div>
           </div>
         </div>
@@ -271,27 +502,62 @@ export default function VendorOrders() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Đang giao</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {allOrders.filter(o => o.status === 'SHIPPING').length}
-              </p>
+              <p className="text-sm font-medium text-gray-600">Shop đang chuẩn bị hàng ({statusCounts.PREPARING || 0})</p>
+              <p className="text-2xl font-bold text-gray-900">{statusCounts.PREPARING || 0}</p>
             </div>
             <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
+              <Package className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Đang giao hàng ({statusCounts.SHIPPING || 0})</p>
+              <p className="text-2xl font-bold text-gray-900">{statusCounts.SHIPPING || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center">
               <Truck className="w-6 h-6 text-white" />
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Additional Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Đã giao hàng ({statusCounts.DELIVERED || 0})</p>
+              <p className="text-2xl font-bold text-gray-900">{statusCounts.DELIVERED || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
+              <CheckCircle className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
         
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Đã giao</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {allOrders.filter(o => o.status === 'DELIVERED').length}
-              </p>
+              <p className="text-sm font-medium text-gray-600">Đã hủy ({statusCounts.CANCELLED || 0})</p>
+              <p className="text-2xl font-bold text-gray-900">{statusCounts.CANCELLED || 0}</p>
             </div>
-            <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center">
+              <XCircle className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Yêu cầu hủy ({statusCounts.CANCELLATION_REQUESTED || 0})</p>
+              <p className="text-2xl font-bold text-gray-900">{statusCounts.CANCELLATION_REQUESTED || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-gray-500 rounded-lg flex items-center justify-center">
+              <AlertCircle className="w-6 h-6 text-white" />
             </div>
           </div>
         </div>
@@ -322,9 +588,11 @@ export default function VendorOrders() {
               <option value="all">Tất cả trạng thái</option>
               <option value="NEW">Mới</option>
               <option value="CONFIRMED">Đã xác nhận</option>
-              <option value="SHIPPING">Đang giao</option>
-              <option value="DELIVERED">Đã giao</option>
+              <option value="PREPARING">Shop đang chuẩn bị hàng</option>
+              <option value="SHIPPING">Đang giao hàng</option>
+              <option value="DELIVERED">Đã giao hàng</option>
               <option value="CANCELLED">Đã hủy</option>
+              <option value="CANCELLATION_REQUESTED">Yêu cầu hủy</option>
             </select>
             
             <button className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
@@ -445,10 +713,46 @@ export default function VendorOrders() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
-                            <StatusIcon className="w-3 h-3 mr-1" />
-                            {getStatusText(order.status)}
-                          </span>
+                          <div className="relative">
+                            {getAllStatuses(order.status).length > 0 ? (
+                              <select
+                                value={order.status}
+                                onChange={(e) => {
+                                  if (e.target.value && e.target.value !== order.status) {
+                                    handleStatusChange(order.orderId, e.target.value);
+                                  }
+                                }}
+                                disabled={updatingStatus === order.orderId}
+                                className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px] ${getStatusColor(order.status)}`}
+                                style={{
+                                  appearance: 'none',
+                                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
+                                  backgroundPosition: 'right 8px center',
+                                  backgroundRepeat: 'no-repeat',
+                                  backgroundSize: '16px',
+                                  paddingRight: '32px'
+                                }}
+                              >
+                                <option value={order.status} disabled>
+                                  {getStatusText(order.status)}
+                                </option>
+                                {getAllStatuses(order.status).map((status: string) => (
+                                  <option key={status} value={status}>
+                                    {getStatusText(status)}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                                <StatusIcon className="w-3 h-3 mr-1" />
+                                {getStatusText(order.status)}
+                              </span>
+                            )}
+                            
+                            {updatingStatus === order.orderId && (
+                              <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusColor(order.paymentStatus)}`}>

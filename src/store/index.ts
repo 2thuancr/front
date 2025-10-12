@@ -8,9 +8,22 @@ import cartReducer from './cartSlice';
 import orderReducer from './orderSlice';
 import wishlistReducer from './wishlistSlice';
 
+// Generate unique key for each tab to avoid conflicts
+const generateTabId = () => {
+  if (typeof window !== 'undefined') {
+    let tabId = sessionStorage.getItem('tabId');
+    if (!tabId) {
+      tabId = `tab_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      sessionStorage.setItem('tabId', tabId);
+    }
+    return tabId;
+  }
+  return 'default';
+};
+
 // Persist config - persist auth và wishlist state
 const persistConfig = {
-  key: 'root',
+  key: `root_${generateTabId()}`, // Unique key per tab
   storage,
   whitelist: ['auth', 'wishlist'], // Lưu auth và wishlist reducer
   version: process.env.NODE_ENV === 'development' ? Date.now() : 1, // Reset khi restart trong dev mode

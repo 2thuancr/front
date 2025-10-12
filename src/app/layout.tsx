@@ -8,6 +8,7 @@ import { AuthInitializer } from '@/components/providers/AuthInitializer';
 import { WishlistInitializer } from '@/components/providers/WishlistInitializer';
 import { ToastProvider } from '@/components/ui/Toast';
 import { APP_CONFIG } from '@/lib/constants';
+import { ErrorBoundary, ChunkErrorFallback } from '@/components/ErrorBoundary';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -55,19 +56,46 @@ export default function RootLayout({
           rel="stylesheet" 
           href="https://cdn.jsdelivr.net/npm/primeicons@6.0.1/primeicons.css" 
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Handle chunk loading errors
+              window.addEventListener('error', function(e) {
+                if (e.message && e.message.includes('Loading chunk')) {
+                  console.warn('Chunk loading error detected, reloading page...');
+                  setTimeout(() => {
+                    window.location.reload();
+                  }, 1000);
+                }
+              });
+              
+              // Handle unhandled promise rejections
+              window.addEventListener('unhandledrejection', function(e) {
+                if (e.reason && e.reason.message && e.reason.message.includes('Loading chunk')) {
+                  console.warn('Chunk loading promise rejection, reloading page...');
+                  setTimeout(() => {
+                    window.location.reload();
+                  }, 1000);
+                }
+              });
+            `,
+          }}
+        />
       </head>
       <body className={inter.className} suppressHydrationWarning={true}>
-        <Providers>
-          <AuthInitializer />
-          <WishlistInitializer />
-          <ToastProvider>
-            <ViewTrackingProvider>
-              <ConditionalLayout>
-                {children}
-              </ConditionalLayout>
-            </ViewTrackingProvider>
-          </ToastProvider>
-        </Providers>
+        <ErrorBoundary fallback={ChunkErrorFallback}>
+          <Providers>
+            <AuthInitializer />
+            <WishlistInitializer />
+            <ToastProvider>
+              <ViewTrackingProvider>
+                <ConditionalLayout>
+                  {children}
+                </ConditionalLayout>
+              </ViewTrackingProvider>
+            </ToastProvider>
+          </Providers>
+        </ErrorBoundary>
       </body>
     </html>
   );
