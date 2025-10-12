@@ -55,8 +55,12 @@ export const useSocketIO = ({
     
     console.log('🔌 SocketIO: Connecting to', socketUrl);
     
+    // Generate unique tab ID for Socket.IO connection
+    const tabId = sessionStorage.getItem('tabId') || `tab_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    sessionStorage.setItem('tabId', tabId);
+    
     socketRef.current = io(socketUrl, {
-      query: { token },
+      query: { token, tabId }, // Include tabId to distinguish connections
       transports: ['websocket', 'polling'],
       timeout: 20000,
       forceNew: true
@@ -66,6 +70,7 @@ export const useSocketIO = ({
     socketRef.current.on('connect', () => {
       console.log('✅ SocketIO: Connected');
       console.log('🔌 SocketIO: Socket ID:', socketRef.current?.id);
+      console.log('🔌 SocketIO: Tab ID:', tabId);
       setIsConnected(true);
       setConnectionError(null);
     });
