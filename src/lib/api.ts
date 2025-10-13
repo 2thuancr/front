@@ -44,7 +44,10 @@ api.interceptors.response.use(
       '/wishlist',
       '/auth/login',
       '/auth/register',
-      '/auth/forgot-password'
+      '/auth/forgot-password',
+      '/staff-auth/login',
+      '/admin-auth/login',
+      '/vendor-auth/login'
     ];
     
     const shouldSkipLogging = skipLoggingEndpoints.some(endpoint => {

@@ -53,8 +53,14 @@ export const loginUser = createAsyncThunk(
           userType = 'staff';
           console.log('🔐 Staff login successful - response:', response.data);
           console.log('🔐 Staff login successful - userType:', userType);
-        } catch (staffError) {
-          console.log('🔐 Staff login failed, trying customer login:', staffError);
+        } catch (staffError: any) {
+          // Only log if it's not a 401 (unauthorized) error, which is expected for non-staff users
+          if (staffError.response?.status !== 401) {
+            console.log('🔐 Staff login failed with unexpected error:', staffError);
+          } else {
+            console.log('🔐 Staff login failed (expected for non-staff users), trying customer login');
+          }
+          
           // If staff login fails, try customer login
           try {
             response = await authAPI.login({
@@ -84,7 +90,14 @@ export const loginUser = createAsyncThunk(
             password: credentials.password
           });
           userType = 'admin';
-        } catch (adminError) {
+        } catch (adminError: any) {
+          // Only log if it's not a 401 (unauthorized) error, which is expected for non-admin users
+          if (adminError.response?.status !== 401) {
+            console.log('🔐 Admin login failed with unexpected error:', adminError);
+          } else {
+            console.log('🔐 Admin login failed (expected for non-admin users), trying vendor login');
+          }
+          
           // If admin login fails, try vendor login
           try {
             response = await vendorAuthAPI.login({
@@ -92,7 +105,13 @@ export const loginUser = createAsyncThunk(
               password: credentials.password
             });
             userType = 'vendor';
-          } catch (vendorError) {
+          } catch (vendorError: any) {
+            // Only log if it's not a 401 (unauthorized) error
+            if (vendorError.response?.status !== 401) {
+              console.log('🔐 Vendor login failed with unexpected error:', vendorError);
+            } else {
+              console.log('🔐 Vendor login also failed (expected for non-vendor users)');
+            }
             throw adminError; // Throw original admin error
           }
         }
