@@ -996,5 +996,16 @@ export const categoryAPI = {
   delete: (id: number) => api.delete(`/categories/${id}`),
 };
 
+// Voucher API
+export const voucherAPI = {
+  getAll: (params?: any) => api.get("/vouchers", { params }),
+  getById: (id: number) => api.get(`/vouchers/${id}`),
+  create: (data: any) => api.post("/vouchers", data),
+  update: (id: number, data: any) => api.put(`/vouchers/${id}`, data),
+  delete: (id: number) => api.delete(`/vouchers/${id}`),
+  toggleActive: (id: number) => api.patch(`/vouchers/${id}/toggle-active`),
+  getStats: () => api.get("/vouchers/stats"),
+};
+
 export default api;
 

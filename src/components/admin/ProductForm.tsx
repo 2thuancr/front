@@ -199,7 +199,7 @@ export default function ProductForm({ isOpen, onClose, onSuccess }: ProductFormP
             {/* Product Name */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Package className="w-4 h-4 inline mr-2" />
+                <Package className="w-4 h-4 inline mr-2" /> 
                 Tên sản phẩm *
               </label>
               <input
