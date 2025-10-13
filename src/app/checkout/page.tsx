@@ -17,7 +17,9 @@ import { CheckoutForm } from "./components/CheckoutForm";
 import { OrderSummary } from "./components/OrderSummary";
 import { PaymentMethodSelector } from "./components/PaymentMethodSelector";
 import { CheckoutSuccess } from "./components/CheckoutSuccess";
+import { VoucherSelector } from "./components/VoucherSelector";
 import { ShippingInfo } from "@/types/order";
+import { Voucher } from "@/types/voucher";
 import { useUserId } from "@/hooks/useUserId";
 import { useToastSuccess } from "@/components/ui/Toast";
 
@@ -45,7 +47,7 @@ export default function CheckoutPage() {
   // Local state
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<number | null>(null);
-  const [voucherCode, setVoucherCode] = useState<string | null>(null);
+  const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     customerName: "",
@@ -146,18 +148,6 @@ export default function CheckoutPage() {
     }
   };
 
-  // Simple voucher validation (client-side placeholder)
-  const applyVoucher = () => {
-    if (!voucherCode) return;
-    // Demo rules: CODE10 => 10% off; CODE50K => 50,000₫ off; max to subtotal
-    const code = voucherCode.trim().toUpperCase();
-    const subtotal = checkoutItems.reduce((s, i) => s + i.price * i.quantity, 0);
-    let discount = 0;
-    if (code === 'CODE10') discount = Math.round(subtotal * 0.1);
-    else if (code === 'CODE50K') discount = 50000;
-    else discount = 0;
-    setDiscountAmount(Math.max(0, Math.min(discount, subtotal)));
-  };
 
   const handlePlaceOrder = async () => {
     if (!checkoutItems.length || !userId || !selectedPaymentMethod) return;
@@ -367,28 +357,33 @@ export default function CheckoutPage() {
                         </p>
                       </div>
 
-                      <div>
-                        <h3 className="font-medium text-gray-900 mb-2">Voucher:</h3>
-                        <div className="flex space-x-2">
-                          <input
-                            type="text"
-                            value={voucherCode || ''}
-                            onChange={(e) => setVoucherCode(e.target.value)}
-                            placeholder="Nhập mã (ví dụ: CODE10, CODE50K)"
-                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
-                          <button
-                            onClick={applyVoucher}
-                            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
-                            type="button"
-                          >
-                            Áp dụng
-                          </button>
-                        </div>
-                        {discountAmount > 0 && (
-                          <p className="mt-2 text-sm text-green-600">Đã áp dụng giảm {discountAmount.toLocaleString()}₫</p>
-                        )}
-                      </div>
+                      <VoucherSelector
+                        selectedVoucher={selectedVoucher}
+                        onVoucherSelect={(voucher) => {
+                          setSelectedVoucher(voucher);
+                          if (voucher) {
+                            const orderTotal = checkoutItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                            let discount = 0;
+                            
+                            if (voucher.discountType === 'percentage') {
+                              const percentage = parseFloat(voucher.discountValue || '0');
+                              discount = (orderTotal * percentage) / 100;
+                              if (voucher.maxDiscount) {
+                                discount = Math.min(discount, parseFloat(voucher.maxDiscount));
+                              }
+                            } else if (voucher.discountType === 'fixed') {
+                              discount = parseFloat(voucher.discountValue || '0');
+                            } else if (voucher.discountType === 'freeship') {
+                              discount = 30000; // Assuming shipping fee is 30k
+                            }
+                            
+                            setDiscountAmount(discount);
+                          } else {
+                            setDiscountAmount(0);
+                          }
+                        }}
+                        orderTotal={checkoutItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)}
+                      />
                     </div>
 
                     <div className="flex justify-between mt-6">
@@ -414,7 +409,7 @@ export default function CheckoutPage() {
 
           {/* Order Summary Sidebar */}
           <div className="lg:col-span-1">
-            <OrderSummary checkoutItems={checkoutItems} discountAmount={discountAmount} voucherCode={voucherCode} />
+            <OrderSummary checkoutItems={checkoutItems} discountAmount={discountAmount} voucherCode={selectedVoucher?.code || null} />
           </div>
         </div>
       </div>
