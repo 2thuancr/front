@@ -199,6 +199,7 @@ export default function VendorVouchers() {
 
       console.log('Creating voucher with data:', createData);
       const response = await voucherAPI.create(createData);
+      console.log('Voucher created successfully:', response.data);
       
       // Add new voucher to list
       setVouchers(prev => [response.data, ...prev]);
@@ -255,10 +256,23 @@ export default function VendorVouchers() {
   const getStatusConfig = (voucher: Voucher) => {
     const now = new Date();
     const endDate = new Date(voucher.endDate);
+    const startDate = new Date(voucher.startDate);
+    
+    console.log('Checking voucher status:', {
+      code: voucher.code,
+      isActive: voucher.isActive,
+      startDate: voucher.startDate,
+      endDate: voucher.endDate,
+      now: now.toISOString(),
+      isBeforeStart: now < startDate,
+      isAfterEnd: now > endDate
+    });
     
     if (!voucher.isActive) {
       return statusConfig.inactive;
-    } else if (endDate < now) {
+    } else if (now < startDate) {
+      return statusConfig.scheduled;
+    } else if (now > endDate) {
       return statusConfig.expired;
     } else {
       return statusConfig.active;
@@ -313,7 +327,12 @@ export default function VendorVouchers() {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Đang hoạt động</p>
               <p className="text-2xl font-bold text-gray-900">
-                {vouchers.filter(v => v.isActive && new Date(v.endDate) >= new Date()).length}
+                {vouchers.filter(v => {
+                  const now = new Date();
+                  const startDate = new Date(v.startDate);
+                  const endDate = new Date(v.endDate);
+                  return v.isActive && now >= startDate && now <= endDate;
+                }).length}
               </p>
             </div>
           </div>
@@ -341,7 +360,7 @@ export default function VendorVouchers() {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Hết hạn</p>
               <p className="text-2xl font-bold text-gray-900">
-                {vouchers.filter(v => new Date(v.endDate) < new Date()).length}
+                {vouchers.filter(v => new Date(v.endDate) < new Date() && v.isActive).length}
               </p>
             </div>
           </div>
@@ -881,23 +900,21 @@ export default function VendorVouchers() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && selectedVoucher && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3 text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl border border-gray-200 w-96 max-w-sm mx-4">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
                 <Trash2 className="h-6 w-6 text-red-600" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mt-2">Xác nhận xóa</h3>
-              <div className="mt-2 px-7 py-3">
-                <p className="text-sm text-gray-500">
-                  Bạn có chắc chắn muốn xóa voucher <strong>{selectedVoucher.code}</strong>?
-                  Hành động này không thể hoàn tác.
-                </p>
-              </div>
-              <div className="items-center px-4 py-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Xác nhận xóa</h3>
+              <p className="text-sm text-gray-500 mb-6">
+                Bạn có chắc chắn muốn xóa voucher <strong>{selectedVoucher.code}</strong>?
+                Hành động này không thể hoàn tác.
+              </p>
+              <div className="flex flex-col space-y-3">
                 <button
                   onClick={() => handleDeleteVoucher(selectedVoucher.id)}
-                  className="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
                 >
                   Xóa
                 </button>
@@ -906,7 +923,7 @@ export default function VendorVouchers() {
                     setShowDeleteModal(false);
                     setSelectedVoucher(null);
                   }}
-                  className="mt-3 px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                  className="px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors"
                 >
                   Hủy
                 </button>
