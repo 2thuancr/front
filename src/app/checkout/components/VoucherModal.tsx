@@ -106,8 +106,25 @@ export function VoucherModal({
         };
       });
       
-      setVouchers(processedVouchers);
-      setFilteredVouchers(processedVouchers);
+      // Sort vouchers: applicable ones first, then expired ones
+      const sortedVouchers = processedVouchers.sort((a, b) => {
+        // First priority: applicable vouchers come first
+        if (a.isApplicable && !b.isApplicable) return -1;
+        if (!a.isApplicable && b.isApplicable) return 1;
+        
+        // Second priority: among applicable vouchers, sort by discount amount (highest first)
+        if (a.isApplicable && b.isApplicable) {
+          return b.discountAmount - a.discountAmount;
+        }
+        
+        // Third priority: among non-applicable vouchers, sort by end date (most recent first)
+        const aEndDate = new Date(a.endDate).getTime();
+        const bEndDate = new Date(b.endDate).getTime();
+        return bEndDate - aEndDate;
+      });
+      
+      setVouchers(sortedVouchers);
+      setFilteredVouchers(sortedVouchers);
     } catch (err: any) {
       setError('Không thể tải danh sách voucher');
       console.error('Error loading vouchers:', err);
@@ -126,7 +143,22 @@ export function VoucherModal({
         voucher.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         voucher.discountType.toLowerCase().includes(searchTerm.toLowerCase())
       );
-      setFilteredVouchers(filtered);
+      
+      // Maintain sorting after filtering
+      const sortedFiltered = filtered.sort((a, b) => {
+        if (a.isApplicable && !b.isApplicable) return -1;
+        if (!a.isApplicable && b.isApplicable) return 1;
+        
+        if (a.isApplicable && b.isApplicable) {
+          return b.discountAmount - a.discountAmount;
+        }
+        
+        const aEndDate = new Date(a.endDate).getTime();
+        const bEndDate = new Date(b.endDate).getTime();
+        return bEndDate - aEndDate;
+      });
+      
+      setFilteredVouchers(sortedFiltered);
     }
   }, [searchTerm, vouchers]);
 

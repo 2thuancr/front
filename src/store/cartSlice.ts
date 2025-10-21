@@ -83,6 +83,16 @@ export const updateQuantity = createAsyncThunk(
   }
 );
 
+// 🗑️ Xóa nhiều items khỏi giỏ hàng (sau khi checkout)
+export const removeMultipleFromCart = createAsyncThunk(
+  "cart/removeMultipleFromCart",
+  async (itemIds: number[]) => {
+    // Xóa từng item
+    await Promise.all(itemIds.map(itemId => cartApi.removeFromCart(itemId)));
+    return itemIds;
+  }
+);
+
 const cartSlice = createSlice({
   name: "cart",
   initialState,
@@ -131,7 +141,20 @@ const cartSlice = createSlice({
             );
           }
         }
-      );
+      )
+
+      // removeMultipleFromCart
+      .addCase(removeMultipleFromCart.fulfilled, (state, action: PayloadAction<number[]>) => {
+        if (state.data) {
+          state.data.cartItems = state.data.cartItems.filter(
+            (item) => !action.payload.includes(item.cartItemId)
+          );
+          state.data.totalPrice = state.data.cartItems.reduce(
+            (sum, item) => sum + item.price * item.quantity,
+            0
+          );
+        }
+      });
   },
 });
 

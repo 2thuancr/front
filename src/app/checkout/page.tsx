@@ -9,7 +9,7 @@ import {
   processPayment,
   resetCheckout 
 } from "@/store/orderSlice";
-import { fetchCart } from "@/store/cartSlice";
+import { fetchCart, removeMultipleFromCart } from "@/store/cartSlice";
 import { fetchUserProfile } from "@/store/userSlice";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -172,6 +172,15 @@ export default function CheckoutPage() {
       };
       
       const result = await dispatch(createOrder(checkoutData)).unwrap();
+      
+      // Remove checked out items from cart
+      const cartItemIds = checkoutItems
+        .map(item => item.cartItemId)
+        .filter(id => id !== undefined && id !== null);
+      
+      if (cartItemIds.length > 0) {
+        await dispatch(removeMultipleFromCart(cartItemIds));
+      }
       
       // Clear checkout items from localStorage after successful order
       localStorage.removeItem('checkoutItems');
