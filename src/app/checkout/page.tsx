@@ -66,7 +66,6 @@ export default function CheckoutPage() {
       try {
         const items = JSON.parse(savedCheckoutItems);
         setCheckoutItems(items);
-        console.log('✅ Loaded checkout items from localStorage:', items);
       } catch (error) {
         console.error('❌ Failed to parse checkout items:', error);
       }
@@ -87,7 +86,6 @@ export default function CheckoutPage() {
     // Thêm delay nhỏ để đảm bảo checkout items đã load xong
     const timer = setTimeout(() => {
       if (checkoutItems.length === 0) {
-        console.log('❌ No checkout items found, redirecting to cart');
         router.push("/cart");
       }
     }, 100);
@@ -104,12 +102,10 @@ export default function CheckoutPage() {
 
   // Debug selectedPaymentMethod changes
   useEffect(() => {
-    console.log("🔍 selectedPaymentMethod changed:", selectedPaymentMethod);
   }, [selectedPaymentMethod]);
 
   // Debug paymentMethods changes
   useEffect(() => {
-    console.log("🔍 paymentMethods changed:", paymentMethods);
   }, [paymentMethods]);
 
   const handleShippingInfoChange = (info: ShippingInfo) => {
@@ -117,8 +113,6 @@ export default function CheckoutPage() {
   };
 
   const handlePaymentMethodSelect = (paymentMethodId: number) => {
-    console.log("🔘 Selecting payment method:", paymentMethodId, "Type:", typeof paymentMethodId);
-    console.log("🔘 Current selectedPaymentMethod:", selectedPaymentMethod, "Type:", typeof selectedPaymentMethod);
     setSelectedPaymentMethod(paymentMethodId);
   };
 
@@ -175,11 +169,6 @@ export default function CheckoutPage() {
           unitPrice: item.price.toString() // Backend expects string
         }))
       };
-
-      console.log('📦 Sending checkout data:', JSON.stringify(checkoutData, null, 2));
-      console.log('📦 Checkout items:', JSON.stringify(checkoutItems, null, 2));
-      console.log('📦 User ID:', userId);
-      console.log('📦 Payment Method ID:', selectedPaymentMethod);
       
       const result = await dispatch(createOrder(checkoutData)).unwrap();
       

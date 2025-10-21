@@ -47,12 +47,10 @@ export default function ProductDetailPage() {
       try {
         if (!id) return;
         const numericId = Number(id);
-        console.log("📦 Lấy chi tiết sản phẩm ID:", numericId);
 
         const res = await productAPI.getProductById(numericId);
         const productData = res.data?.product || res.data;
 
-        console.log("✅ Dữ liệu sản phẩm:", productData);
         setProduct(productData);
       } catch (error) {
         console.error("❌ Lỗi khi load chi tiết sản phẩm:", error);
@@ -63,23 +61,17 @@ export default function ProductDetailPage() {
 
     async function fetchCart() {
       if (!userId || userId <= 0) {
-        console.log("👤 Guest user - skipping cart fetch");
         setCartId(null);
         return;
       }
 
-      // Check if user is actually authenticated
       if (!isAuthenticated || !authToken) {
-        console.log("🔒 User not authenticated - skipping cart fetch");
         setCartId(null);
         return;
       }
 
       try {
-        console.log("🛒 Lấy giỏ hàng cho user:", userId);
         const cart = await cartApi.getCartByUser(userId);
-
-        console.log("✅ Dữ liệu giỏ hàng:", cart);
 
         // sửa cart.id → cart.cartId
         if (cart && cart.cartId) {
@@ -112,10 +104,8 @@ export default function ProductDetailPage() {
         
         // Try to create a new cart if cart doesn't exist and endpoint is available
         if (error.response?.status === 404 && isCartEndpointAvailable('carts')) {
-          console.log("🛒 Cart not found, attempting to create new cart for user:", userId);
           try {
             const newCart = await cartApi.createCart(userId);
-            console.log("✅ Created new cart:", newCart);
             if (newCart && newCart.cartId) {
               setCartId(newCart.cartId);
             }
@@ -141,14 +131,10 @@ export default function ProductDetailPage() {
       
       const numericId = Number(id);
       try {
-        console.log("📊 Tracking product view for ID:", numericId);
         const result = await viewTracker.trackView(numericId, productStatsApi.trackProductView);
         if (result.tracked) {
           hasTrackedRef.current = true;
           setHasTrackedView(true);
-          console.log("✅ Product view tracked successfully");
-        } else {
-          console.log("ℹ️ Product view not tracked:", result.message);
         }
       } catch (error) {
         console.error("❌ Error tracking product view:", error);
@@ -160,8 +146,6 @@ export default function ProductDetailPage() {
 
   // 🔹 Xử lý thêm vào giỏ hàng
   const handleAddToCart = async () => {
-    console.log("👉 Click thêm giỏ hàng", { product, cartId, quantity, userId });
-
     if (!product) {
       toastError("Lỗi sản phẩm", "Không tìm thấy sản phẩm");
       return;
@@ -169,7 +153,6 @@ export default function ProductDetailPage() {
     
     // Redirect to login if not authenticated
     if (!userId || userId <= 0 || !isAuthenticated || !authToken) {
-      console.log("🔒 User not authenticated - redirecting to login");
       router.push('/login');
       return;
     }
@@ -182,13 +165,10 @@ export default function ProductDetailPage() {
     setAdding(true);
     try {
       const res = await cartApi.addToCart(cartId, product.productId, quantity);
-      console.log("✅ API addToCart response:", res);
-
       toastSuccess("Thành công!", "Đã thêm sản phẩm vào giỏ hàng");
     } catch (error: any) {
       console.error("❌ Lỗi khi thêm giỏ hàng:", error);
       
-      // Log detailed error information
       if (error.response) {
         console.error("❌ AddToCart API Error Details:", {
           status: error.response.status,

@@ -56,20 +56,11 @@ export default function StaffOrders() {
     });
     
     setStatusCounts(counts);
-    console.log('📊 Staff status counts updated:', counts);
   };
 
   // Real-time order status sync
   const { isConnected, connectionError } = useStaffOrderSync({
     onStatusUpdate: (update) => {
-      console.log('📦 Staff received order update:', update);
-      console.log('📦 Staff order update details:', {
-        orderId: update.orderId,
-        oldStatus: update.oldStatus,
-        newStatus: update.status,
-        updatedBy: update.updatedBy,
-        timestamp: update.timestamp
-      });
       
       // Update orders in real-time
       setOrders(prevOrders => {
@@ -78,7 +69,6 @@ export default function StaffOrders() {
             ? { ...order, status: update.status }
             : order
         );
-        console.log('🔄 Staff orders updated:', updatedOrders);
         return updatedOrders;
       });
       
@@ -106,7 +96,6 @@ export default function StaffOrders() {
   // Fallback polling mechanism if Socket.IO is not working
   useEffect(() => {
     if (!isConnected && allOrders.length > 0) {
-      console.log('🔄 Socket.IO not connected, starting fallback polling...');
       
       const pollInterval = setInterval(async () => {
         try {
@@ -125,15 +114,12 @@ export default function StaffOrders() {
             const currentOrderIds = allOrders.map(o => o.orderId).sort();
             const fetchedOrderIds = normalizedOrders.map((o: any) => o.orderId).sort();
             
-            // Check if orders have changed
             if (JSON.stringify(currentOrderIds) !== JSON.stringify(fetchedOrderIds)) {
-              console.log('🔄 Staff polling detected order changes, updating...');
               setAllOrders(normalizedOrders);
               updateStatusCounts(normalizedOrders);
             }
           }
         } catch (error) {
-          console.error('❌ Staff polling error:', error);
         }
       }, 5000); // Poll every 5 seconds
       
@@ -156,16 +142,12 @@ export default function StaffOrders() {
           return order;
         });
         
-        console.log('📦 Staff fetched orders from API:', fetchedOrders);
-        console.log('📦 Staff normalized orders:', normalizedOrders);
-        
         setAllOrders(normalizedOrders);
         
         // Update status counts after fetching
         updateStatusCounts(normalizedOrders);
       }
     } catch (error) {
-      console.error('❌ Error fetching all orders for stats:', error);
     }
   };
 
@@ -200,22 +182,12 @@ export default function StaffOrders() {
         
         setOrders(response.data.orders);
         
-        console.log('📊 Staff Orders loaded:', {
-          ordersCount: response.data.orders.length,
-          totalFromBackend: response.data.total,
-          totalPages: calculatedTotalPages,
-          currentPage: currentPage,
-          limit: limit
-        });
-        
       } else {
-        console.warn('⚠️ No orders data in response');
         setOrders([]);
         setTotalOrders(0);
         setTotalPages(0);
       }
     } catch (error: any) {
-      console.error('❌ Error fetching staff orders:', error);
       setError(error.response?.data?.message || 'Không thể tải danh sách đơn hàng');
       toastError('Lỗi', 'Không thể tải danh sách đơn hàng');
     } finally {
@@ -331,15 +303,13 @@ export default function StaffOrders() {
   const handleStatusChange = async (orderId: number, newStatus: string) => {
     setUpdatingStatus(orderId);
     try {
-      console.log('🔄 Updating order status:', { orderId, newStatus });
+      
       
       // Call API to update order status
       const response = await staffOrderAPI.updateOrderStatus(orderId, newStatus);
-      console.log('✅ API call successful:', response.data);
       
       // Verify the status was actually updated in the response
       if (response.data && response.data.status) {
-        console.log('✅ Status confirmed in response:', response.data.status);
       } else {
         console.warn('⚠️ Status not found in response, checking if update was successful');
       }
@@ -366,23 +336,16 @@ export default function StaffOrders() {
       // Verify the update by fetching the order again
       setTimeout(async () => {
         try {
-          const verifyResponse = await staffOrderAPI.getOrderById(orderId);
-          console.log('🔍 Verification - Current order status:', verifyResponse.data.status);
-          
+          const verifyResponse = await staffOrderAPI.getOrderById(orderId);  
           if (verifyResponse.data.status !== newStatus) {
-            console.warn('⚠️ Status mismatch! Expected:', newStatus, 'Got:', verifyResponse.data.status);
             toastError('Cảnh báo!', 'Trạng thái có thể chưa được lưu vào database');
-          } else {
-            console.log('✅ Status verified in database:', verifyResponse.data.status);
-          }
+          } 
         } catch (verifyError) {
-          console.error('❌ Error verifying order status:', verifyError);
         }
       }, 1000);
       
       toastSuccess('Thành công!', `Đã cập nhật trạng thái đơn hàng #${orderId}`);
     } catch (error: any) {
-      console.error('❌ Error updating order status:', error);
       console.error('❌ Error details:', {
         status: error.response?.status,
         statusText: error.response?.statusText,

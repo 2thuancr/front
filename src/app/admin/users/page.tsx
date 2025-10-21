@@ -34,16 +34,12 @@ export default function AdminUsers() {
       try {
         setLoading(true);
         setError(null);
-        console.log('🔄 Fetching customers from API...');
         
         const response = await adminCustomerAPI.getAllCustomers();
-        console.log('✅ Customers API response:', response.data);
         
         if (response.data && response.data.customers) {
           setCustomers(response.data.customers);
-          console.log('✅ Customers loaded:', response.data.customers.length);
         } else {
-          console.warn('⚠️ No customers data in response');
           setCustomers([]);
         }
       } catch (error: any) {

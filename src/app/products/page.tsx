@@ -70,15 +70,12 @@ export default function ProductsPage() {
     const fetchCart = async () => {
       // Chỉ fetch cart khi user đã đăng nhập và có userId hợp lệ
       if (!isAuthenticated || !userId || userId <= 0) {
-        console.log("🔒 User not authenticated or invalid userId, skipping cart fetch");
         setCartId(null);
         return;
       }
 
       try {
-        console.log("🛒 Lấy giỏ hàng cho user:", userId);
         const cart = await cartApi.getCartByUser(userId);
-        console.log("✅ Dữ liệu giỏ hàng:", cart);
 
         if (cart && cart.cartId) {
           setCartId(cart.cartId);
@@ -90,15 +87,12 @@ export default function ProductsPage() {
         
         // Thử tạo giỏ hàng mới nếu không tìm thấy
         if (error.response?.status === 404) {
-          console.log("🛒 Cart not found, attempting to create new cart for user:", userId);
           try {
             const newCart = await cartApi.createCart(userId);
-            console.log("✅ Created new cart:", newCart);
             if (newCart && newCart.cartId) {
               setCartId(newCart.cartId);
             }
           } catch (createError: any) {
-            console.error("❌ Failed to create cart:", createError);
           }
         } else if (error.response?.status === 401) {
           console.warn("🔒 Unauthorized - user may need to login again");
@@ -111,34 +105,24 @@ export default function ProductsPage() {
   }, [userId, isAuthenticated]);
 
   const handleAddToCart = async (productId: number) => {
-    console.log("🔥 handleAddToCart được gọi từ ProductsPage!", { productId, cartId, userId });
-
     if (!isAuthenticated) {
-      console.log("❌ User not authenticated");
       toastError("Cần đăng nhập", "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
       return;
     }
 
     if (!userId || userId <= 0) {
-      console.log("❌ Không có userId:", userId);
       toastError("Lỗi đăng nhập", "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
       return;
     }
     if (!cartId) {
-      console.log("❌ Không có cartId:", cartId);
       toastError("Lỗi giỏ hàng", "Không tìm thấy giỏ hàng. Vui lòng đăng nhập để sử dụng giỏ hàng.");
       return;
     }
 
     try {
-      console.log("🔄 Gọi API cartApi.addToCart");
       const res = await cartApi.addToCart(cartId, productId, 1);
-      console.log("✅ API addToCart response:", res);
       toastSuccess("Thành công!", "Đã thêm sản phẩm vào giỏ hàng");
     } catch (error: any) {
-      console.error("❌ Lỗi khi thêm giỏ hàng:", error);
-      
-      // Log detailed error information
       if (error.response) {
         console.error("❌ AddToCart API Error Details:", {
           status: error.response.status,
@@ -232,10 +216,7 @@ export default function ProductsPage() {
                 product={product}
                 onAddToCart={handleAddToCart}
                 onToggleWishlist={async (productId: number) => {
-                  console.log("🔥 handleToggleWishlist được gọi từ ProductsPage!", { productId, userId });
-
                   if (!isAuthenticated) {
-                    console.log("❌ User not authenticated for wishlist");
                     toastError("Cần đăng nhập", "Vui lòng đăng nhập để sử dụng tính năng yêu thích");
                     return;
                   }
@@ -246,9 +227,7 @@ export default function ProductsPage() {
                   }
 
                   try {
-                    console.log("🔄 Gọi Redux toggleWishlist");
                     const result = await dispatch(toggleWishlist(productId)).unwrap();
-                    console.log("✅ Toggle wishlist result:", result);
                     
                     if (result.action === 'added') {
                       toastSuccess("Thành công!", "Đã thêm sản phẩm vào danh sách yêu thích");

@@ -59,15 +59,6 @@ export default function AdminOrders() {
         // Calculate total pages based on total count
         const calculatedTotalPages = Math.ceil(total / limit);
         setTotalPages(calculatedTotalPages);
-        
-        console.log('📊 Orders loaded:', {
-          ordersCount: response.data.orders.length,
-          totalFromBackend: response.data.total,
-          totalPages: calculatedTotalPages,
-          currentPage: currentPage,
-          limit: limit
-        });
-        
       } else {
         console.warn('⚠️ No orders data in response');
         setOrders([]);
