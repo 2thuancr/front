@@ -61,12 +61,7 @@ export default function OrdersPage() {
       setOrders(prevOrders => {
         const updatedOrders = prevOrders.map(order => {
           if (order.orderId === update.orderId) {
-            // Normalize cancelled status to CANCELLED
-            let normalizedStatus = update.status;
-            if (update.status === 'CANCELED' || update.status === 'CANCEL') {
-              normalizedStatus = 'CANCELLED';
-            }
-            return { ...order, status: normalizedStatus };
+            return { ...order, status: update.status };
           }
           return order;
         });
