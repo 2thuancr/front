@@ -18,10 +18,25 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
   children, 
   fallback 
 }) => {
-  const { user, userType, hasAnyRole } = useAuth();
+  const { user, userType, hasAnyRole, isLoading } = useAuth();
   const router = useRouter();
+  const [isChecking, setIsChecking] = React.useState(true);
   
   useEffect(() => {
+    // Wait a bit for auth state to be restored from localStorage
+    const timer = setTimeout(() => {
+      setIsChecking(false);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  useEffect(() => {
+    // Don't redirect while still checking or loading
+    if (isChecking || isLoading) {
+      return;
+    }
+    
     // Redirect to login if no user
     if (!user) {
       router.push('/login');
@@ -39,7 +54,16 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
       router.push('/login');
       return;
     }
-  }, [user, userType, hasAnyRole, allowedUserTypes, allowedRoles, router]);
+  }, [user, userType, hasAnyRole, allowedUserTypes, allowedRoles, router, isChecking, isLoading]);
+  
+  // Show loading state while checking
+  if (isChecking || isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
   
   // Check if user exists
   if (!user) {

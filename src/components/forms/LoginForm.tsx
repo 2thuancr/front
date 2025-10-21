@@ -69,7 +69,6 @@ const onSubmit = async (data: LoginCredentials) => {
       }
       
       
-      
       // Fallback redirect in case useAuth redirect fails
       setTimeout(() => {
         if (window.location.pathname === '/login' || window.location.pathname === '/') {

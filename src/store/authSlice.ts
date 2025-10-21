@@ -250,8 +250,10 @@ const authSlice = createSlice({
         } else if (action.payload.userType === 'staff') {
           // Handle staff data from both customer API and staff API
           if (action.payload.staff) {
+            console.log('🔐 Setting staff user from staff API:', action.payload.staff);
             state.user = action.payload.staff;
           } else if (action.payload.user && action.payload.user.role === 'staff') {
+            console.log('🔐 Setting staff user from customer API:', action.payload.user);
             state.user = action.payload.user;
           }
         } else {
