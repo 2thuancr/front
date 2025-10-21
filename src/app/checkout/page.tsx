@@ -100,11 +100,9 @@ export default function CheckoutPage() {
     };
   }, [dispatch]);
 
-  // Debug selectedPaymentMethod changes
   useEffect(() => {
   }, [selectedPaymentMethod]);
 
-  // Debug paymentMethods changes
   useEffect(() => {
   }, [paymentMethods]);
 

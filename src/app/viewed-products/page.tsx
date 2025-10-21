@@ -51,14 +51,6 @@ const ViewedProductsPage: React.FC = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [limit] = useState(10);
 
-  // Debug user data
-  console.log('🔍 ViewedProductsPage - User data:', { 
-    isAuthenticated, 
-    user, 
-    userId: (user as any)?.id,
-    localStorageUserId: typeof window !== 'undefined' ? localStorage.getItem('userId') : null
-  });
-
   useEffect(() => {
     const fetchViewedProducts = async () => {
       // Get userId from user object or localStorage
@@ -90,14 +82,6 @@ const ViewedProductsPage: React.FC = () => {
         setError(null);
         console.log('🔍 Fetching viewed products for user ID:', userId);
         const response: ViewedProductsResponse = await productStatsApi.getUserViewHistory(userId, currentPage, limit);
-        
-        console.log('Viewed products response:', response);
-        
-        // Debug each product to see its structure
-        if (response.views && response.views.length > 0) {
-          console.log('First product structure:', response.views[0]);
-          console.log('Product images:', response.views[0]?.product);
-        }
         
         // Fetch detailed product info including images for each product
         const viewsWithImages = await Promise.all(
