@@ -59,9 +59,7 @@ api.interceptors.response.use(
     });
     
     if (!shouldSkipLogging) {
-      console.error('❌ API Error:', status, url, error.response?.data);
-      console.error('❌ Full error response:', error.response);
-      console.error('❌ Request config:', error.config);
+      console.error('❌ API Error:', status, url, error);
     } else {
       console.warn('⚠️ API Error (expected):', status, url);
     }

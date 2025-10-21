@@ -21,12 +21,13 @@ import { VoucherSelector } from "./components/VoucherSelector";
 import { ShippingInfo } from "@/types/order";
 import { Voucher } from "@/types/voucher";
 import { useUserId } from "@/hooks/useUserId";
-import { useToastSuccess } from "@/components/ui/Toast";
+import { useToastSuccess, useToastError } from "@/components/ui/Toast";
 
 export default function CheckoutPage() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const showSuccessToast = useToastSuccess();
+  const showErrorToast = useToastError();
   
   // Redux state
   const { data: cart, loading: cartLoading } = useSelector((state: RootState) => state.cart);
@@ -158,9 +159,11 @@ export default function CheckoutPage() {
       const checkoutData = {
         userId: userId,
         totalAmount: totalAmount.toString(), // Backend expects string
+        shippingFee: shippingFee.toString(), // Add shipping fee for backend calculation
         paymentMethod: paymentMethodCode, // Use payment method code instead of ID
         shippingAddress: `${shippingInfo.shippingAddress}, ${shippingInfo.ward}, ${shippingInfo.city}`,
         notes: shippingInfo.notes ?? "",
+        voucherId: selectedVoucher?.id || null, // Add voucher ID if selected
         orderDetails: checkoutItems.map(item => ({
           productId: item.productId,
           quantity: item.quantity,
@@ -191,8 +194,31 @@ export default function CheckoutPage() {
           router.push('/orders');
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Checkout error:", error);
+      
+      // Extract error message
+      let errorMessage = "Đã có lỗi xảy ra khi đặt hàng";
+      
+      if (error?.message) {
+        errorMessage = error.message;
+        
+        // Translate common error messages to Vietnamese
+        if (errorMessage.includes("Voucher validation failed")) {
+          if (errorMessage.includes("usage limit")) {
+            errorMessage = "Bạn đã sử dụng hết số lần áp dụng voucher này";
+          } else if (errorMessage.includes("expired")) {
+            errorMessage = "Voucher đã hết hạn";
+          } else if (errorMessage.includes("minimum order")) {
+            errorMessage = "Đơn hàng chưa đạt giá trị tối thiểu để áp dụng voucher";
+          } else {
+            errorMessage = "Voucher không hợp lệ hoặc không thể áp dụng";
+          }
+        }
+      }
+      
+      // Show error toast
+      showErrorToast('Đặt hàng thất bại', errorMessage);
     }
   };
 

@@ -350,16 +350,15 @@ export function VoucherModal({
                                   return `Còn ${diffDays} ngày`;
                                 })()}
                               </span>
-                              <button 
-                                type="button"
-                                className="text-xs text-blue-600 hover:text-blue-800"
+                              <span 
+                                className="text-xs text-blue-600 hover:text-blue-800 cursor-pointer"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   // Handle conditions click
                                 }}
                               >
                                 Điều kiện
-                              </button>
+                              </span>
                             </div>
                             
                             {/* Radio Button */}
