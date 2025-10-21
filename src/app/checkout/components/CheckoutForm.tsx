@@ -43,7 +43,6 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
           
           setFormData(autoFilledData);
           onShippingInfoChange(autoFilledData);
-          console.log("✅ Auto-filled form with saved address:", autoFilledData);
           return;
         }
       }
@@ -60,7 +59,6 @@ export function CheckoutForm({ shippingInfo, onShippingInfoChange, onNext }: Che
       
       setFormData(autoFilledData);
       onShippingInfoChange(autoFilledData);
-      console.log("✅ Auto-filled form with user profile data:", autoFilledData);
     }
   }, [userProfile, shippingInfo.customerName, onShippingInfoChange]);
 

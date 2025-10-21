@@ -51,37 +51,21 @@ export default function OrdersPage() {
     });
     
     setStatusCounts(counts);
-    console.log('📊 Status counts updated:', counts);
-    console.log('📊 Total orders:', orders.length);
-    console.log('📊 Orders with CANCELLED status:', orders.filter(o => o.status === 'CANCELLED'));
   };
 
   // Real-time order status sync for customers
   const { isConnected, connectionError } = useCustomerOrderSync({
     onStatusUpdate: (update) => {
-      console.log('📦 Customer received order update:', update);
-      console.log('📦 Update details:', {
-        orderId: update.orderId,
-        oldStatus: orders.find(o => o.orderId === update.orderId)?.status,
-        newStatus: update.status
-      });
       
       // Update orders in real-time
       setOrders(prevOrders => {
         const updatedOrders = prevOrders.map(order => {
           if (order.orderId === update.orderId) {
-            // Normalize cancelled status to CANCELLED
-            let normalizedStatus = update.status;
-            if (update.status === 'CANCELED' || update.status === 'CANCEL') {
-              normalizedStatus = 'CANCELLED';
-            }
-            return { ...order, status: normalizedStatus };
+            return { ...order, status: update.status };
           }
           return order;
         });
-        console.log('🔄 Customer orders updated:', updatedOrders);
-        console.log('🔄 Filtered orders count:', updatedOrders.filter(o => o.status === selectedStatus).length);
-        
+          
         // Update status counts
         updateStatusCounts(updatedOrders);
         
@@ -93,8 +77,6 @@ export default function OrdersPage() {
   // Fallback polling mechanism if Socket.IO is not working
   useEffect(() => {
     if (!isConnected && orders.length > 0) {
-      console.log('🔄 Socket.IO not connected, starting fallback polling...');
-      
       const pollInterval = setInterval(async () => {
         try {
           if (!user) return;
@@ -120,7 +102,6 @@ export default function OrdersPage() {
           
           // Check if orders have changed
           if (JSON.stringify(currentOrderIds) !== JSON.stringify(fetchedOrderIds)) {
-            console.log('🔄 Polling detected order changes, updating...');
             setOrders(normalizedOrders);
             updateStatusCounts(normalizedOrders);
           }
@@ -162,11 +143,6 @@ export default function OrdersPage() {
       });
       
       const fetchedOrders = res.data.orders || [];
-      console.log('📦 Fetched orders from API:', fetchedOrders);
-      console.log('📦 Orders by status:', fetchedOrders.reduce((acc: any, order: any) => {
-        acc[order.status] = (acc[order.status] || 0) + 1;
-        return acc;
-      }, {}));
       
       // Normalize cancelled status to CANCELLED
       const normalizedOrders = fetchedOrders.map((order: any) => {
@@ -175,15 +151,7 @@ export default function OrdersPage() {
         }
         return order;
       });
-      
-      console.log('📦 Normalized orders:', normalizedOrders);
-      console.log('📦 Orders by status after normalization:', normalizedOrders.reduce((acc: any, order: any) => {
-        acc[order.status] = (acc[order.status] || 0) + 1;
-        return acc;
-      }, {}));
-      
       setOrders(normalizedOrders);
-      
       // Update status counts after fetching
       updateStatusCounts(normalizedOrders);
     } catch (err) {
@@ -196,16 +164,9 @@ export default function OrdersPage() {
   // Hủy đơn
   const cancelOrder = async (orderId: string) => {
     try {
-      console.log('🔄 Customer cancelling order:', orderId);
       const response = await axios.patch(`${API_BASE}/orders/${orderId}/cancel`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log('✅ Customer order cancellation successful:', response.data);
-      
-      // Wait for Socket.IO event from backend
-      console.log('📡 Waiting for Socket.IO event from backend...');
-      console.log('📡 Expected event: order_cancelled or order_status_update');
-      console.log('📡 Backend should emit to staff room for real-time sync');
       
       fetchOrders(true); // Force refresh sau khi cancel
     } catch (err: any) {
@@ -279,7 +240,6 @@ export default function OrdersPage() {
           </button>
           {Object.entries(statusConfig).map(([status, config]) => {
             const count = statusCounts[status] || 0;
-            console.log(`📊 Tab ${status}: count = ${count}, label = ${config.label}`);
             return (
               <button
                 key={status}

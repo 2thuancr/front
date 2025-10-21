@@ -38,9 +38,6 @@ export default function StaffDashboard() {
         setOrdersLoading(true);
         const response = await vendorOrderAPI.getAllOrders(1, 3); // Get only 3 most recent
         const orders = response.data?.orders || [];
-        
-        console.log('📦 Staff Recent orders data:', orders);
-        
         // Sort by createdAt date (most recent first)
         const sortedOrders = orders.sort((a: any, b: any) => 
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -148,7 +145,6 @@ export default function StaffDashboard() {
             </span>
             <button 
               onClick={() => {
-                console.log('🧪 Test redirect to staff dashboard');
                 window.location.href = '/staff/dashboard';
               }}
               className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
@@ -360,12 +356,6 @@ export default function StaffDashboard() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
                 <p className="text-gray-900">{staff?.isActive ? 'Hoạt động' : 'Tạm dừng'}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Lần đăng nhập cuối</label>
-                <p className="text-gray-900">
-                  {staff?.lastLoginAt ? formatDate(staff.lastLoginAt) : 'Chưa có'}
-                </p>
               </div>
             </div>
             <div className="mt-6">

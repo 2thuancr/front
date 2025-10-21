@@ -239,14 +239,6 @@ export const useSocketIO = ({
       
       // Special debug for order status updates
       if (eventName.includes('order') && eventName.includes('status')) {
-        console.log('🔍 SocketIO: Order status event detected:', {
-          eventName,
-          args,
-          userType,
-          userId: 'id' in user ? user.id : null,
-          vendorId: 'vendorId' in user ? user.vendorId : null,
-          staffId: 'id' in user ? user.id : null
-        });
         
         // Additional debug for vendor receiving staff updates
         if (userType === 'vendor' && args && args[0]) {

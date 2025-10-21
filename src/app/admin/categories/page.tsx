@@ -54,7 +54,6 @@ export default function AdminCategories() {
         setTotalPages(calculatedTotalPages);
         
       } else {
-        console.warn('⚠️ No categories data in response');
         setCategories([]);
         setTotalCategories(0);
         setTotalPages(0);
@@ -74,7 +73,7 @@ export default function AdminCategories() {
 
   const filteredCategories = categories.filter(category => {
     const matchesSearch = category.categoryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         category.description.toLowerCase().includes(searchTerm.toLowerCase());
+                         category.description?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 

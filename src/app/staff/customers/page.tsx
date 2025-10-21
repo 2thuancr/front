@@ -60,15 +60,11 @@ export default function StaffCustomersPage() {
       
       if (response.data) {
         setCustomers(response.data);
-        console.log('📊 Staff Customers loaded:', response.data.length);
       } else {
-        console.warn('⚠️ No customers data in response');
         setCustomers([]);
       }
     } catch (error: any) {
-      console.error('❌ Error fetching customers:', error);
       setError('Không thể tải danh sách khách hàng');
-      useToastError('Không thể tải danh sách khách hàng');
     } finally {
       setLoading(false);
     }

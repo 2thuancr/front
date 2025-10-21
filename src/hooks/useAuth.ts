@@ -151,6 +151,11 @@ export const useAuth = () => {
       // Check what we got from the API
       if (result.access_token) {
         console.log('💾 Saving token to localStorage:', result.access_token ? 'exists' : 'null');
+        console.log('🔍 Token format check:', {
+          length: result.access_token.length,
+          parts: result.access_token.split('.').length,
+          firstChars: result.access_token.substring(0, 20) + '...'
+        });
         
         localStorage.setItem('token', result.access_token);
         
@@ -165,7 +170,19 @@ export const useAuth = () => {
         } else if (result.userType === 'vendor') {
           userData = result.vendor;
         } else if (result.userType === 'staff') {
-          userData = result.staff;
+          // Handle staff data from both customer API and staff API
+          if (result.staff) {
+            console.log('🔐 Setting staff user from staff API:', result.staff);
+            userData = result.staff;
+          } else if (result.user && result.user.role === 'staff') {
+            console.log('🔐 Setting staff user from customer API:', result.user);
+            userData = result.user;
+          }
+          
+          // Log staff ID for debugging
+          if (userData) {
+            console.log('🔐 Staff ID:', userData.staffId || userData.id);
+          }
         } else {
           userData = result.user;
         }
@@ -180,6 +197,9 @@ export const useAuth = () => {
           if (userData.id) {
             userIdToSave = userData.id;
             localStorage.setItem('userId', JSON.stringify(userData.id));
+          } else if (userData.staffId) {
+            userIdToSave = userData.staffId;
+            localStorage.setItem('userId', JSON.stringify(userData.staffId));
           } else if (userData.adminId) {
             userIdToSave = userData.adminId;
             localStorage.setItem('userId', JSON.stringify(userData.adminId));

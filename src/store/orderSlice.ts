@@ -78,9 +78,15 @@ export const fetchPaymentMethods = createAsyncThunk(
 // 🛍️ Tạo đơn hàng mới (Checkout)
 export const createOrder = createAsyncThunk(
   "order/createOrder",
-  async (checkoutData: CheckoutRequest) => {
-    const response = await orderApi.createOrder(checkoutData);
-    return response.data || response;
+  async (checkoutData: CheckoutRequest, { rejectWithValue }) => {
+    try {
+      const response = await orderApi.createOrder(checkoutData);
+      return response.data || response;
+    } catch (error: any) {
+      // Extract error message from response
+      const errorMessage = error.response?.data?.message || error.message || "Failed to create order";
+      return rejectWithValue(errorMessage);
+    }
   }
 );
 
@@ -197,7 +203,7 @@ const orderSlice = createSlice({
       })
       .addCase(createOrder.rejected, (state, action) => {
         state.checkoutLoading = false;
-        state.checkoutError = action.error.message || "Failed to create order";
+        state.checkoutError = (action.payload as string) || action.error.message || "Failed to create order";
         state.checkoutSuccess = false;
       })
 

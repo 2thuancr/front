@@ -17,15 +17,6 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ className = '' }) => {
   const { user, logout } = useAuth();
   const router = useRouter();
 
-  // Debug logging
-  console.log('🎯 UserDropdown render:', { 
-    user, 
-    hasUser: !!user,
-    userFirstName: (user as any)?.firstName,
-    userLastName: (user as any)?.lastName,
-    userEmail: user?.email
-  });
-
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

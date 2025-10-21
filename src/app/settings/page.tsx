@@ -66,22 +66,18 @@ export default function SettingsPage() {
 
   const handleSaveProfile = () => {
     // Handle profile save
-    console.log('Saving profile:', profileData);
   };
 
   const handleChangePassword = () => {
     // Handle password change
-    console.log('Changing password:', passwordData);
   };
 
   const handleSaveNotifications = () => {
     // Handle notification settings save
-    console.log('Saving notifications:', notificationSettings);
   };
 
   const handleSaveAppearance = () => {
     // Handle appearance settings save
-    console.log('Saving appearance:', appearanceSettings);
   };
 
   const handleLogout = async () => {

@@ -31,7 +31,6 @@ export const clearWishlistFromStorage = () => {
 };
 
 export const handleUnauthorized = () => {
-  console.log('🔒 Unauthorized access - clearing auth data and redirecting');
   
   // Clear auth data
   clearAuthData();
@@ -45,10 +44,8 @@ export const handleUnauthorized = () => {
     const isPublicPage = publicPaths.includes(window.location.pathname);
     
     if (!isPublicPage) {
-      console.log('🔄 handleUnauthorized: Redirecting to login');
       window.location.href = '/login';
     } else {
-      console.log('🔍 handleUnauthorized: On public page, not redirecting');
     }
   }
 };
@@ -60,12 +57,38 @@ export const isTokenValid = () => {
   }
   
   try {
-    // Decode JWT token to check expiration
-    const payload = JSON.parse(atob(token.split('.')[1]));
+    // Check if token has the correct JWT format (3 parts separated by dots)
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      return false;
+    }
+    
+    // Decode JWT token payload to check expiration
+    const base64Payload = parts[1];
+    
+    if (!base64Payload) {
+      return false;
+    }
+    
+    // Replace URL-safe characters if needed
+    const base64 = base64Payload.replace(/-/g, '+').replace(/_/g, '/');
+    
+    // Add padding if needed
+    const padding = '='.repeat((4 - (base64.length % 4)) % 4);
+    const base64WithPadding = base64 + padding;
+    
+    const payload = JSON.parse(atob(base64WithPadding));
+    
+    // Check if payload has expiration
+    if (!payload.exp) {
+      return false;
+    }
+    
     const currentTime = Date.now() / 1000;
     return payload.exp > currentTime;
   } catch (error) {
-    console.error('❌ Invalid token format:', error);
+    // Clear invalid token
+    localStorage.removeItem('token');
     return false;
   }
 };

@@ -25,7 +25,8 @@ import {
   Star,
   HelpCircle,
   Users,
-  FolderOpen
+  FolderOpen,
+  Ticket
 } from 'lucide-react';
 
 interface SidebarItem {
@@ -52,6 +53,11 @@ const vendorMenuItems: SidebarItem[] = [
     name: 'Danh mục',
     href: '/vendor/categories',
     icon: FolderOpen
+  },
+  {
+    name: 'Voucher',
+    href: '/vendor/vouchers',
+    icon: Ticket
   },
   {
     name: 'Đơn hàng',

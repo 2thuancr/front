@@ -27,13 +27,7 @@ const Navigation: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
   
-  // Debug log
-  console.log('🔍 Navigation: Current state:', {
-    pathname,
-    isAuthenticated,
-    user: (user as any)?.firstName + ' ' + (user as any)?.lastName,
-    currentPath: window.location.pathname
-  });
+
   const navigation = [
     { name: 'Trang chủ', href: '/' },
     { name: 'Sản phẩm', href: '/products' },

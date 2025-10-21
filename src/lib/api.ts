@@ -44,7 +44,10 @@ api.interceptors.response.use(
       '/wishlist',
       '/auth/login',
       '/auth/register',
-      '/auth/forgot-password'
+      '/auth/forgot-password',
+      '/staff-auth/login',
+      '/admin-auth/login',
+      '/vendor-auth/login'
     ];
     
     const shouldSkipLogging = skipLoggingEndpoints.some(endpoint => {
@@ -56,7 +59,7 @@ api.interceptors.response.use(
     });
     
     if (!shouldSkipLogging) {
-      console.error('❌ API Error:', status, url, error.response?.data);
+      console.error('❌ API Error:', status, url, error);
     } else {
       console.warn('⚠️ API Error (expected):', status, url);
     }
@@ -994,6 +997,17 @@ export const categoryAPI = {
   create: (data: any) => api.post("/categories", data),
   update: (id: number, data: any) => api.put(`/categories/${id}`, data),
   delete: (id: number) => api.delete(`/categories/${id}`),
+};
+
+// Voucher API
+export const voucherAPI = {
+  getAll: (params?: any) => api.get("/vouchers", { params }),
+  getById: (id: number) => api.get(`/vouchers/${id}`),
+  create: (data: any) => api.post("/vouchers", data),
+  update: (id: number, data: any) => api.put(`/vouchers/${id}`, data),
+  delete: (id: number) => api.delete(`/vouchers/${id}/hard`),
+  toggleActive: (id: number) => api.patch(`/vouchers/${id}/toggle-active`),
+  getStats: () => api.get("/vouchers/stats"),
 };
 
 export default api;
