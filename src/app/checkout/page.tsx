@@ -153,19 +153,34 @@ export default function CheckoutPage() {
     if (!checkoutItems.length || !userId || !selectedPaymentMethod) return;
 
     try {
+      // Calculate total amount
+      const subtotal = checkoutItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const shippingFee = 30000; // Fixed shipping fee
+      const discount = Math.max(0, Math.min(discountAmount, subtotal));
+      const totalAmount = Math.max(0, subtotal - discount) + shippingFee;
+
+      // Get payment method code
+      const paymentMethod = paymentMethods.find(pm => pm.id === selectedPaymentMethod);
+      const paymentMethodCode = paymentMethod?.code || 'COD';
+
       const checkoutData = {
-        cartId: checkoutItems[0]?.cartId || null, // Use cartId from first item
-        shippingInfo,
-        paymentMethodId: selectedPaymentMethod,
+        userId: userId,
+        totalAmount: totalAmount.toString(), // Backend expects string
+        paymentMethod: paymentMethodCode, // Use payment method code instead of ID
+        shippingAddress: `${shippingInfo.shippingAddress}, ${shippingInfo.ward}, ${shippingInfo.city}`,
         notes: shippingInfo.notes ?? "",
-        selectedItems: checkoutItems.map(item => ({
-          cartItemId: item.cartItemId,
+        orderDetails: checkoutItems.map(item => ({
           productId: item.productId,
           quantity: item.quantity,
-          price: item.price
+          unitPrice: item.price.toString() // Backend expects string
         }))
       };
 
+      console.log('📦 Sending checkout data:', JSON.stringify(checkoutData, null, 2));
+      console.log('📦 Checkout items:', JSON.stringify(checkoutItems, null, 2));
+      console.log('📦 User ID:', userId);
+      console.log('📦 Payment Method ID:', selectedPaymentMethod);
+      
       const result = await dispatch(createOrder(checkoutData)).unwrap();
       
       // Clear checkout items from localStorage after successful order
@@ -178,8 +193,8 @@ export default function CheckoutPage() {
       );
       
       // If payment method is COD, redirect to orders page
-      const paymentMethod = paymentMethods.find(pm => pm.id === selectedPaymentMethod);
-      if (paymentMethod?.code === 'COD') {
+      const selectedPaymentMethodObj = paymentMethods.find(pm => pm.id === selectedPaymentMethod);
+      if (selectedPaymentMethodObj?.code === 'COD') {
         router.push('/orders');
       } else {
         // For e-wallet payments, process payment

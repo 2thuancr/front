@@ -111,15 +111,15 @@ export default function StaffReportsPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Tổng đơn hàng</p>
-                <p className="text-2xl font-bold text-gray-900">{currentData.totalOrders}</p>
+                <p className="text-2xl font-bold text-gray-900">{currentData?.totalOrders}</p>
                 <div className="flex items-center mt-1">
-                  {currentData.growthRate > 0 ? (
+                  {(currentData?.growthRate || 0) > 0 ? (
                     <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
                   ) : (
                     <TrendingDown className="w-4 h-4 text-red-500 mr-1" />
                   )}
-                  <span className={`text-sm ${currentData.growthRate > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {Math.abs(currentData.growthRate).toFixed(1)}%
+                  <span className={`text-sm ${(currentData?.growthRate || 0) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {Math.abs(currentData?.growthRate || 0).toFixed(1)}%
                   </span>
                 </div>
               </div>
@@ -133,15 +133,15 @@ export default function StaffReportsPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Doanh thu</p>
-                <p className="text-2xl font-bold text-gray-900">{formatPrice(currentData.totalRevenue)}</p>
+                <p className="text-2xl font-bold text-gray-900">{formatPrice(currentData?.totalRevenue || 0)}</p>
                 <div className="flex items-center mt-1">
-                  {currentData.growthRate > 0 ? (
+                  {(currentData?.growthRate || 0) > 0 ? (
                     <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
                   ) : (
                     <TrendingDown className="w-4 h-4 text-red-500 mr-1" />
                   )}
-                  <span className={`text-sm ${currentData.growthRate > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {Math.abs(currentData.growthRate).toFixed(1)}%
+                  <span className={`text-sm ${(currentData?.growthRate || 0) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {Math.abs(currentData?.growthRate || 0).toFixed(1)}%
                   </span>
                 </div>
               </div>
@@ -155,10 +155,10 @@ export default function StaffReportsPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Khách hàng</p>
-                <p className="text-2xl font-bold text-gray-900">{currentData.totalCustomers}</p>
+                <p className="text-2xl font-bold text-gray-900">{currentData?.totalCustomers || 0}</p>
                 <div className="flex items-center mt-1">
                   <span className="text-sm text-gray-500">
-                    Tăng {currentData.totalCustomers - previousData.totalCustomers} khách hàng
+                    Tăng {(currentData?.totalCustomers || 0) - (previousData?.totalCustomers || 0)} khách hàng
                   </span>
                 </div>
               </div>
@@ -172,7 +172,7 @@ export default function StaffReportsPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Giá trị đơn hàng TB</p>
-                <p className="text-2xl font-bold text-gray-900">{formatPrice(currentData.averageOrderValue)}</p>
+                <p className="text-2xl font-bold text-gray-900">{formatPrice(currentData?.averageOrderValue || 0)}</p>
                 <div className="flex items-center mt-1">
                   <span className="text-sm text-gray-500">Trung bình</span>
                 </div>
@@ -320,7 +320,7 @@ export default function StaffReportsPage() {
               <BarChart3 className="w-5 h-5 text-green-600 mr-3" />
               <div className="text-left">
                 <div className="font-medium text-gray-900">Phân tích xu hướng</div>
-                translatetext-sm text-gray-500">Xem xu hướng kinh doanh</div>
+                <div className="text-sm text-gray-500">Xem chi tiết xu hướng</div>
               </div>
             </button>
             <button className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">

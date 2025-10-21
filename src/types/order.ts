@@ -87,10 +87,16 @@ export interface PaymentTransaction {
 
 // Checkout Types
 export interface CheckoutRequest {
-  cartId: number;
-  shippingInfo: ShippingInfo;
-  paymentMethodId: number;
+  userId: number;
+  totalAmount: string; // Backend expects string
+  paymentMethod: string; // Payment method code (COD, BANK_TRANSFER, etc.)
+  shippingAddress: string; // Combined address string
   notes?: string;
+  orderDetails: Array<{
+    productId: number;
+    quantity: number;
+    unitPrice: string; // Backend expects string
+  }>;
 }
 
 export interface CheckoutResponse {
