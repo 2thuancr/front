@@ -78,9 +78,15 @@ export const fetchPaymentMethods = createAsyncThunk(
 // 🛍️ Tạo đơn hàng mới (Checkout)
 export const createOrder = createAsyncThunk(
   "order/createOrder",
-  async (checkoutData: CheckoutRequest) => {
-    const response = await orderApi.createOrder(checkoutData);
-    return response.data || response;
+  async (checkoutData: CheckoutRequest, { rejectWithValue }) => {
+    try {
+      const response = await orderApi.createOrder(checkoutData);
+      return response.data || response;
+    } catch (error: any) {
+      // Extract error message from response
+      const errorMessage = error.response?.data?.message || error.message || "Failed to create order";
+      return rejectWithValue(errorMessage);
+    }
   }
 );
 
@@ -197,7 +203,7 @@ const orderSlice = createSlice({
       })
       .addCase(createOrder.rejected, (state, action) => {
         state.checkoutLoading = false;
-        state.checkoutError = action.error.message || "Failed to create order";
+        state.checkoutError = (action.payload as string) || action.error.message || "Failed to create order";
         state.checkoutSuccess = false;
       })
 
@@ -222,11 +228,11 @@ const orderSlice = createSlice({
       .addCase(cancelOrder.fulfilled, (state, action) => {
         // Update order in list
         const orderIndex = state.orders.findIndex(order => order.orderId === action.payload.orderId);
-        if (orderIndex !== -1) {
+        if (orderIndex !== -1 && state.orders[orderIndex]) {
           state.orders[orderIndex].status = 'cancelled';
         }
         // Update current order if it's the same
-        if (state.currentOrder?.orderId === action.payload.orderId) {
+        if (state.currentOrder && state.currentOrder.orderId === action.payload.orderId) {
           state.currentOrder.status = 'cancelled';
         }
       })
@@ -235,11 +241,11 @@ const orderSlice = createSlice({
       .addCase(updateOrderStatus.fulfilled, (state, action) => {
         // Update order in list
         const orderIndex = state.orders.findIndex(order => order.orderId === action.payload.orderId);
-        if (orderIndex !== -1) {
+        if (orderIndex !== -1 && state.orders[orderIndex]) {
           state.orders[orderIndex].status = action.payload.status;
         }
         // Update current order if it's the same
-        if (state.currentOrder?.orderId === action.payload.orderId) {
+        if (state.currentOrder && state.currentOrder.orderId === action.payload.orderId) {
           state.currentOrder.status = action.payload.status;
         }
       });

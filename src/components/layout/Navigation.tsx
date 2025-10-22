@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X, ShoppingCart, User, Heart } from 'lucide-react';
@@ -12,9 +12,22 @@ import UserDropdown from './UserDropdown';
 
 const Navigation: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
   const { isAuthenticated, user } = useAuth();
-const router = useRouter();
+  const router = useRouter();
+  
+  // Handle scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+  
+
   const navigation = [
     { name: 'Trang chủ', href: '/' },
     { name: 'Sản phẩm', href: '/products' },
@@ -35,7 +48,11 @@ const router = useRouter();
   };
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200">
+    <nav className={`sticky top-0 z-50 transition-all duration-300 ${
+      isScrolled 
+        ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200' 
+        : 'bg-white shadow-sm border-b border-gray-200'
+    }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -168,12 +185,12 @@ const router = useRouter();
                     <div className="px-3 py-2 bg-gray-50 rounded-md">
                       <div className="flex items-center space-x-3">
                         <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                          {user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                          {(user as any)?.firstName?.charAt(0) || user?.email?.charAt(0) || 'U'}
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-900">
-                            {user?.firstName && user?.lastName 
-                              ? `${user.firstName} ${user.lastName}` 
+                            {(user as any)?.firstName && (user as any)?.lastName 
+                              ? `${(user as any).firstName} ${(user as any).lastName}` 
                               : user?.email?.split('@')[0] || 'User'
                             }
                           </p>

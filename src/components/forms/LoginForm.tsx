@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useAuth } from '@/hooks/useAuth';
-import { LoginCredentials } from '@/types/auth';
+import { LoginCredentials, UserRole } from '@/types/auth';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
 import { Password } from 'primereact/password';
@@ -45,12 +45,52 @@ const LoginForm: React.FC = () => {
 const onSubmit = async (data: LoginCredentials) => {
   try {
     const result = await login(data);
-    if (result?.user?.id) {
-      console.log("✅ Đăng nhập thành công, userId:", result.user.id);
-      router.push('/'); // hoặc /profile, tùy bạn muốn
+    
+    if (result?.access_token) {
+      
+      
+      // Check role for different user types
+      if (result.userType === 'staff' && result.staff) {
+      } else if (result.userType === 'admin' && result.admin) {
+      } else if (result.userType === 'vendor' && result.vendor) {
+      } else if (result.userType === 'customer' && result.user) {
+      }
+      
+      // Redirect based on user type
+      let redirectPath = '/';
+      if (result.userType === 'admin') {
+        redirectPath = '/admin/dashboard';
+      } else if (result.userType === 'vendor') {
+        redirectPath = '/vendor/dashboard';
+      } else if (result.userType === 'staff') {
+        redirectPath = '/staff/dashboard';
+      } else {
+        redirectPath = '/'; // Customer
+      }
+      
+      
+      // Fallback redirect in case useAuth redirect fails
+      setTimeout(() => {
+        if (window.location.pathname === '/login' || window.location.pathname === '/') {
+          window.location.href = redirectPath;
+        }
+      }, 2000);
+      
+    } else {
+      
     }
-  } catch (error) {
-    console.error('Login error:', error);
+  } catch (error: any) {
+    
+    
+    // Log more details about the error
+    if (error.response) {
+      console.error('❌ Login API Error Details:', {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+        url: error.config?.url
+      });
+    }
   }
 };
 
@@ -70,14 +110,14 @@ const onSubmit = async (data: LoginCredentials) => {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="field">
             <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-              Tên đăng nhập
+              Tên đăng nhập / Email
             </label>
             <span className="p-input-icon-left w-full">
               <Mail className="h-4 w-4" />
               <InputText
                 id="username"
                 type="text"
-                placeholder="Nhập tên đăng nhập của bạn"
+                placeholder="Nhập email hoặc tên đăng nhập"
                 className={`w-full ${errors.username ? 'p-invalid' : ''}`}
                 {...register('username')}
               />
@@ -85,6 +125,9 @@ const onSubmit = async (data: LoginCredentials) => {
             {errors.username && (
               <small className="p-error block mt-1">{errors.username.message}</small>
             )}
+            <small className="text-gray-500 mt-1 block">
+              Khách hàng/Nhân viên: Email | Admin/Nhà cung cấp: Tên đăng nhập
+            </small>
           </div>
 
           <Input
@@ -137,7 +180,7 @@ const onSubmit = async (data: LoginCredentials) => {
           />
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center space-y-4">
           <p className="text-sm text-gray-600">
             Chưa có tài khoản?{' '}
             <Link
@@ -147,6 +190,7 @@ const onSubmit = async (data: LoginCredentials) => {
               Đăng ký ngay
             </Link>
           </p>
+          
         </div>
       </Card>
     </div>

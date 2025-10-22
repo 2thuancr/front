@@ -108,11 +108,11 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg relative overflow-hidden">
               {getAvatarUrl(userProfile?.avatar) ? (
                 <img
-                  src={getAvatarUrl(userProfile.avatar)!}
+                  src={getAvatarUrl(userProfile?.avatar)!}
                   alt="Avatar"
                   className="w-20 h-20 rounded-full object-cover"
                   onError={(e) => {
-                    console.log('Sidebar avatar load error:', userProfile.avatar);
+                    console.log('Sidebar avatar load error:', userProfile?.avatar);
                     e.currentTarget.style.display = 'none';
                   }}
                 />

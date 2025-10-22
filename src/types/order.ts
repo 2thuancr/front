@@ -8,20 +8,34 @@ export interface Order {
   paymentMethod: string;
   paymentStatus: 'pending' | 'completed' | 'failed';
   shippingInfo: ShippingInfo;
-  orderItems: OrderItem[];
+  orderItems?: OrderItem[];
+  orderDetails?: OrderItem[]; // Backend uses this field name
   createdAt: string;
   updatedAt: string;
 }
 
 export interface OrderItem {
-  orderItemId: number;
+  orderItemId?: number;
+  orderDetailId?: number; // Backend uses this field name
   orderId: number;
   productId: number;
-  productName: string;
+  productName?: string;
   quantity: number;
-  price: number;
-  totalPrice: number;
+  price?: number;
+  unitPrice?: number; // Backend uses this field name
+  totalPrice?: number;
   imageUrl?: string;
+  product?: {
+    productId: number;
+    productName: string;
+    price: number;
+    images?: Array<{
+      imageId: number;
+      productId: number;
+      imageUrl: string;
+      isPrimary: boolean;
+    }>;
+  };
 }
 
 export interface ShippingInfo {
@@ -29,6 +43,7 @@ export interface ShippingInfo {
   customerPhone: string;
   shippingAddress: string;
   city: string;
+  district?: string;
   ward: string;
   notes?: string;
 }
@@ -72,10 +87,16 @@ export interface PaymentTransaction {
 
 // Checkout Types
 export interface CheckoutRequest {
-  cartId: number;
-  shippingInfo: ShippingInfo;
-  paymentMethodId: number;
+  userId: number;
+  totalAmount: string; // Backend expects string
+  paymentMethod: string; // Payment method code (COD, BANK_TRANSFER, etc.)
+  shippingAddress: string; // Combined address string
   notes?: string;
+  orderDetails: Array<{
+    productId: number;
+    quantity: number;
+    unitPrice: string; // Backend expects string
+  }>;
 }
 
 export interface CheckoutResponse {

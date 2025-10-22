@@ -45,6 +45,7 @@ export interface ProductImage {
 export interface Product {
   productId: number;
   categoryId: number;
+  vendorId?: number | null;
   productName: string;
   description?: string;
   price: string; // API returns as string
@@ -54,6 +55,7 @@ export interface Product {
   updatedAt: string;
   category: Category;
   images: ProductImage[];
+  reviews?: ProductReview[];
 }
 
 // Legacy interface for backward compatibility
@@ -187,5 +189,82 @@ export interface RatingStatsResponse {
   success: boolean;
   data: RatingStats;
   message?: string;
+}
+
+// Products list response interface
+export interface ProductsResponse {
+  products: Product[];
+}
+
+// Admin Product Stats interface
+export interface AdminProductStats {
+  total: number;
+  active: number;
+  lowStock: number;
+  outOfStock: number;
+  totalValue: number;
+}
+
+// Category interfaces
+export interface Category {
+  categoryId: number;
+  categoryName: string;
+  description: string;
+  productCount: number;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface CategoriesResponse {
+  categories: Category[];
+  total: number;
+  page: string;
+  limit: string;
+}
+
+// Order interfaces
+export interface OrderDetail {
+  orderDetailId: number;
+  orderId: number;
+  productId: number;
+  quantity: number;
+  unitPrice: string;
+  product: Product;
+}
+
+export interface Order {
+  orderId: number;
+  userId: number;
+  vendorId: number | null;
+  orderDate: string;
+  totalAmount: string;
+  status: 'NEW' | 'CONFIRMED' | 'PREPARING' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED' | 'CANCELLATION_REQUESTED';
+  paymentMethod: 'COD' | 'BANK_TRANSFER' | 'CREDIT_CARD';
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  shippingAddress: string | null;
+  notes: string | null;
+  user: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    gender: 'male' | 'female' | 'other' | null;
+    dateOfBirth: string | null;
+    isVerified: boolean;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+  };
+  orderDetails: OrderDetail[];
+}
+
+export interface OrdersResponse {
+  orders: Order[];
+  total: number;
+  page: number;
+  limit: number;
 }
 

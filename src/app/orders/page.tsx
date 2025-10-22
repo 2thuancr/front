@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card } from 'primereact/card';
 import { Button } from 'primereact/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import Link from 'next/link';
+import { useCustomerOrderSync } from '@/hooks/useOrderStatusSync';
 
 // API base URL
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -20,8 +21,17 @@ const statusConfig = {
   PREPARING: { label: 'Shop đang chuẩn bị hàng', color: 'bg-purple-100 text-purple-800', icon: Package },
   SHIPPING: { label: 'Đang giao hàng', color: 'bg-indigo-100 text-indigo-800', icon: Truck },
   DELIVERED: { label: 'Đã giao hàng', color: 'bg-green-100 text-green-800', icon: CheckCircle },
-  CANCELED: { label: 'Đã hủy', color: 'bg-red-100 text-red-800', icon: XCircle },
-  CANCEL_REQUESTED: { label: 'Yêu cầu hủy', color: 'bg-orange-100 text-orange-800', icon: Clock },
+  CANCELLED: { label: 'Đã hủy', color: 'bg-red-100 text-red-800', icon: XCircle },
+  CANCELLATION_REQUESTED: { label: 'Yêu cầu hủy', color: 'bg-orange-100 text-orange-800', icon: Clock },
+};
+
+// Helper function to get user ID based on user type
+const getUserId = (user: any): number | undefined => {
+  if (!user) return undefined;
+  if ('id' in user) return user.id;
+  if ('adminId' in user) return user.adminId;
+  if ('vendorId' in user) return user.vendorId;
+  return undefined;
 };
 
 export default function OrdersPage() {
@@ -30,24 +40,120 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [loading, setLoading] = useState(false);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const hasFetchedRef = useRef(false);
+
+  // Function to update status counts
+  const updateStatusCounts = (orders: any[]) => {
+    const counts: Record<string, number> = {};
+    Object.keys(statusConfig).forEach(status => {
+      counts[status] = orders.filter(o => o.status === status).length;
+    });
+    
+    setStatusCounts(counts);
+  };
+
+  // Real-time order status sync for customers
+  const { isConnected, connectionError } = useCustomerOrderSync({
+    onStatusUpdate: (update) => {
+      
+      // Update orders in real-time
+      setOrders(prevOrders => {
+        const updatedOrders = prevOrders.map(order => {
+          if (order.orderId === update.orderId) {
+            return { ...order, status: update.status };
+          }
+          return order;
+        });
+          
+        // Update status counts
+        updateStatusCounts(updatedOrders);
+        
+        return updatedOrders;
+      });
+    }
+  });
+
+  // Fallback polling mechanism if Socket.IO is not working
+  useEffect(() => {
+    if (!isConnected && orders.length > 0) {
+      const pollInterval = setInterval(async () => {
+        try {
+          if (!user) return;
+          const userId = getUserId(user);
+          if (!userId) return;
+          
+          const res = await axios.get(`${API_BASE}/orders/user/${userId}?page=1&limit=10`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          
+          const fetchedOrders = res.data.orders || [];
+          
+          // Normalize cancelled status to CANCELLED
+          const normalizedOrders = fetchedOrders.map((order: any) => {
+            if (order.status === 'CANCELED' || order.status === 'CANCEL') {
+              return { ...order, status: 'CANCELLED' };
+            }
+            return order;
+          });
+          
+          const currentOrderIds = orders.map(o => o.orderId).sort();
+          const fetchedOrderIds = normalizedOrders.map((o: any) => o.orderId).sort();
+          
+          // Check if orders have changed
+          if (JSON.stringify(currentOrderIds) !== JSON.stringify(fetchedOrderIds)) {
+            setOrders(normalizedOrders);
+            updateStatusCounts(normalizedOrders);
+          }
+        } catch (error) {
+          console.error('❌ Polling error:', error);
+        }
+      }, 5000); // Poll every 5 seconds
+      
+      return () => clearInterval(pollInterval);
+    }
+  }, [isConnected, orders, user, token]);
 
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/login');
-    } else {
+      return;
+    }
+    
+    // Chỉ fetch một lần khi có user
+    if (user && !hasFetchedRef.current) {
+      hasFetchedRef.current = true;
       fetchOrders();
     }
   }, [isAuthenticated, user]);
 
   // Lấy danh sách đơn
-  const fetchOrders = async () => {
+  const fetchOrders = async (force = false) => {
     if (!user) return;
+    const userId = getUserId(user);
+    if (!userId) return;
+    
+    // Nếu không phải force và đã fetch rồi thì skip
+    if (!force && hasFetchedRef.current && orders.length > 0) return;
+    
     try {
       setLoading(true);
-      const res = await axios.get(`${API_BASE}/orders/user/${user.id}`, {
+      const res = await axios.get(`${API_BASE}/orders/user/${userId}?page=1&limit=10`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setOrders(res.data.orders || []);
+      
+      const fetchedOrders = res.data.orders || [];
+      
+      // Normalize cancelled status to CANCELLED
+      const normalizedOrders = fetchedOrders.map((order: any) => {
+        if (order.status === 'CANCELED' || order.status === 'CANCEL') {
+          return { ...order, status: 'CANCELLED' };
+        }
+        return order;
+      });
+      setOrders(normalizedOrders);
+      // Update status counts after fetching
+      updateStatusCounts(normalizedOrders);
     } catch (err) {
       console.error('Lỗi load orders', err);
     } finally {
@@ -58,11 +164,18 @@ export default function OrdersPage() {
   // Hủy đơn
   const cancelOrder = async (orderId: string) => {
     try {
-      await axios.patch(`${API_BASE}/orders/${orderId}/cancel`, {}, {
+      const response = await axios.patch(`${API_BASE}/orders/${orderId}/cancel`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      fetchOrders();
+      
+      fetchOrders(true); // Force refresh sau khi cancel
     } catch (err: any) {
+      console.error('❌ Customer order cancellation failed:', err);
+      console.error('❌ Error details:', {
+        status: err.response?.status,
+        message: err.response?.data?.message,
+        orderId
+      });
       alert(err.response?.data?.message || 'Không thể hủy đơn');
     }
   };
@@ -103,6 +216,16 @@ export default function OrdersPage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Đơn hàng của tôi</h1>
           <p className="text-gray-600">Theo dõi và quản lý các đơn hàng của bạn</p>
+          {/* Socket.IO Connection Status */}
+          <div className="flex items-center justify-center space-x-2 mt-2">
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+            <span className="text-xs text-gray-500">
+              {isConnected ? 'Cập nhật thời gian thực' : 'Chế độ tải thủ công'}
+            </span>
+            {connectionError && (
+              <span className="text-xs text-red-500">({connectionError})</span>
+            )}
+          </div>
         </div>
 
         {/* Filter Tabs */}
@@ -116,7 +239,7 @@ export default function OrdersPage() {
             Tất cả ({orders.length})
           </button>
           {Object.entries(statusConfig).map(([status, config]) => {
-            const count = orders.filter((o) => o.status === status).length;
+            const count = statusCounts[status] || 0;
             return (
               <button
                 key={status}
@@ -174,8 +297,8 @@ export default function OrdersPage() {
 
                         {/* Order Items */}
                         <div className="space-y-2 mb-4">
-                          {order.orderDetails?.map((detail: any) => (
-                            <div key={detail.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                          {order.orderDetails?.map((detail: any, idx: number) => (
+                            <div key={`${order.orderId}-${detail.productId || detail.id || idx}`} className="flex items-center justify-between bg-gray-50 p-2 rounded">
                               <div className="flex items-center space-x-3">
                                 <img
                                   src={

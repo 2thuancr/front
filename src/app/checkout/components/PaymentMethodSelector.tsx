@@ -19,8 +19,6 @@ export function PaymentMethodSelector({
   onNext,
   onBack
 }: PaymentMethodSelectorProps) {
-  console.log("🔍 PaymentMethodSelector render - selectedPaymentMethod:", selectedPaymentMethod);
-  console.log("🔍 PaymentMethodSelector render - paymentMethods:", paymentMethods);
   const getPaymentIcon = (code: string) => {
     switch (code) {
       case 'COD':
@@ -63,7 +61,6 @@ export function PaymentMethodSelector({
 
       <div className="space-y-4">
         {paymentMethods.map((method, index) => {
-          console.log(`🔍 Rendering method ${index}:`, method, "Selected:", selectedPaymentMethod, "Is selected:", selectedPaymentMethod === method.id);
           return (
           <motion.div
             key={`payment-method-${method.id}-${index}`}
@@ -75,9 +72,6 @@ export function PaymentMethodSelector({
                 : 'border-gray-200 hover:border-gray-300'
             }`}
             onClick={() => {
-              console.log("🔘 Payment method clicked:", method.id, "Current selected:", selectedPaymentMethod);
-              console.log("🔘 Method details:", method);
-              console.log("🔘 Comparison result:", selectedPaymentMethod === method.id);
               onPaymentMethodSelect(method.id);
             }}
           >
@@ -106,7 +100,6 @@ export function PaymentMethodSelector({
                 }`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log("🔘 Radio button clicked for method:", method.id);
                 }}
               >
                 {selectedPaymentMethod === method.id && (

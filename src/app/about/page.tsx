@@ -59,28 +59,22 @@ const values = [
 
 const team = [
   {
-    name: 'Nguyễn Văn A',
-    position: 'Giám đốc điều hành',
-    image: '/images/hcmute-logo.png',
-    description: 'Có hơn 15 năm kinh nghiệm trong lĩnh vực thời trang và giáo dục.'
+    name: 'Vi Quốc Thuận',
+    position: 'Thành viên đội ngũ',
+    image: '/images/Thuan.jpg',
+    description: 'MSSV: 22110006 - Thành viên tích cực trong dự án phát triển HCMUTE Gift Shop.'
   },
   {
-    name: 'Trần Thị B',
-    position: 'Trưởng phòng thiết kế',
-    image: '/images/hcmute-logo.png',
-    description: 'Chuyên gia thiết kế với nhiều giải thưởng quốc tế.'
+    name: 'Dương Nguyễn Hoài Bảo',
+    position: 'Thành viên đội ngũ',
+    image: '/images/HoaiBao.jpg',
+    description: 'MSSV: 22110283 - Đóng góp quan trọng trong việc xây dựng và phát triển hệ thống.'
   },
   {
-    name: 'Lê Văn C',
-    position: 'Trưởng phòng kinh doanh',
-    image: '/images/hcmute-logo.png',
-    description: 'Có kinh nghiệm 10 năm trong lĩnh vực bán lẻ và marketing.'
-  },
-  {
-    name: 'Phạm Thị D',
-    position: 'Trưởng phòng sản xuất',
-    image: '/images/hcmute-logo.png',
-    description: 'Chuyên gia về quản lý chất lượng và quy trình sản xuất.'
+    name: 'Vương Lập Quế',
+    position: 'Thành viên đội ngũ',
+    image: '/images/Que.jpg',
+    description: 'MSSV: Cập nhật sau - Thành viên năng động của đội ngũ phát triển.'
   }
 ];
 
@@ -116,8 +110,13 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 py-20">
-        <div className="absolute inset-0 bg-black/20"></div>
+      <div className="relative py-20" style={{
+        backgroundImage: 'url(https://scontent.fhan4-1.fna.fbcdn.net/v/t39.30808-6/542089016_1112716014337985_4419394213277965335_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=127cfc&_nc_eui2=AeEiXSGeh_5Yt90INIeC55ahzse-mdCaXHDOx76Z0JpccITlObgyJNxZuP2C5O4WM8XQh9GFrYWDRCX7uvhMVgQf&_nc_ohc=WTTxbu3v8pgQ7kNvwEMrVjl&_nc_oc=Adm6NVy3M2U4h4Fuu73NC_ddzZUJJpVsgA3dEY_sYiVPcoCsIBso5akE-9khgQeE-dg&_nc_zt=23&_nc_ht=scontent.fhan4-1.fna&_nc_gid=YopUiAtn-sW23wcZSK-1Xg&oh=00_Afefhk9LlADgg8nXdKu0J8QUOGPlsh5twnYrv09GSXtBnQ&oe=68EE9A02)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'bottom',
+        backgroundRepeat: 'no-repeat'
+      }}>
+        <div className="absolute inset-0 bg-black/40"></div>
         <div className="relative container mx-auto px-4 text-center text-white">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -185,11 +184,11 @@ export default function AboutPage() {
               />
             </div>
             <div className="relative">
-              <div className="w-full h-96 bg-gradient-to-br from-blue-400 to-purple-600 rounded-2xl shadow-2xl flex items-center justify-center">
+              <div className="w-full h-96 rounded-2xl shadow-2xl overflow-hidden">
                 <img
-                  src="/images/hcmute-logo.png"
-                  alt="HCMUTE Logo"
-                  className="w-32 h-32 object-contain"
+                  src="https://scontent.fhan4-4.fna.fbcdn.net/v/t39.30808-6/472714225_2790698411112315_6033508433177811243_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=cc71e4&_nc_eui2=AeHq2ZdOlSR4aQcdz_A62J87x8MVvHYkC9vHwxW8diQL25ib0DzImc2vV2kvY_ibFH85PvqWa_eM5CSw9Tj2-WYk&_nc_ohc=yTkMbac77kgQ7kNvwEaWOnp&_nc_oc=AdmXYQlXhFRszVcGtJQsXzgTi6cFm-1w1X322LjcziJcwXHlFuKOO8oS9iMveuAPNq0&_nc_zt=23&_nc_ht=scontent.fhan4-4.fna&_nc_gid=uo8Lih-xa7CXquo_CFs8Tw&oh=00_AfcdM9oExv0ojofi0Pv09_XfmM4KhKJe934ZVxateM41iQ&oe=68EE854B"
+                  alt="HCMUTE Gift Shop Story"
+                  className="w-full h-full object-cover"
                 />
               </div>
               <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg">
@@ -308,7 +307,7 @@ export default function AboutPage() {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {team.map((member, index) => (
               <motion.div
                 key={index}
@@ -342,8 +341,15 @@ export default function AboutPage() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
-          className="bg-white rounded-2xl shadow-xl p-8"
+          className="rounded-2xl shadow-xl p-8 relative" style={{
+            backgroundImage: 'url(https://scontent.fhan4-1.fna.fbcdn.net/v/t39.30808-6/542089016_1112716014337985_4419394213277965335_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=127cfc&_nc_eui2=AeEiXSGeh_5Yt90INIeC55ahzse-mdCaXHDOx76Z0JpccITlObgyJNxZuP2C5O4WM8XQh9GFrYWDRCX7uvhMVgQf&_nc_ohc=WTTxbu3v8pgQ7kNvwEMrVjl&_nc_oc=Adm6NVy3M2U4h4Fuu73NC_ddzZUJJpVsgA3dEY_sYiVPcoCsIBso5akE-9khgQeE-dg&_nc_zt=23&_nc_ht=scontent.fhan4-1.fna&_nc_gid=YopUiAtn-sW23wcZSK-1Xg&oh=00_Afefhk9LlADgg8nXdKu0J8QUOGPlsh5twnYrv09GSXtBnQ&oe=68EE9A02)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'bottom',
+            backgroundRepeat: 'no-repeat'
+          }}
         >
+          <div className="absolute inset-0 bg-white/70 rounded-2xl"></div>
+          <div className="relative z-10">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
               Liên hệ với chúng tôi
@@ -362,7 +368,7 @@ export default function AboutPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-800">Địa chỉ</h3>
-                  <p className="text-gray-600">1 Võ Văn Ngân, Linh Chiểu, Thủ Đức, TP.HCM</p>
+                  <p className="text-gray-600">Số 1 Võ Văn Ngân, Phường Thủ Đức, TP.HCM</p>
                 </div>
               </div>
               
@@ -449,6 +455,7 @@ export default function AboutPage() {
                 className="w-full bg-blue-600 hover:bg-blue-700 border-0 py-3 text-lg"
               />
             </div>
+          </div>
           </div>
         </motion.div>
       </div>

@@ -32,10 +32,10 @@ export default function SettingsPage() {
 
   // Form states
   const [profileData, setProfileData] = useState({
-    firstName: user?.firstName || '',
-    lastName: user?.lastName || '',
+    firstName: (user as any)?.firstName || '',
+    lastName: (user as any)?.lastName || '',
     email: user?.email || '',
-    phone: user?.phone || '',
+    phone: (user as any)?.phone || '',
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -66,22 +66,18 @@ export default function SettingsPage() {
 
   const handleSaveProfile = () => {
     // Handle profile save
-    console.log('Saving profile:', profileData);
   };
 
   const handleChangePassword = () => {
     // Handle password change
-    console.log('Changing password:', passwordData);
   };
 
   const handleSaveNotifications = () => {
     // Handle notification settings save
-    console.log('Saving notifications:', notificationSettings);
   };
 
   const handleSaveAppearance = () => {
     // Handle appearance settings save
-    console.log('Saving appearance:', appearanceSettings);
   };
 
   const handleLogout = async () => {

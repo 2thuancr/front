@@ -17,11 +17,17 @@ import { CheckoutForm } from "./components/CheckoutForm";
 import { OrderSummary } from "./components/OrderSummary";
 import { PaymentMethodSelector } from "./components/PaymentMethodSelector";
 import { CheckoutSuccess } from "./components/CheckoutSuccess";
+import { VoucherSelector } from "./components/VoucherSelector";
 import { ShippingInfo } from "@/types/order";
+import { Voucher } from "@/types/voucher";
+import { useUserId } from "@/hooks/useUserId";
+import { useToastSuccess, useToastError } from "@/components/ui/Toast";
 
 export default function CheckoutPage() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
+  const showSuccessToast = useToastSuccess();
+  const showErrorToast = useToastError();
   
   // Redux state
   const { data: cart, loading: cartLoading } = useSelector((state: RootState) => state.cart);
@@ -34,12 +40,15 @@ export default function CheckoutPage() {
     currentOrder 
   } = useSelector((state: RootState) => state.order);
   
-  const userId = useSelector((state: RootState) => state.user?.profile?.id);
+  const userId = useUserId();
+  
+  // Local state for checkout items
+  const [checkoutItems, setCheckoutItems] = useState<any[]>([]);
   
   // Local state
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<number | null>(null);
-  const [voucherCode, setVoucherCode] = useState<string | null>(null);
+  const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     customerName: "",
@@ -50,6 +59,20 @@ export default function CheckoutPage() {
     notes: ""
   });
 
+
+  // Load checkout items from localStorage on mount
+  useEffect(() => {
+    const savedCheckoutItems = localStorage.getItem('checkoutItems');
+    if (savedCheckoutItems) {
+      try {
+        const items = JSON.parse(savedCheckoutItems);
+        setCheckoutItems(items);
+      } catch (error) {
+        console.error('❌ Failed to parse checkout items:', error);
+      }
+    }
+  }, []);
+
   // Load data on mount
   useEffect(() => {
     if (userId) {
@@ -59,17 +82,17 @@ export default function CheckoutPage() {
     }
   }, [dispatch, userId]);
 
-  // Redirect if no cart or empty cart (only after loading is complete)
+  // Redirect if no checkout items
   useEffect(() => {
-    // Thêm delay nhỏ để đảm bảo cart đã load xong
+    // Thêm delay nhỏ để đảm bảo checkout items đã load xong
     const timer = setTimeout(() => {
-      if (!cartLoading && cart && cart.cartItems.length === 0) {
+      if (checkoutItems.length === 0) {
         router.push("/cart");
       }
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [cart, cartLoading, router]);
+  }, [checkoutItems, router]);
 
   // Reset checkout state when component unmounts
   useEffect(() => {
@@ -78,14 +101,10 @@ export default function CheckoutPage() {
     };
   }, [dispatch]);
 
-  // Debug selectedPaymentMethod changes
   useEffect(() => {
-    console.log("🔍 selectedPaymentMethod changed:", selectedPaymentMethod);
   }, [selectedPaymentMethod]);
 
-  // Debug paymentMethods changes
   useEffect(() => {
-    console.log("🔍 paymentMethods changed:", paymentMethods);
   }, [paymentMethods]);
 
   const handleShippingInfoChange = (info: ShippingInfo) => {
@@ -93,8 +112,6 @@ export default function CheckoutPage() {
   };
 
   const handlePaymentMethodSelect = (paymentMethodId: number) => {
-    console.log("🔘 Selecting payment method:", paymentMethodId, "Type:", typeof paymentMethodId);
-    console.log("🔘 Current selectedPaymentMethod:", selectedPaymentMethod, "Type:", typeof selectedPaymentMethod);
     setSelectedPaymentMethod(paymentMethodId);
   };
 
@@ -124,50 +141,88 @@ export default function CheckoutPage() {
     }
   };
 
-  // Simple voucher validation (client-side placeholder)
-  const applyVoucher = () => {
-    if (!voucherCode) return;
-    // Demo rules: CODE10 => 10% off; CODE50K => 50,000₫ off; max to subtotal
-    const code = voucherCode.trim().toUpperCase();
-    const subtotal = cart?.cartItems.reduce((s, i) => s + i.price * i.quantity, 0) || 0;
-    let discount = 0;
-    if (code === 'CODE10') discount = Math.round(subtotal * 0.1);
-    else if (code === 'CODE50K') discount = 50000;
-    else discount = 0;
-    setDiscountAmount(Math.max(0, Math.min(discount, subtotal)));
-  };
 
   const handlePlaceOrder = async () => {
-    if (!cart || !userId || !selectedPaymentMethod) return;
+    if (!checkoutItems.length || !userId || !selectedPaymentMethod) return;
 
     try {
-      const checkoutData = {
-        cartId: cart.cartId,
-        shippingInfo,
-        paymentMethodId: selectedPaymentMethod,
-        notes: shippingInfo.notes ?? ""
-      };
+      // Calculate total amount
+      const subtotal = checkoutItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const shippingFee = 30000; // Fixed shipping fee
+      const discount = Math.max(0, Math.min(discountAmount, subtotal));
+      const totalAmount = Math.max(0, subtotal - discount) + shippingFee;
 
+      // Get payment method code
+      const paymentMethod = paymentMethods.find(pm => pm.id === selectedPaymentMethod);
+      const paymentMethodCode = paymentMethod?.code || 'COD';
+
+      const checkoutData = {
+        userId: userId,
+        totalAmount: totalAmount.toString(), // Backend expects string
+        shippingFee: shippingFee.toString(), // Add shipping fee for backend calculation
+        paymentMethod: paymentMethodCode, // Use payment method code instead of ID
+        shippingAddress: `${shippingInfo.shippingAddress}, ${shippingInfo.ward}, ${shippingInfo.city}`,
+        notes: shippingInfo.notes ?? "",
+        voucherId: selectedVoucher?.id || null, // Add voucher ID if selected
+        orderDetails: checkoutItems.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPrice: item.price.toString() // Backend expects string
+        }))
+      };
+      
       const result = await dispatch(createOrder(checkoutData)).unwrap();
       
-      // If payment method is COD, show success immediately
-      const paymentMethod = paymentMethods.find(pm => pm.id === selectedPaymentMethod);
-      if (paymentMethod?.code === 'COD') {
-        setCurrentStep(4);
+      // Clear checkout items from localStorage after successful order
+      localStorage.removeItem('checkoutItems');
+      
+      // Show success toast
+      showSuccessToast(
+        'Đặt hàng thành công!',
+        `Đơn hàng #${result.order?.orderId || ''} đã được tạo thành công`
+      );
+      
+      // If payment method is COD, redirect to orders page
+      const selectedPaymentMethodObj = paymentMethods.find(pm => pm.id === selectedPaymentMethod);
+      if (selectedPaymentMethodObj?.code === 'COD') {
+        router.push('/orders');
       } else {
         // For e-wallet payments, process payment
         if (result.paymentUrl) {
           window.location.href = result.paymentUrl;
         } else {
-          setCurrentStep(4);
+          router.push('/orders');
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Checkout error:", error);
+      
+      // Extract error message
+      let errorMessage = "Đã có lỗi xảy ra khi đặt hàng";
+      
+      if (error?.message) {
+        errorMessage = error.message;
+        
+        // Translate common error messages to Vietnamese
+        if (errorMessage.includes("Voucher validation failed")) {
+          if (errorMessage.includes("usage limit")) {
+            errorMessage = "Bạn đã sử dụng hết số lần áp dụng voucher này";
+          } else if (errorMessage.includes("expired")) {
+            errorMessage = "Voucher đã hết hạn";
+          } else if (errorMessage.includes("minimum order")) {
+            errorMessage = "Đơn hàng chưa đạt giá trị tối thiểu để áp dụng voucher";
+          } else {
+            errorMessage = "Voucher không hợp lệ hoặc không thể áp dụng";
+          }
+        }
+      }
+      
+      // Show error toast
+      showErrorToast('Đặt hàng thất bại', errorMessage);
     }
   };
 
-  if (cartLoading || paymentMethodsLoading) {
+  if (paymentMethodsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <motion.div
@@ -179,7 +234,7 @@ export default function CheckoutPage() {
     );
   }
 
-  if (!cart || cart.cartItems.length === 0) {
+  if (checkoutItems.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <motion.div
@@ -330,28 +385,33 @@ export default function CheckoutPage() {
                         </p>
                       </div>
 
-                      <div>
-                        <h3 className="font-medium text-gray-900 mb-2">Voucher:</h3>
-                        <div className="flex space-x-2">
-                          <input
-                            type="text"
-                            value={voucherCode || ''}
-                            onChange={(e) => setVoucherCode(e.target.value)}
-                            placeholder="Nhập mã (ví dụ: CODE10, CODE50K)"
-                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
-                          <button
-                            onClick={applyVoucher}
-                            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
-                            type="button"
-                          >
-                            Áp dụng
-                          </button>
-                        </div>
-                        {discountAmount > 0 && (
-                          <p className="mt-2 text-sm text-green-600">Đã áp dụng giảm {discountAmount.toLocaleString()}₫</p>
-                        )}
-                      </div>
+                      <VoucherSelector
+                        selectedVoucher={selectedVoucher}
+                        onVoucherSelect={(voucher) => {
+                          setSelectedVoucher(voucher);
+                          if (voucher) {
+                            const orderTotal = checkoutItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                            let discount = 0;
+                            
+                            if (voucher.discountType === 'percentage') {
+                              const percentage = parseFloat(voucher.discountValue || '0');
+                              discount = (orderTotal * percentage) / 100;
+                              if (voucher.maxDiscount) {
+                                discount = Math.min(discount, parseFloat(voucher.maxDiscount));
+                              }
+                            } else if (voucher.discountType === 'fixed') {
+                              discount = parseFloat(voucher.discountValue || '0');
+                            } else if (voucher.discountType === 'freeship') {
+                              discount = 30000; // Assuming shipping fee is 30k
+                            }
+                            
+                            setDiscountAmount(discount);
+                          } else {
+                            setDiscountAmount(0);
+                          }
+                        }}
+                        orderTotal={checkoutItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)}
+                      />
                     </div>
 
                     <div className="flex justify-between mt-6">
@@ -377,7 +437,7 @@ export default function CheckoutPage() {
 
           {/* Order Summary Sidebar */}
           <div className="lg:col-span-1">
-            <OrderSummary cart={cart} discountAmount={discountAmount} voucherCode={voucherCode} />
+            <OrderSummary checkoutItems={checkoutItems} discountAmount={discountAmount} voucherCode={selectedVoucher?.code || null} />
           </div>
         </div>
       </div>

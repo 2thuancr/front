@@ -1,14 +1,20 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Heart, ShoppingCart, Star, Eye, TrendingUp, Eye as EyeIcon, Percent, Clock } from 'lucide-react';
-import { Card } from 'primereact/card';
-import { Button } from 'primereact/button';
+import { TrendingUp, Eye as EyeIcon, Percent, Clock } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { Dropdown } from 'primereact/dropdown';
+import { Button } from 'primereact/button';
 import { motion } from 'framer-motion';
-import { productAPI } from '@/lib/api';
+import { productAPI, cartApi } from '@/lib/api';
 import { Product, LegacyProduct } from '@/types/api';
+import { ProductCard } from '@/components/ui';
 import Link from 'next/link';
+import { useToastSuccess, useToastError } from '@/components/ui/Toast';
+import { useUserId } from '@/hooks/useUserId';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@/store';
+import { toggleWishlist } from '@/store/wishlistSlice';
 
 type ProductType = 'latest' | 'bestseller' | 'most-viewed' | 'highest-discount';
 
@@ -20,6 +26,17 @@ const ProductGrid: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedType, setSelectedType] = useState<ProductType>('latest');
   const [productCount, setProductCount] = useState(8);
+  const [cartId, setCartId] = useState<number | null>(null);
+  
+  const userId = useUserId();
+  const toastSuccess = useToastSuccess();
+  const toastError = useToastError();
+  const router = useRouter();
+  
+  // Check authentication status from Redux
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const authToken = useSelector((state: RootState) => state.auth.token);
+  const dispatch = useDispatch<AppDispatch>();
 
   const productTypes = [
     {
@@ -65,6 +82,46 @@ const ProductGrid: React.FC = () => {
       icon: Clock
     };
   };
+
+  // Lấy cartId khi userId thay đổi
+  useEffect(() => {
+    const fetchCart = async () => {
+      if (!userId || userId <= 0) {
+        setCartId(null);
+        return;
+      }
+
+      // Check if user is actually authenticated
+      if (!isAuthenticated || !authToken) {
+        setCartId(null);
+        return;
+      }
+
+      try {
+        const cart = await cartApi.getCartByUser(userId);
+
+        if (cart && cart.cartId) {
+          setCartId(cart.cartId);
+        } 
+      } catch (error: any) {
+        
+        
+        // Thử tạo giỏ hàng mới nếu không tìm thấy
+        if (error.response?.status === 404) {
+          try {
+            const newCart = await cartApi.createCart(userId);
+            if (newCart && newCart.cartId) {
+              setCartId(newCart.cartId);
+            }
+          } catch (createError: any) {
+            
+          }
+        }
+      }
+    };
+
+    fetchCart();
+  }, [userId, isAuthenticated, authToken]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -143,7 +200,7 @@ const ProductGrid: React.FC = () => {
     fetchProducts();
   }, [selectedType, productCount]);
 
-  const toggleWishlist = (productId: number) => {
+  const toggleLocalWishlist = (productId: number) => {
     setWishlist(prev =>
       prev.includes(productId)
         ? prev.filter(id => id !== productId)
@@ -158,130 +215,73 @@ const ProductGrid: React.FC = () => {
     }).format(price);
   };
 
-  const ProductCard = ({ product }: { product: LegacyProduct }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -5 }}
-      transition={{ duration: 0.3 }}
-    >
-      <Card className="h-full border-0 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group flex flex-col">
-        <div className="relative">
-          {/* Sửa: Bọc ảnh bằng Link */}
-          <Link href={`/products/${product.id}`}>
-            <img
-              src={product.image}
-              alt={product.name}
-              className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
-            />
-          </Link>
-          {/* Badges */}
-          <div className="absolute top-2 left-2 space-y-2">
-            {product.isNew && (
-              <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                Mới
-              </span>
-            )}
-            {product.isHot && (
-              <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                Hot
-              </span>
-            )}
-            {selectedType === 'highest-discount' && product.discount && product.discount >= 10 && (
-              <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                Siêu Sale
-              </span>
-            )}
-          </div>
-          {/* Discount Badge */}
-          {product.discount && product.discount > 0 && (
-            <div className="absolute top-2 right-2">
-              <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                -{product.discount}%
-              </span>
-            </div>
-          )}
-          {/* Quick Actions */}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-            <div className="flex space-x-2">
-              <Button
-                icon={<Heart className="w-4 h-4" />}
-                className="p-button-rounded p-button-text p-button-lg bg-white/90 hover:bg-white"
-                tooltip="Yêu thích"
-                onClick={() => toggleWishlist(product.id)}
-              />
-              {/* Sửa: Bọc Eye bằng Link */}
-              <Link href={`/product/${product.id}`}>
-                <Button
-                  icon={<Eye className="w-4 h-4" />}
-                  className="p-button-rounded p-button-text p-button-lg bg-white/90 hover:bg-white"
-                  tooltip="Xem chi tiết"
-                />
-              </Link>
-            </div>
-          </div>
-        </div>
+  const handleAddToCart = async (productId: number) => {
+    
+    // Redirect to login if not authenticated
+    if (!userId || userId <= 0 || !isAuthenticated || !authToken) {
+      router.push('/login');
+      return;
+    }
+    
+    if (!cartId) {
+      toastError("Lỗi giỏ hàng", "Không tìm thấy giỏ hàng. Vui lòng đăng nhập để sử dụng giỏ hàng.");
+      return;
+    }
 
-        <div className="p-4 flex flex-col flex-1">
-          <div className="flex-1">
-            <div className="mb-2">
-              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                {product.category}
-              </span>
-            </div>
-            {/* Sửa: Bọc tên sản phẩm bằng Link */}
-            <Link href={`/product/${product.id}`}>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2 line-clamp-2 cursor-pointer">
-                {product.name}
-              </h3>
-            </Link>
-            <div className="flex items-center mb-2">
-              <div className="flex items-center">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-4 h-4 ${
-                      i < Math.floor(product.rating)
-                        ? 'text-yellow-400 fill-current'
-                        : 'text-gray-300'
-                    }`}
-                  />
-                ))}
-              </div>
-              <span className="text-sm text-gray-600 ml-2">
-                {selectedType === 'most-viewed' 
-                  ? `(${product.reviewCount} lượt xem)`
-                  : selectedType === 'highest-discount' && product.discount
-                  ? `(Giảm ${product.discount}%)`
-                  : `(${product.reviewCount})`
-                }
-              </span>
-            </div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-2">
-                <span className="text-xl font-bold text-blue-600">
-                  {formatPrice(product.price)}
-                </span>
-                {product.originalPrice && product.originalPrice > product.price && (
-                  <span className="text-sm text-gray-500 line-through">
-                    {formatPrice(product.originalPrice)}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-        {/* Button docked to bottom */}
-        <div className="p-4 pt-0">
-          <Button
-            label="Thêm vào giỏ"
-            icon={<ShoppingCart className="w-4 h-4" />}
-            className="w-full bg-blue-600 hover:bg-blue-700 border-0"
-          />
-        </div>
-      </Card>
-    </motion.div>
-  );
+    try {
+      const res = await cartApi.addToCart(cartId, productId, 1);
+      toastSuccess("Thành công!", "Đã thêm sản phẩm vào giỏ hàng");
+    } catch (error: any) {
+      console.error("❌ Lỗi khi thêm giỏ hàng:", error);
+      
+      // Log detailed error information
+      if (error.response) {
+        console.error("❌ AddToCart API Error Details:", {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          url: error.config?.url,
+          requestData: { cartId, productId, quantity: 1 }
+        });
+        
+        // Handle specific error cases
+        if (error.response.status === 400) {
+          console.warn("⚠️ Add to cart endpoint may not exist or requires different parameters");
+        } else if (error.response.status === 401) {
+          console.warn("⚠️ User not authenticated for cart operations");
+        } else if (error.response.status === 404) {
+          console.warn("⚠️ Cart or product not found");
+        }
+      }
+      
+      const errorMessage = error.response?.data?.message || error.message || "Thêm giỏ hàng thất bại";
+      toastError("Thất bại", errorMessage);
+    }
+  };
+
+  const handleToggleWishlist = async (productId: number) => {
+    
+    if (!userId || userId <= 0) {
+      toastError("Cần đăng nhập", "Vui lòng đăng nhập để sử dụng tính năng yêu thích");
+      return;
+    }
+
+    try {
+      const result = await dispatch(toggleWishlist(productId)).unwrap() as any;
+      
+      if (result.action === 'added') {
+        toastSuccess("Thành công!", "Đã thêm sản phẩm vào danh sách yêu thích");
+      } else if (result.action === 'removed') {
+        toastSuccess("Thành công!", "Đã bỏ sản phẩm khỏi danh sách yêu thích");
+      } else if (result.action === 'already_exists') {
+        toastSuccess("Thông báo", "Sản phẩm đã có trong danh sách yêu thích");
+      }
+    } catch (error: any) {
+      console.error("❌ Lỗi khi toggle wishlist:", error);
+      const errorMessage = error.message || "Thao tác yêu thích thất bại";
+      toastError("Thất bại", errorMessage);
+    }
+  };
 
   if (loading) {
     return (
@@ -379,12 +379,17 @@ const ProductGrid: React.FC = () => {
 
         {/* Products Grid */}
         <div className={`grid gap-6 ${
-          viewMode === 'grid'
+          viewMode === 'grid' 
             ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
             : 'grid-cols-1'
         }`}>
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard 
+              key={product.id} 
+              product={product}
+              onAddToCart={handleAddToCart}
+              onToggleWishlist={handleToggleWishlist}
+            />
           ))}
         </div>
 

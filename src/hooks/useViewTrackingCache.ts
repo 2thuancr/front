@@ -14,7 +14,9 @@ export const useViewTrackingCache = () => {
       
       if (lastCacheDate !== today) {
         viewTracker.clearCacheForNewDay();
-        localStorage.setItem('view_tracking_last_date', today);
+        if (today) {
+          localStorage.setItem('view_tracking_last_date', today);
+        }
       }
     };
 

@@ -22,9 +22,25 @@ export const fetchWishlist = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await wishlistApi.getWishlist();
-      return response.data || response;
+      console.log('📋 Raw wishlist response:', response);
+      
+      // Handle different response formats
+      let wishlistItems = [];
+      if (response.wishlist && Array.isArray(response.wishlist)) {
+        wishlistItems = response.wishlist;
+      } else if (response.data && Array.isArray(response.data)) {
+        wishlistItems = response.data;
+      } else if (Array.isArray(response)) {
+        wishlistItems = response;
+      } else if (response.items && Array.isArray(response.items)) {
+        wishlistItems = response.items;
+      }
+      
+      console.log('📋 Processed wishlist items:', wishlistItems);
+      return wishlistItems;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch wishlist');
+      console.error('❌ Error fetching wishlist:', error);
+      return rejectWithValue(error.message || 'Failed to fetch wishlist');
     }
   }
 );
@@ -34,18 +50,15 @@ export const addToWishlist = createAsyncThunk(
   async (productId: number, { rejectWithValue }) => {
     try {
       const response = await wishlistApi.addToWishlist(productId);
-      return { productId, wishlistItem: response.data || response, alreadyExists: false };
+      console.log('✅ Added to wishlist:', response);
+      return { 
+        productId, 
+        wishlistItem: response.wishlistItem, 
+        alreadyExists: response.alreadyExists || false 
+      };
     } catch (error: any) {
-      // Handle 409 Conflict - item already exists in wishlist
-      if (error.response?.status === 409) {
-        // Treat 409 as success since item is already in wishlist
-        return { 
-          productId, 
-          wishlistItem: null, 
-          alreadyExists: true 
-        };
-      }
-      return rejectWithValue(error.response?.data?.message || 'Failed to add to wishlist');
+      console.error('❌ Error adding to wishlist:', error);
+      return rejectWithValue(error.message || 'Failed to add to wishlist');
     }
   }
 );
@@ -55,9 +68,11 @@ export const removeFromWishlist = createAsyncThunk(
   async (productId: number, { rejectWithValue }) => {
     try {
       await wishlistApi.removeProductFromWishlist(productId);
+      console.log('🗑️ Removed from wishlist:', productId);
       return productId;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to remove from wishlist');
+      console.error('❌ Error removing from wishlist:', error);
+      return rejectWithValue(error.message || 'Failed to remove from wishlist');
     }
   }
 );
@@ -67,9 +82,11 @@ export const checkInWishlist = createAsyncThunk(
   async (productId: number, { rejectWithValue }) => {
     try {
       const response = await wishlistApi.checkInWishlist(productId);
-      return { productId, isInWishlist: response.data?.isInWishlist || false };
+      console.log('🔍 Checked wishlist:', { productId, exists: response.exists });
+      return { productId, isInWishlist: response.exists };
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to check wishlist status');
+      console.error('❌ Error checking wishlist:', error);
+      return { productId, isInWishlist: false };
     }
   }
 );
@@ -81,25 +98,27 @@ export const toggleWishlist = createAsyncThunk(
       const state = getState() as { wishlist: WishlistState };
       const isInWishlist = state.wishlist.checkedItems[productId] || false;
       
+      console.log('🔄 Toggle wishlist:', { productId, isInWishlist });
+      
       if (isInWishlist) {
         // Remove from wishlist
-        await wishlistApi.removeProductFromWishlist(productId);
+        const response = await wishlistApi.removeProductFromWishlist(productId);
+        console.log('🗑️ Removed from wishlist:', response);
         return { productId, action: 'removed' };
       } else {
         // Add to wishlist
-        try {
-          const response = await wishlistApi.addToWishlist(productId);
-          return { productId, action: 'added', wishlistItem: response.data || response };
-        } catch (error: any) {
-          // Handle 409 Conflict - item already exists
-          if (error.response?.status === 409) {
-            return { productId, action: 'already_exists' };
-          }
-          throw error;
+        const response = await wishlistApi.addToWishlist(productId);
+        console.log('✅ Added to wishlist:', response);
+        
+        if (response.alreadyExists) {
+          return { productId, action: 'already_exists' };
+        } else {
+          return { productId, action: 'added', wishlistItem: response.wishlistItem };
         }
       }
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to toggle wishlist');
+      console.error('❌ Error toggling wishlist:', error);
+      return rejectWithValue(error.message || 'Failed to toggle wishlist');
     }
   }
 );
@@ -109,9 +128,10 @@ export const getMostWishlisted = createAsyncThunk(
   async (limit: number = 10, { rejectWithValue }) => {
     try {
       const response = await wishlistApi.getMostWishlisted(limit);
-      return response.data || response;
+      return response.products || response.data || [];
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch most wishlisted');
+      console.warn('⚠️ Wishlist feature not available yet');
+      return [];
     }
   }
 );
@@ -250,6 +270,31 @@ const wishlistSlice = createSlice({
 });
 
 export const { clearError, clearWishlist, updateCheckedItem } = wishlistSlice.actions;
+
+// Helper function to reset wishlist localStorage
+export const resetWishlistStorage = () => {
+  if (typeof window !== 'undefined') {
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith('persist:root')) {
+        try {
+          const data = JSON.parse(localStorage.getItem(key) || '{}');
+          if (data.wishlist) {
+            data.wishlist = {
+              items: [],
+              loading: false,
+              error: null,
+              checkedItems: {},
+            };
+            localStorage.setItem(key, JSON.stringify(data));
+          }
+        } catch (error) {
+          console.error('Error resetting wishlist storage:', error);
+        }
+      }
+    });
+  }
+};
 
 // Helper action to sync wishlist status for a specific product
 export const syncWishlistStatus = (productId: number, isInWishlist: boolean) => 
