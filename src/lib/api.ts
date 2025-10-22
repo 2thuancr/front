@@ -209,6 +209,7 @@ export const cartApi = {
 export const voucherApi = {
   apply: (code: string, orderAmount: number) =>
     api.post("/vouchers/apply", { code, orderAmount }).then((res) => res.data),
+    listAvailable: () => api.get("/vouchers/available").then((res) => res.data),
   // (Optional) thêm CRUD:
   // create: (payload) => api.post("/vouchers", payload).then(r=>r.data),
   // list: () => api.get("/vouchers").then(r=>r.data),

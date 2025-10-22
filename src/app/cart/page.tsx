@@ -1,32 +1,36 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store";
 import {
   fetchCart,
   removeFromCart,
   updateQuantity,
-  applyVoucher,
-  clearVoucher,
   reapplyVoucher,
 } from "@/store/cartSlice";
 import Link from "next/link";
 import { CartItem } from "@/types/cart";
 import { motion, AnimatePresence } from "framer-motion";
+import VoucherModal from "@/components/ui/VoucherModal";
 
 export default function CartPage() {
   const dispatch = useDispatch<AppDispatch>();
-  const { data: cart, loading, error, appliedVoucher, discount, grandTotal, applyingVoucher, voucherError } =
-    useSelector((state: RootState) => state.cart);
+  const {
+    data: cart,
+    loading,
+    error,
+    appliedVoucher,
+    discount,
+    grandTotal,
+  } = useSelector((state: RootState) => state.cart);
   const userId = useSelector((state: RootState) => state.user?.profile?.id);
 
-  const [voucherCode, setVoucherCode] = React.useState("");
+  const [showVoucherModal, setShowVoucherModal] = useState(false);
 
   useEffect(() => {
     if (userId) {
       dispatch(fetchCart(userId)).then(() => {
-        // giữ lại mã nếu có
         dispatch(reapplyVoucher());
       });
     }
@@ -121,11 +125,6 @@ export default function CartPage() {
               className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 bg-white rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 mb-6"
             >
               <div className="flex items-center gap-4 w-full sm:w-2/3">
-                {/* <img
-                  src={item.image || "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500"}
-                  alt={item.name}
-                  className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg border border-gray-200"
-                /> */}
                 <div>
                   <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
                     {item.name}
@@ -186,42 +185,22 @@ export default function CartPage() {
           ))}
         </AnimatePresence>
 
-        {/* Khối áp mã voucher */}
+        {/* Nút mở modal voucher */}
         <div className="mt-8 bg-white p-6 rounded-2xl shadow-sm flex flex-col sm:flex-row gap-4 sm:items-center">
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <p className="text-sm font-medium text-gray-700 mb-1">
               Mã giảm giá
-            </label>
-            <div className="flex gap-2">
-              <input
-                value={voucherCode}
-                onChange={(e) => setVoucherCode(e.target.value)}
-                placeholder="Nhập mã (VD: HELLO10)"
-                className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                onClick={() => voucherCode && dispatch(applyVoucher(voucherCode))}
-                disabled={applyingVoucher}
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
-              >
-                {applyingVoucher ? "Đang áp..." : "Áp mã"}
-              </button>
-              {appliedVoucher && (
-                <button
-                  onClick={() => dispatch(clearVoucher())}
-                  className="px-4 py-2 rounded-lg bg-gray-100 text-gray-800 hover:bg-gray-200 transition"
-                >
-                  Gỡ mã
-                </button>
-              )}
-            </div>
-
-            {voucherError && (
-              <p className="mt-2 text-sm text-red-600">{voucherError}</p>
-            )}
+            </p>
+            <button
+              onClick={() => setShowVoucherModal(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition w-full sm:w-auto"
+            >
+              Chọn mã giảm giá
+            </button>
             {appliedVoucher && (
               <p className="mt-2 text-sm text-green-700">
-                Đã áp mã <span className="font-semibold">{appliedVoucher.code}</span>
+                Đã áp mã{" "}
+                <span className="font-semibold">{appliedVoucher.code}</span>
               </p>
             )}
           </div>
@@ -235,7 +214,10 @@ export default function CartPage() {
         >
           <div className="w-full sm:w-auto space-y-1">
             <p className="text-gray-700">
-              Tạm tính: <span className="font-semibold">{total.toLocaleString()}₫</span>
+              Tạm tính:{" "}
+              <span className="font-semibold">
+                {total.toLocaleString()}₫
+              </span>
             </p>
             <p className="text-gray-700">
               Giảm giá:{" "}
@@ -257,6 +239,12 @@ export default function CartPage() {
           </Link>
         </motion.div>
       </div>
+
+      {/* Modal chọn hoặc nhập voucher */}
+      <VoucherModal
+        open={showVoucherModal}
+        onClose={() => setShowVoucherModal(false)}
+      />
     </div>
   );
 }

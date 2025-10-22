@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { Cart, CartItem } from "../types/cart";
 import { cartApi, voucherApi } from "@/lib/api";
+import axios from "axios";
 
 // ================== STATE ==================
 interface CartState {
@@ -14,6 +15,10 @@ interface CartState {
   grandTotal: number;
   applyingVoucher: boolean;
   voucherError: string | null;
+
+  // 🧾 Voucher list (dành cho modal chọn)
+  availableVouchers: any[];
+  loadingVouchers: boolean;
 }
 
 const initialState: CartState = {
@@ -26,6 +31,9 @@ const initialState: CartState = {
   grandTotal: 0,
   applyingVoucher: false,
   voucherError: null,
+
+  availableVouchers: [],
+  loadingVouchers: false,
 };
 
 // helpers
@@ -82,7 +90,7 @@ export const fetchCart = createAsyncThunk("cart/fetchCart", async (userId: numbe
 // ❌ Xóa item khỏi giỏ hàng
 export const removeFromCart = createAsyncThunk("cart/removeFromCart", async (itemId: number) => {
   await cartApi.removeFromCart(itemId);
-  return itemId; // để reducer filter
+  return itemId;
 });
 
 // 🔄 Cập nhật số lượng sản phẩm
@@ -111,7 +119,7 @@ export const applyVoucher = createAsyncThunk(
       return {
         discount: Number(data.discount || 0),
         finalAmount: Number(data.finalAmount || 0),
-        voucher: data.voucher || null,
+        voucher: data.voucher || { code },
       };
     } catch (err: any) {
       const msg =
@@ -123,7 +131,7 @@ export const applyVoucher = createAsyncThunk(
   }
 );
 
-// 🔁 Áp lại mã theo tổng hiện tại (khi thay đổi giỏ)
+// 🔁 Áp lại mã theo tổng hiện tại
 export const reapplyVoucher = createAsyncThunk(
   "cart/reapplyVoucher",
   async (_: void, { getState, dispatch, rejectWithValue }: any) => {
@@ -142,6 +150,15 @@ export const reapplyVoucher = createAsyncThunk(
 // 🧽 Gỡ voucher
 export const clearVoucher = createAsyncThunk("cart/clearVoucher", async () => true);
 
+// 🧾 Lấy danh sách voucher khả dụng để hiển thị modal
+export const fetchAvailableVouchers = createAsyncThunk(
+  "cart/fetchAvailableVouchers",
+  async () => {
+    const res = await voucherApi.listAvailable(); // ✅ dùng API chuẩn
+    return res;
+  }
+);
+
 // ================== SLICE ==================
 const cartSlice = createSlice({
   name: "cart",
@@ -156,7 +173,7 @@ const cartSlice = createSlice({
       .addCase(fetchCart.fulfilled, (state, action: PayloadAction<Cart>) => {
         state.loading = false;
         state.data = action.payload;
-        if (!state.appliedVoucher) state.discount = 0; // nếu chưa có mã, reset discount
+        if (!state.appliedVoucher) state.discount = 0;
         syncGrandTotal(state);
       })
       .addCase(fetchCart.rejected, (state, action) => {
@@ -204,7 +221,7 @@ const cartSlice = createSlice({
           state.voucherError = null;
           state.appliedVoucher = action.payload.voucher;
           state.discount = action.payload.discount;
-          state.grandTotal = action.payload.finalAmount; // theo BE
+          state.grandTotal = action.payload.finalAmount;
         }
       )
       .addCase(applyVoucher.rejected, (state, action: any) => {
@@ -220,12 +237,10 @@ const cartSlice = createSlice({
           state.grandTotal = action.payload.finalAmount;
           state.voucherError = null;
         } else {
-          // không có payload => giữ discount hiện có, chỉ sync lại tổng
           syncGrandTotal(state);
         }
       })
       .addCase(reapplyVoucher.rejected, (state, action: any) => {
-        // nếu áp lại thất bại (vd không đủ min), gỡ mã
         state.appliedVoucher = null;
         state.discount = 0;
         state.voucherError =
@@ -239,6 +254,18 @@ const cartSlice = createSlice({
         state.discount = 0;
         state.voucherError = null;
         syncGrandTotal(state);
+      })
+
+      // fetchAvailableVouchers
+      .addCase(fetchAvailableVouchers.pending, (state) => {
+        state.loadingVouchers = true;
+      })
+      .addCase(fetchAvailableVouchers.fulfilled, (state, action: any) => {
+        state.loadingVouchers = false;
+        state.availableVouchers = action.payload;
+      })
+      .addCase(fetchAvailableVouchers.rejected, (state) => {
+        state.loadingVouchers = false;
       });
   },
 });
