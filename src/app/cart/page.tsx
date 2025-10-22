@@ -7,6 +7,9 @@ import {
   fetchCart,
   removeFromCart,
   updateQuantity,
+  applyVoucher,
+  clearVoucher,
+  reapplyVoucher,
 } from "@/store/cartSlice";
 import Link from "next/link";
 import { CartItem } from "@/types/cart";
@@ -14,24 +17,32 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function CartPage() {
   const dispatch = useDispatch<AppDispatch>();
-  const { data: cart, loading, error } = useSelector(
-    (state: RootState) => state.cart
-  );
+  const { data: cart, loading, error, appliedVoucher, discount, grandTotal, applyingVoucher, voucherError } =
+    useSelector((state: RootState) => state.cart);
   const userId = useSelector((state: RootState) => state.user?.profile?.id);
+
+  const [voucherCode, setVoucherCode] = React.useState("");
 
   useEffect(() => {
     if (userId) {
-      dispatch(fetchCart(userId));
+      dispatch(fetchCart(userId)).then(() => {
+        // giữ lại mã nếu có
+        dispatch(reapplyVoucher());
+      });
     }
   }, [dispatch, userId]);
 
   const handleRemove = (itemId: number) => {
-    dispatch(removeFromCart(itemId));
+    dispatch(removeFromCart(itemId)).then(() => {
+      dispatch(reapplyVoucher());
+    });
   };
 
   const handleUpdateQty = (itemId: number, qty: number) => {
     if (qty <= 0) return;
-    dispatch(updateQuantity({ itemId, quantity: qty }));
+    dispatch(updateQuantity({ itemId, quantity: qty })).then(() => {
+      dispatch(reapplyVoucher());
+    });
   };
 
   if (loading)
@@ -83,7 +94,7 @@ export default function CartPage() {
       </div>
     );
 
-  const total = cart?.cartItems.reduce(
+  const total = cart.cartItems.reduce(
     (sum: number, item: CartItem) => sum + item.price * item.quantity,
     0
   );
@@ -175,17 +186,72 @@ export default function CartPage() {
           ))}
         </AnimatePresence>
 
+        {/* Khối áp mã voucher */}
+        <div className="mt-8 bg-white p-6 rounded-2xl shadow-sm flex flex-col sm:flex-row gap-4 sm:items-center">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Mã giảm giá
+            </label>
+            <div className="flex gap-2">
+              <input
+                value={voucherCode}
+                onChange={(e) => setVoucherCode(e.target.value)}
+                placeholder="Nhập mã (VD: HELLO10)"
+                className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                onClick={() => voucherCode && dispatch(applyVoucher(voucherCode))}
+                disabled={applyingVoucher}
+                className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
+              >
+                {applyingVoucher ? "Đang áp..." : "Áp mã"}
+              </button>
+              {appliedVoucher && (
+                <button
+                  onClick={() => dispatch(clearVoucher())}
+                  className="px-4 py-2 rounded-lg bg-gray-100 text-gray-800 hover:bg-gray-200 transition"
+                >
+                  Gỡ mã
+                </button>
+              )}
+            </div>
+
+            {voucherError && (
+              <p className="mt-2 text-sm text-red-600">{voucherError}</p>
+            )}
+            {appliedVoucher && (
+              <p className="mt-2 text-sm text-green-700">
+                Đã áp mã <span className="font-semibold">{appliedVoucher.code}</span>
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Tổng kết với voucher */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mt-12 flex flex-col sm:flex-row justify-between items-center bg-white p-6 rounded-2xl shadow-sm"
         >
-          <p className="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">
-            Tổng cộng: {total.toLocaleString()}₫
-          </p>
+          <div className="w-full sm:w-auto space-y-1">
+            <p className="text-gray-700">
+              Tạm tính: <span className="font-semibold">{total.toLocaleString()}₫</span>
+            </p>
+            <p className="text-gray-700">
+              Giảm giá:{" "}
+              <span className="font-semibold">
+                -{Number(discount || 0).toLocaleString()}₫
+              </span>
+              {appliedVoucher ? ` (Mã: ${appliedVoucher.code})` : ""}
+            </p>
+            <p className="text-2xl font-bold text-gray-900">
+              Thành tiền: {Number(grandTotal || total).toLocaleString()}₫
+            </p>
+          </div>
+
           <Link
             href="/checkout"
-            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transform hover:scale-105 transition duration-200"
+            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transform hover:scale-105 transition duration-200 mt-4 sm:mt-0"
           >
             Thanh toán ngay
           </Link>
