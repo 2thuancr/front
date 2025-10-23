@@ -33,6 +33,8 @@ export default function AdminProducts() {
   const [totalPages, setTotalPages] = useState(0);
   const [limit] = useState(10);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   
   const toastSuccess = useToastSuccess();
   const toastError = useToastError();
@@ -122,8 +124,22 @@ export default function AdminProducts() {
   };
 
   const handleFormSuccess = () => {
-    // Refresh the products list after successful creation
+    // Refresh the products list after successful creation/update
     fetchProducts(currentPage);
+    setEditingProduct(null);
+    setFormMode('create');
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setFormMode('edit');
+    setIsFormOpen(true);
+  };
+
+  const handleAddProduct = () => {
+    setEditingProduct(null);
+    setFormMode('create');
+    setIsFormOpen(true);
   };
 
   const handleToggleActive = async (productId: number) => {
@@ -167,7 +183,7 @@ export default function AdminProducts() {
             <span>Làm mới</span>
           </button>
           <button 
-            onClick={() => setIsFormOpen(true)}
+            onClick={handleAddProduct}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
           >
             <Plus className="w-4 h-4" />
@@ -411,7 +427,11 @@ export default function AdminProducts() {
                             <button className="text-gray-400 hover:text-gray-600" title="Xem chi tiết">
                               <Eye className="w-4 h-4" />
                             </button>
-                            <button className="text-gray-400 hover:text-gray-600" title="Chỉnh sửa">
+                            <button 
+                              onClick={() => handleEditProduct(product)}
+                              className="text-gray-400 hover:text-gray-600" 
+                              title="Chỉnh sửa"
+                            >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button className="text-gray-400 hover:text-gray-600" title="Xóa">
@@ -531,8 +551,14 @@ export default function AdminProducts() {
       {/* Product Form Modal */}
       <ProductForm
         isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
+        onClose={() => {
+          setIsFormOpen(false);
+          setEditingProduct(null);
+          setFormMode('create');
+        }}
         onSuccess={handleFormSuccess}
+        product={editingProduct}
+        mode={formMode}
       />
     </div>
   );

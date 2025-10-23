@@ -31,36 +31,36 @@ const products: Product[] = [
   },
   {
     id: 2,
-    name: "Ba Lô HCMUTE Premium",
-    description: "Ba lô cao cấp với thiết kế hiện đại, logo HCMUTE nổi bật. Chất liệu chống thấm nước, nhiều ngăn tiện lợi. Phù hợp cho sinh viên, dân văn phòng và du lịch.",
+    name: "Balo HCMUTE Premium",
+    description: "Balo cao cấp với thiết kế hiện đại, logo HCMUTE nổi bật. Chất liệu chống thấm nước, nhiều ngăn tiện lợi. Phù hợp cho sinh viên, dân văn phòng và du lịch.",
     price: 599000,
     image: "/images/ba-lo-hcmute.jpg",
-    category: "Ba lô",
+    category: "Balo",
     rating: 4.9,
     reviews: 89,
     features: ["Chống thấm nước", "Nhiều ngăn", "Logo HCMUTE", "Đai đeo thoải mái"]
   },
   {
     id: 3,
-    name: "Mũ Nón HCMUTE",
-    description: "Mũ nón thời trang với logo HCMUTE độc đáo. Chất liệu vải cao cấp, thấm hút mồ hôi tốt. Thiết kế unisex, phù hợp mọi giới tính và độ tuổi.",
+    name: "Nón HCMUTE",
+    description: "Nón thời trang với logo HCMUTE độc đáo. Chất liệu vải cao cấp, thấm hút mồ hôi tốt. Thiết kế unisex, phù hợp mọi giới tính và độ tuổi.",
     price: 199000,
     image: "/images/mu-non-hcmute.jpg",
-    category: "Mũ nón",
+    category: "Nón",
     rating: 4.7,
     reviews: 203,
     features: ["Thấm hút mồ hôi", "Logo HCMUTE", "Nhiều màu sắc", "Size điều chỉnh"]
   },
   {
     id: 4,
-    name: "Túi Xách HCMUTE",
-    description: "Túi xách thời trang với logo HCMUTE nổi bật. Chất liệu da tổng hợp cao cấp, thiết kế đa năng. Phù hợp cho sinh viên, dân văn phòng và các dịp đặc biệt.",
+    name: "Sổ tay HCMUTE",
+    description: "Sổ tay cao cấp với logo HCMUTE nổi bật. Chất liệu giấy cao cấp, thiết kế đẹp mắt. Phù hợp cho sinh viên ghi chép bài học và lưu giữ kỷ niệm.",
     price: 399000,
-    image: "/images/tui-xach-hcmute.jpg",
-    category: "Túi xách",
+    image: "/images/sotay-hcmute.jpg",
+    category: "Sổ tay",
     rating: 4.6,
     reviews: 67,
-    features: ["Chất liệu cao cấp", "Logo HCMUTE", "Nhiều ngăn", "Dây đeo điều chỉnh"]
+    features: ["Giấy cao cấp", "Logo HCMUTE", "Nhiều trang", "Bìa cứng bền"]
   }
 ];
 
