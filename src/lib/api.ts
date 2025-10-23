@@ -16,14 +16,10 @@ api.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('🚀 API Request:', config.method?.toUpperCase(), config.url, 'with token');
-    } else {
-      console.log('⚠️ API Request:', config.method?.toUpperCase(), config.url, 'without token');
     }
     return config;
   },
   (error) => {
-    console.error('❌ Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -31,7 +27,6 @@ api.interceptors.request.use(
 // Response interceptor
 api.interceptors.response.use(
   (response: AxiosResponse) => {
-    console.log('✅ API Response:', response.status, response.config.url, response.data);
     return response;
   },
   async (error) => {
@@ -70,13 +65,13 @@ api.interceptors.response.use(
       if (!url.includes('/auth/login') && !url.includes('/auth/register') && !url.includes('/auth/forgot-password')) {
         // Don't clear auth data for cart/wishlist endpoints that might not be implemented yet
         if (!url.includes('/carts/user') && !url.includes('/wishlist')) {
-          console.log('🔒 401 Unauthorized on non-auth endpoint, clearing auth data');
+          // console.log('🔒 401 Unauthorized on non-auth endpoint, clearing auth data');
           handleUnauthorized();
         } else {
-          console.log('🔒 401 on cart/wishlist endpoint - likely not implemented yet');
+          // console.log('🔒 401 on cart/wishlist endpoint - likely not implemented yet');
         }
       } else {
-        console.log('🔒 401 on auth endpoint, not clearing auth data');
+        // console.log('🔒 401 on auth endpoint, not clearing auth data');
       }
     }
     return Promise.reject(error);
@@ -386,7 +381,7 @@ const failedCartEndpoints = new Set<string>();
 // Utility function to reset failed endpoints
 export const resetFailedCartEndpoints = () => {
   failedCartEndpoints.clear();
-  console.log('🔄 Failed cart endpoints reset');
+  // console.log('🔄 Failed cart endpoints reset');
 };
 
 // Utility function to check if cart endpoints are available
@@ -397,7 +392,7 @@ export const isCartEndpointAvailable = (endpoint: 'carts' | 'carts/user') => {
 // Utility function to reset cart endpoints (useful for testing or when backend is fixed)
 export const resetCartEndpoints = () => {
   failedCartEndpoints.clear();
-  console.log('🔄 Cart endpoints reset - will try API calls again');
+  // console.log('🔄 Cart endpoints reset - will try API calls again');
 };
 
 export const cartApi = {
@@ -410,13 +405,13 @@ export const cartApi = {
     
     // Check if endpoint has failed before
     if (failedCartEndpoints.has('carts')) {
-      console.log(`📊 Cart creation skipped - endpoint known to fail`);
+      // console.log(`📊 Cart creation skipped - endpoint known to fail`);
       return Promise.reject(new Error('Cart endpoint not available'));
     }
     
-    console.log(`📡 Calling createCart API for userId: ${userId}`);
+    // console.log(`📡 Calling createCart API for userId: ${userId}`);
     return api.post("/carts", { userId }).then((res) => {
-      console.log(`✅ createCart API response:`, res.data);
+      // console.log(`✅ createCart API response:`, res.data);
       return res.data;
     }).catch((error) => {
       console.error(`❌ createCart API error:`, error);
@@ -442,13 +437,13 @@ export const cartApi = {
     
     // Check if endpoint has failed before
     if (failedCartEndpoints.has('carts/user')) {
-      console.log(`📊 Cart fetch skipped - endpoint known to fail`);
+      // console.log(`📊 Cart fetch skipped - endpoint known to fail`);
       return Promise.reject(new Error('Cart endpoint not available'));
     }
     
-    console.log(`📡 Calling getCartByUser API for userId: ${userId}`);
+    // console.log(`📡 Calling getCartByUser API for userId: ${userId}`);
     return api.get(`/carts/user/${userId}`).then((res) => {
-      console.log(`✅ getCartByUser API response:`, res.data);
+      // console.log(`✅ getCartByUser API response:`, res.data);
       return res.data;
     }).catch((error) => {
       // Handle specific error cases gracefully
@@ -715,7 +710,7 @@ export const wishlistApi = {
         wishlist.push(newItem);
         localStorage.setItem('wishlist', JSON.stringify(wishlist));
         
-        console.log('✅ Added to localStorage wishlist:', newItem);
+        // console.log('✅ Added to localStorage wishlist:', newItem);
         return { 
           success: true, 
           message: 'Added to wishlist',
@@ -752,13 +747,13 @@ export const wishlistApi = {
         });
       }
       
-      console.log('🗑️ Removed from backend wishlist:', response.data);
+      // console.log('🗑️ Removed from backend wishlist:', response.data);
       
       // Also remove from localStorage
       const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
       const filteredWishlist = wishlist.filter((item: any) => item.productId !== productId);
       localStorage.setItem('wishlist', JSON.stringify(filteredWishlist));
-      console.log('💾 Also removed from localStorage:', productId);
+      // console.log('💾 Also removed from localStorage:', productId);
       
       return response.data;
     } catch (error: any) {
@@ -771,7 +766,7 @@ export const wishlistApi = {
         
         localStorage.setItem('wishlist', JSON.stringify(filteredWishlist));
         
-        console.log('🗑️ Removed from localStorage wishlist:', productId);
+        // console.log('🗑️ Removed from localStorage wishlist:', productId);
         return { success: true, message: 'Removed from wishlist' };
       } catch (localError) {
         console.error('❌ Error removing from localStorage wishlist:', localError);
@@ -792,7 +787,7 @@ export const wishlistApi = {
 
       // Try backend first
       const response = await api.get(`/wishlist/check/${productId}?userId=${userId}`);
-      console.log('🔍 Checked backend wishlist:', { productId, exists: response.data.exists });
+      // console.log('🔍 Checked backend wishlist:', { productId, exists: response.data.exists });
       return response.data;
     } catch (error: any) {
       console.warn('⚠️ Backend wishlist not available, using localStorage only:', error.message);
@@ -802,7 +797,7 @@ export const wishlistApi = {
         const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
         const exists = wishlist.some((item: any) => item.productId === productId);
         
-        console.log('🔍 Checked localStorage wishlist:', { productId, exists });
+        // console.log('🔍 Checked localStorage wishlist:', { productId, exists });
         return { exists };
       } catch (localError) {
         console.error('❌ Error checking localStorage wishlist:', localError);
@@ -817,7 +812,7 @@ export const wishlistApi = {
       // Try backend first
       const endpoint = productId ? `/wishlist/count/${productId}` : '/wishlist/count';
       const response = await api.get(endpoint);
-      console.log('📊 Backend wishlist count:', response.data);
+      // console.log('📊 Backend wishlist count:', response.data);
       return response.data;
     } catch (error: any) {
       console.warn('⚠️ Backend wishlist not available, using localStorage only');
@@ -829,7 +824,7 @@ export const wishlistApi = {
           ? wishlist.filter((item: any) => item.productId === productId).length
           : wishlist.length;
         
-        console.log('📊 LocalStorage wishlist count:', { productId, count });
+        // console.log('📊 LocalStorage wishlist count:', { productId, count });
         return { count };
       } catch (localError) {
         console.error('❌ Error getting localStorage wishlist count:', localError);
@@ -842,7 +837,7 @@ export const wishlistApi = {
   getUserWishlist: async (userId: number) => {
     try {
       const response = await api.get(`/wishlist/user/${userId}`);
-      console.log('👤 User wishlist from backend:', response.data);
+      // console.log('👤 User wishlist from backend:', response.data);
       return response.data;
     } catch (error: any) {
       console.warn('⚠️ Backend user wishlist not available, using localStorage');
@@ -854,7 +849,7 @@ export const wishlistApi = {
   getProductWishlist: async (productId: number) => {
     try {
       const response = await api.get(`/wishlist/product/${productId}`);
-      console.log('🛍️ Product wishlist from backend:', response.data);
+      // console.log('🛍️ Product wishlist from backend:', response.data);
       return response.data;
     } catch (error: any) {
       console.warn('⚠️ Backend product wishlist not available, using localStorage');
@@ -874,7 +869,7 @@ export const wishlistApi = {
   getUserWishlistCount: async (userId: number) => {
     try {
       const response = await api.get(`/wishlist/user/${userId}/count`);
-      console.log('👤 User wishlist count from backend:', response.data);
+      // console.log('👤 User wishlist count from backend:', response.data);
       return response.data;
     } catch (error: any) {
       console.warn('⚠️ Backend user wishlist count not available, using localStorage');
@@ -886,7 +881,7 @@ export const wishlistApi = {
   getMostWishlisted: async (limit?: number) => {
     try {
       const response = await api.get(`/wishlist/most-wishlisted?limit=${limit || 10}`);
-      console.log('⭐ Most wishlisted from backend:', response.data);
+      // console.log('⭐ Most wishlisted from backend:', response.data);
       return response.data;
     } catch (error: any) {
       console.warn('⚠️ Backend most wishlisted not available');
@@ -898,13 +893,13 @@ export const wishlistApi = {
   removeFromWishlist: async (wishlistId: number) => {
     try {
       const response = await api.delete(`/wishlist/${wishlistId}`);
-      console.log('🗑️ Removed wishlist item from backend:', response.data);
+      // console.log('🗑️ Removed wishlist item from backend:', response.data);
       
       // Also remove from localStorage
       const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
       const filteredWishlist = wishlist.filter((item: any) => item.wishlistId !== wishlistId);
       localStorage.setItem('wishlist', JSON.stringify(filteredWishlist));
-      console.log('💾 Also removed from localStorage:', wishlistId);
+      // console.log('💾 Also removed from localStorage:', wishlistId);
       
       return response.data;
     } catch (error: any) {
@@ -916,7 +911,7 @@ export const wishlistApi = {
         
         localStorage.setItem('wishlist', JSON.stringify(filteredWishlist));
         
-        console.log('🗑️ Removed from localStorage wishlist:', wishlistId);
+        // console.log('🗑️ Removed from localStorage wishlist:', wishlistId);
         return { success: true, message: 'Removed from wishlist' };
       } catch (localError) {
         console.error('❌ Error removing from localStorage wishlist:', localError);

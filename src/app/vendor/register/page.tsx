@@ -63,7 +63,6 @@ export default function VendorRegisterPage() {
     watch,
     setValue
   } = useForm<VendorRegistrationForm>({
-    resolver: yupResolver(vendorRegistrationSchema),
     defaultValues: {
       city: 'TP. Hồ Chí Minh',
     }
@@ -101,7 +100,7 @@ export default function VendorRegisterPage() {
     setIsSubmitting(true);
     try {
       // TODO: Replace with actual API call
-      console.log('Vendor registration data:', data);
+      // console.log('Vendor registration data:', data);
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000));

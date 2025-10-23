@@ -18,7 +18,7 @@ export const useUserId = () => {
     // Priority: Redux > localStorage
     if (userIdFromRedux) {
       setUserId(userIdFromRedux);
-      console.log("👤 User ID from Redux:", userIdFromRedux);
+      // console.log("👤 User ID from Redux:", userIdFromRedux);
     } else {
       // Fallback to localStorage
       const localStorageUserId = localStorage.getItem('userId');
@@ -26,11 +26,11 @@ export const useUserId = () => {
         try {
           const parsedUserId = JSON.parse(localStorageUserId);
           setUserId(parsedUserId);
-          console.log("👤 User ID from localStorage:", parsedUserId);
+          // console.log("👤 User ID from localStorage:", parsedUserId);
           
           // If we have userId from localStorage but no Redux data, try to fetch profile
           if (!hasTriedFetch && !userProfileLoading) {
-            console.log("🔄 Attempting to fetch user profile...");
+            // console.log("🔄 Attempting to fetch user profile...");
             setHasTriedFetch(true);
             dispatch(fetchUserProfile()).catch((error) => {
               console.error("❌ Failed to fetch user profile:", error);
@@ -42,7 +42,7 @@ export const useUserId = () => {
         }
       } else {
         setUserId(null);
-        console.log("👤 No user ID found");
+        // console.log("👤 No user ID found");
       }
     }
   }, [userIdFromRedux, dispatch, hasTriedFetch, userProfileLoading]);

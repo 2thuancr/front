@@ -34,7 +34,7 @@ export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
-      console.log('🔐 loginUser thunk - credentials:', credentials);
+      // console.log('🔐 loginUser thunk - credentials:', credentials);
       
       // Try different login endpoints based on credentials
       let response;
@@ -51,14 +51,14 @@ export const loginUser = createAsyncThunk(
             password: credentials.password
           });
           userType = 'staff';
-          console.log('🔐 Staff login successful - response:', response.data);
-          console.log('🔐 Staff login successful - userType:', userType);
+          // console.log('🔐 Staff login successful - response:', response.data);
+          // console.log('🔐 Staff login successful - userType:', userType);
         } catch (staffError: any) {
           // Only log if it's not a 401 (unauthorized) error, which is expected for non-staff users
           if (staffError.response?.status !== 401) {
-            console.log('🔐 Staff login failed with unexpected error:', staffError);
+            // console.log('🔐 Staff login failed with unexpected error:', staffError);
           } else {
-            console.log('🔐 Staff login failed (expected for non-staff users), trying customer login');
+            // console.log('🔐 Staff login failed (expected for non-staff users), trying customer login');
           }
           
           // If staff login fails, try customer login
@@ -70,15 +70,15 @@ export const loginUser = createAsyncThunk(
             
             // Check if this is actually a staff user by checking role in response
             if (response.data.user && response.data.user.role === 'staff') {
-              console.log('🔐 Customer API returned staff user, treating as staff');
-              console.log('🔐 Staff user data:', response.data.user);
+              // console.log('🔐 Customer API returned staff user, treating as staff');
+              // console.log('🔐 Staff user data:', response.data.user);
               userType = 'staff';
             } else {
-              console.log('🔐 Customer API returned regular customer');
+              // console.log('🔐 Customer API returned regular customer');
               userType = 'customer';
             }
           } catch (customerError) {
-            console.log('🔐 Customer login also failed:', customerError);
+            // console.log('🔐 Customer login also failed:', customerError);
             throw customerError;
           }
         }
@@ -93,9 +93,9 @@ export const loginUser = createAsyncThunk(
         } catch (adminError: any) {
           // Only log if it's not a 401 (unauthorized) error, which is expected for non-admin users
           if (adminError.response?.status !== 401) {
-            console.log('🔐 Admin login failed with unexpected error:', adminError);
+            // console.log('🔐 Admin login failed with unexpected error:', adminError);
           } else {
-            console.log('🔐 Admin login failed (expected for non-admin users), trying vendor login');
+            // console.log('🔐 Admin login failed (expected for non-admin users), trying vendor login');
           }
           
           // If admin login fails, try vendor login
@@ -108,34 +108,34 @@ export const loginUser = createAsyncThunk(
           } catch (vendorError: any) {
             // Only log if it's not a 401 (unauthorized) error
             if (vendorError.response?.status !== 401) {
-              console.log('🔐 Vendor login failed with unexpected error:', vendorError);
+              // console.log('🔐 Vendor login failed with unexpected error:', vendorError);
             } else {
-              console.log('🔐 Vendor login also failed (expected for non-vendor users)');
+              // console.log('🔐 Vendor login also failed (expected for non-vendor users)');
             }
             throw adminError; // Throw original admin error
           }
         }
       }
       
-      console.log('🔐 loginUser thunk - API response:', response.data);
-      console.log('🔐 loginUser thunk - userType:', userType);
-      console.log('🔐 loginUser thunk - response structure:', {
-        hasUser: !!response.data.user,
-        hasStaff: !!response.data.staff,
-        hasAdmin: !!response.data.admin,
-        hasVendor: !!response.data.vendor,
-        userRole: response.data.user?.role,
-        staffRole: response.data.staff?.role
-      });
+      // console.log('🔐 loginUser thunk - API response:', response.data);
+      // console.log('🔐 loginUser thunk - userType:', userType);
+      // console.log('🔐 loginUser thunk - response structure:', {
+      //   hasUser: !!response.data.user,
+      //   hasStaff: !!response.data.staff,
+      //   hasAdmin: !!response.data.admin,
+      //   hasVendor: !!response.data.vendor,
+      //   userRole: response.data.user?.role,
+      //   staffRole: response.data.staff?.role
+      // });
       
       // Additional role checking for staff
       if (userType === 'staff' && response.data.staff) {
-        console.log('🔐 Staff login detected - staff data:', response.data.staff);
-        console.log('🔐 Staff role:', response.data.staff.role);
+        // console.log('🔐 Staff login detected - staff data:', response.data.staff);
+        // console.log('🔐 Staff role:', response.data.staff.role);
       }
       
       const result = { ...response.data, userType };
-      console.log('🔐 loginUser thunk - returning:', result);
+      // console.log('🔐 loginUser thunk - returning:', result);
       return result;
     } catch (error: any) {
       console.error('🔐 loginUser thunk - error:', error);
@@ -238,7 +238,7 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
-        console.log('🔐 loginUser.fulfilled - payload:', action.payload);
+        // console.log('🔐 loginUser.fulfilled - payload:', action.payload);
         state.isLoading = false;
         state.isAuthenticated = true;
         
@@ -250,10 +250,10 @@ const authSlice = createSlice({
         } else if (action.payload.userType === 'staff') {
           // Handle staff data from both customer API and staff API
           if (action.payload.staff) {
-            console.log('🔐 Setting staff user from staff API:', action.payload.staff);
+            // console.log('🔐 Setting staff user from staff API:', action.payload.staff);
             state.user = action.payload.staff;
           } else if (action.payload.user && action.payload.user.role === 'staff') {
-            console.log('🔐 Setting staff user from customer API:', action.payload.user);
+            // console.log('🔐 Setting staff user from customer API:', action.payload.user);
             state.user = action.payload.user;
           }
         } else {
@@ -264,11 +264,11 @@ const authSlice = createSlice({
         state.token = action.payload.access_token;
         state.refreshToken = action.payload.refresh_token;
         state.error = null;
-        console.log('🔐 loginUser.fulfilled - state after update:', { 
-          user: state.user, 
-          userType: state.userType,
-          isAuthenticated: state.isAuthenticated 
-        });
+            // console.log('🔐 loginUser.fulfilled - state after update:', {
+            //   user: state.user,
+            //   userType: state.userType,
+            //   isAuthenticated: state.isAuthenticated
+            // });
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;

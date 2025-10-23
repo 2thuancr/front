@@ -51,6 +51,7 @@ export interface Product {
   price: string; // API returns as string
   discountPercent?: string; // API returns as string
   stockQuantity: number;
+  isActive?: boolean; // Add isActive property
   createdAt: string;
   updatedAt: string;
   category: Category;

@@ -28,7 +28,7 @@ export const AuthStatus: React.FC = () => {
           <strong>useAuth:</strong>
           <div className="ml-2">
             <div>Authenticated: {isAuthenticated ? '✅' : '❌'}</div>
-            <div>User: {user ? `${user.firstName} ${user.lastName}` : 'None'}</div>
+            <div>User: {user ? (user as any).firstName ? `${(user as any).firstName} ${(user as any).lastName}` : (user as any).name || 'Unknown' : 'None'}</div>
             <div>Type: {userType || 'None'}</div>
           </div>
         </div>

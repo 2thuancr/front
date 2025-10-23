@@ -20,7 +20,7 @@ export default function ProfilePage() {
       await updateProfile(data);
       // Refresh profile to get updated data
       await fetchProfile();
-      console.log('Profile updated successfully');
+      // console.log('Profile updated successfully');
     } catch (error) {
       console.error('Update profile error:', error);
       alert('Có lỗi xảy ra khi cập nhật hồ sơ!');

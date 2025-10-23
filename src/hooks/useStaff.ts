@@ -37,20 +37,20 @@ export const useStaff = (): UseStaffReturn => {
       setLoading(true);
       setError(null);
       
-      console.log('🔄 Fetching staff...');
+      // console.log('🔄 Fetching staff...');
       
       // Try to fetch from API first
       try {
         const response = await staffAPI.getAll();
         
-        console.log('✅ Staff API response:', response.data);
+        // console.log('✅ Staff API response:', response.data);
 
         if (response.data && response.data.staff && Array.isArray(response.data.staff)) {
           setStaff(response.data.staff);
-          console.log('📊 Staff loaded:', {
-            staffCount: response.data.staff.length,
-            message: response.data.message
-          });
+              // console.log('📊 Staff loaded:', {
+              //   staffCount: response.data.staff.length,
+              //   message: response.data.message
+              // });
           return;
         }
       } catch (apiError: any) {
@@ -97,7 +97,7 @@ export const useStaff = (): UseStaffReturn => {
         ];
         
         setStaff(mockStaff);
-        console.log('📊 Mock staff loaded:', { staffCount: mockStaff.length });
+        // console.log('📊 Mock staff loaded:', { staffCount: mockStaff.length });
         return;
       }
       

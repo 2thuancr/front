@@ -19,11 +19,11 @@ export const fetchUserProfile = createAsyncThunk(
   'user/fetchProfile',
   async (_, { rejectWithValue }) => {
     try {
-      console.log('🔄 fetchUserProfile thunk started');
+      // console.log('🔄 fetchUserProfile thunk started');
       
       const token = localStorage.getItem('token');
       if (!token) {
-        console.log('⚠️ No token found in localStorage');
+        // console.log('⚠️ No token found in localStorage');
         return rejectWithValue('No authentication token found');
       }
 
@@ -32,7 +32,7 @@ export const fetchUserProfile = createAsyncThunk(
       if (userData) {
         try {
           const user = JSON.parse(userData);
-          console.log('✅ Using user data from localStorage:', user);
+          // console.log('✅ Using user data from localStorage:', user);
           return user;
         } catch (parseError) {
           console.error('❌ Failed to parse user data from localStorage:', parseError);
@@ -40,9 +40,9 @@ export const fetchUserProfile = createAsyncThunk(
       }
 
       // If no localStorage data, try API
-      console.log('📡 Calling userAPI.getProfile()...');
+      // console.log('📡 Calling userAPI.getProfile()...');
       const response = await userAPI.getProfile();
-      console.log('✅ Profile API response:', response.data);
+      // console.log('✅ Profile API response:', response.data);
       
       // Save user data to localStorage for future use
       localStorage.setItem('user', JSON.stringify(response.data));
@@ -56,7 +56,7 @@ export const fetchUserProfile = createAsyncThunk(
       if (userData) {
         try {
           const user = JSON.parse(userData);
-          console.log('✅ Fallback: Using user data from localStorage after API error:', user);
+          // console.log('✅ Fallback: Using user data from localStorage after API error:', user);
           return user;
         } catch (parseError) {
           console.error('❌ Failed to parse user data from localStorage:', parseError);
@@ -86,9 +86,9 @@ export const updateUserProfile = createAsyncThunk(
         throw new Error('User ID not found');
       }
 
-      console.log('📡 Calling userAPI.updateProfile() with userId:', userId);
+      // console.log('📡 Calling userAPI.updateProfile() with userId:', userId);
       const response = await userAPI.updateProfile(userId, profileData);
-      console.log('✅ Update profile API response:', response.data);
+      // console.log('✅ Update profile API response:', response.data);
       return response.data;
     } catch (error: any) {
       console.error('💥 updateUserProfile error:', error);

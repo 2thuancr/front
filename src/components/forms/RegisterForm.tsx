@@ -99,7 +99,7 @@ const RegisterForm: React.FC = () => {
 
   const handleOTPVerify = async (otp: string) => {
     try {
-      console.log('Verifying OTP:', otp, 'for email:', registeredEmail);
+      // console.log('Verifying OTP:', otp, 'for email:', registeredEmail);
       await verifyOTPCode({ email: registeredEmail, otp });
       // Sau khi verify thành công, useAuth sẽ tự động redirect đến /profile
     } catch (error) {
@@ -110,7 +110,7 @@ const RegisterForm: React.FC = () => {
 
   const handleOTPResend = async () => {
     try {
-      console.log('Resending OTP for email:', registeredEmail);
+      // console.log('Resending OTP for email:', registeredEmail);
       await resendOTPCode(registeredEmail);
     } catch (error) {
       console.error('Resend OTP error:', error);

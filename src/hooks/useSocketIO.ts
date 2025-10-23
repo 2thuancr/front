@@ -53,7 +53,7 @@ export const useSocketIO = ({
 
     const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
     
-    console.log('🔌 SocketIO: Connecting to', socketUrl);
+    // console.log('🔌 SocketIO: Connecting to', socketUrl);
     
     // Generate unique tab ID for Socket.IO connection
     const tabId = sessionStorage.getItem('tabId') || `tab_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -68,15 +68,15 @@ export const useSocketIO = ({
 
     // Connection events
     socketRef.current.on('connect', () => {
-      console.log('✅ SocketIO: Connected');
-      console.log('🔌 SocketIO: Socket ID:', socketRef.current?.id);
-      console.log('🔌 SocketIO: Tab ID:', tabId);
+      // console.log('✅ SocketIO: Connected');
+      // console.log('🔌 SocketIO: Socket ID:', socketRef.current?.id);
+      // console.log('🔌 SocketIO: Tab ID:', tabId);
       setIsConnected(true);
       setConnectionError(null);
     });
 
     socketRef.current.on('disconnect', (reason) => {
-      console.log('❌ SocketIO: Disconnected', reason);
+      // console.log('❌ SocketIO: Disconnected', reason);
       setIsConnected(false);
     });
 
@@ -88,20 +88,20 @@ export const useSocketIO = ({
 
     // Order events - Listen to multiple possible event names
     socketRef.current.on('order_status_update', (data) => {
-      console.log('📦 SocketIO: Order status update received', data);
-      console.log('📦 SocketIO: Event details:', {
-        orderId: data.orderId,
-        oldStatus: data.oldStatus,
-        newStatus: data.newStatus,
-        updatedBy: data.updatedBy,
-        timestamp: data.timestamp
-      });
-      console.log('📦 SocketIO: Current user context:', {
-        userType,
-        userId: 'id' in user ? user.id : null,
-        vendorId: 'vendorId' in user ? user.vendorId : null,
-        staffId: 'id' in user ? user.id : null
-      });
+          // console.log('📦 SocketIO: Order status update received', data);
+          // console.log('📦 SocketIO: Event details:', {
+          //   orderId: data.orderId,
+          //   oldStatus: data.oldStatus,
+          //   newStatus: data.newStatus,
+          //   updatedBy: data.updatedBy,
+          //   timestamp: data.timestamp
+          // });
+          // console.log('📦 SocketIO: Current user context:', {
+          //   userType,
+          //   userId: 'id' in user ? user.id : null,
+          //   vendorId: 'vendorId' in user ? user.vendorId : null,
+          //   staffId: 'id' in user ? user.id : null
+          // });
       
       // Transform backend data structure to frontend expected structure
       const transformedData = {
@@ -116,13 +116,13 @@ export const useSocketIO = ({
         updatedByUsername: data.updatedByUsername
       };
       
-      console.log('📦 SocketIO: Transformed data:', transformedData);
+      // console.log('📦 SocketIO: Transformed data:', transformedData);
       onOrderStatusUpdateRef.current?.(transformedData);
     });
 
     // Alternative event names that backend might use
     socketRef.current.on('orderStatusUpdate', (data) => {
-      console.log('📦 SocketIO: orderStatusUpdate received', data);
+      // console.log('📦 SocketIO: orderStatusUpdate received', data);
       const transformedData = {
         orderId: data.orderId,
         status: data.newStatus || data.status,
@@ -138,7 +138,7 @@ export const useSocketIO = ({
     });
 
     socketRef.current.on('order_updated', (data) => {
-      console.log('📦 SocketIO: order_updated received', data);
+      // console.log('📦 SocketIO: order_updated received', data);
       const transformedData = {
         orderId: data.orderId,
         status: data.newStatus || data.status,
@@ -154,7 +154,7 @@ export const useSocketIO = ({
     });
 
     socketRef.current.on('orderUpdated', (data) => {
-      console.log('📦 SocketIO: orderUpdated received', data);
+      // console.log('📦 SocketIO: orderUpdated received', data);
       const transformedData = {
         orderId: data.orderId,
         status: data.newStatus || data.status,
@@ -170,7 +170,7 @@ export const useSocketIO = ({
     });
 
     socketRef.current.on('status_changed', (data) => {
-      console.log('📦 SocketIO: status_changed received', data);
+      // console.log('📦 SocketIO: status_changed received', data);
       const transformedData = {
         orderId: data.orderId,
         status: data.newStatus || data.status,
@@ -186,7 +186,7 @@ export const useSocketIO = ({
     });
 
     socketRef.current.on('statusChanged', (data) => {
-      console.log('📦 SocketIO: statusChanged received', data);
+      // console.log('📦 SocketIO: statusChanged received', data);
       const transformedData = {
         orderId: data.orderId,
         status: data.newStatus || data.status,
@@ -202,19 +202,19 @@ export const useSocketIO = ({
     });
 
     socketRef.current.on('new_order', (data) => {
-      console.log('🆕 SocketIO: New order received', data);
+      // console.log('🆕 SocketIO: New order received', data);
       onNewOrderRef.current?.(data);
     });
 
     socketRef.current.on('order_cancelled', (data) => {
-      console.log('❌ SocketIO: Order cancelled received', data);
-      console.log('❌ SocketIO: Order cancellation details:', {
-        orderId: data.orderId,
-        userId: data.userId,
-        status: data.status,
-        timestamp: data.timestamp,
-        reason: data.reason
-      });
+          // console.log('❌ SocketIO: Order cancelled received', data);
+          // console.log('❌ SocketIO: Order cancellation details:', {
+          //   orderId: data.orderId,
+          //   userId: data.userId,
+          //   status: data.status,
+          //   timestamp: data.timestamp,
+          //   reason: data.reason
+          // });
       
       // Transform to match OrderStatusUpdate interface
       const transformedData = {
@@ -229,13 +229,13 @@ export const useSocketIO = ({
         updatedByUsername: data.updatedByUsername
       };
       
-      console.log('❌ SocketIO: Transformed cancellation data:', transformedData);
+      // console.log('❌ SocketIO: Transformed cancellation data:', transformedData);
       onOrderCancelledRef.current?.(transformedData);
     });
 
     // Listen to all events for debugging
     socketRef.current.onAny((eventName, ...args) => {
-      console.log('🔍 SocketIO: Received event:', eventName, args);
+      // console.log('🔍 SocketIO: Received event:', eventName, args);
       
       // Special debug for order status updates
       if (eventName.includes('order') && eventName.includes('status')) {
@@ -243,25 +243,25 @@ export const useSocketIO = ({
         // Additional debug for vendor receiving staff updates
         if (userType === 'vendor' && args && args[0]) {
           const eventData = args[0];
-          console.log('🔍 SocketIO: Vendor received order status event:', {
-            orderId: eventData.orderId,
-            newStatus: eventData.newStatus,
-            updatedBy: eventData.updatedBy,
-            updatedByUsername: eventData.updatedByUsername,
-            isFromStaff: eventData.updatedByUsername && eventData.updatedByUsername !== 'vendor',
-            timestamp: eventData.timestamp
-          });
+          // console.log('🔍 SocketIO: Vendor received order status event:', {
+          //   orderId: eventData.orderId,
+          //   newStatus: eventData.newStatus,
+          //   updatedBy: eventData.updatedBy,
+          //   updatedByUsername: eventData.updatedByUsername,
+          //   isFromStaff: eventData.updatedByUsername && eventData.updatedByUsername !== 'vendor',
+          //   timestamp: eventData.timestamp
+          // });
           
           // Debug: Check if this is from staff
           if (eventData.updatedByUsername && eventData.updatedByUsername !== 'vendor') {
-            console.log('🎯 SocketIO: Vendor received update from staff/customer:', {
-              eventName,
-              orderId: eventData.orderId,
-              newStatus: eventData.newStatus,
-              updatedByUsername: eventData.updatedByUsername,
-              isRealTime: true,
-              timestamp: eventData.timestamp
-            });
+            // console.log('🎯 SocketIO: Vendor received update from staff/customer:', {
+            //   eventName,
+            //   orderId: eventData.orderId,
+            //   newStatus: eventData.newStatus,
+            //   updatedByUsername: eventData.updatedByUsername,
+            //   isRealTime: true,
+            //   timestamp: eventData.timestamp
+            // });
           }
         }
       }
@@ -269,12 +269,12 @@ export const useSocketIO = ({
 
     // Join room based on user type
     if (userType === 'customer' && 'id' in user && user.id) {
-      console.log('🔌 SocketIO: Joining customer room', { customerId: user.id });
+      // console.log('🔌 SocketIO: Joining customer room', { customerId: user.id });
       socketRef.current.emit('join_customer_room', { customerId: user.id });
       socketRef.current.emit('join_room', { room: `customer_${user.id}`, userId: user.id });
       socketRef.current.emit('join_user_room', { userId: user.id }); // Backend broadcasts to user room
     } else if (userType === 'vendor' && 'vendorId' in user && user.vendorId) {
-      console.log('🔌 SocketIO: Joining vendor room', { vendorId: user.vendorId });
+      // console.log('🔌 SocketIO: Joining vendor room', { vendorId: user.vendorId });
       socketRef.current.emit('join_vendor_room', { vendorId: user.vendorId });
       if ('id' in user) {
         socketRef.current.emit('join_room', { room: `vendor_${user.vendorId}`, userId: user.id });
@@ -282,19 +282,19 @@ export const useSocketIO = ({
       }
       
       // Additional room joins for vendor
-      console.log('🔌 SocketIO: Vendor joining additional rooms');
+      // console.log('🔌 SocketIO: Vendor joining additional rooms');
       socketRef.current.emit('join_room', { room: 'all_vendors', userId: 'id' in user ? user.id : null });
       socketRef.current.emit('join_room', { room: 'all_staff', userId: 'id' in user ? user.id : null });
       socketRef.current.emit('join_room', { room: 'all_users', userId: 'id' in user ? user.id : null });
       
     } else if (userType === 'staff' && 'id' in user && user.id) {
-      console.log('🔌 SocketIO: Joining staff room', { staffId: user.id });
+      // console.log('🔌 SocketIO: Joining staff room', { staffId: user.id });
       socketRef.current.emit('join_staff_room', { staffId: user.id });
       socketRef.current.emit('join_room', { room: `staff_${user.id}`, userId: user.id });
       socketRef.current.emit('join_user_room', { userId: user.id });
       
       // Additional room joins for staff
-      console.log('🔌 SocketIO: Staff joining additional rooms');
+      // console.log('🔌 SocketIO: Staff joining additional rooms');
       socketRef.current.emit('join_room', { room: 'all_staff', userId: user.id });
       socketRef.current.emit('join_room', { room: 'all_vendors', userId: user.id });
       socketRef.current.emit('join_room', { room: 'all_users', userId: user.id });
@@ -302,11 +302,11 @@ export const useSocketIO = ({
 
     // Listen for room join confirmations
     socketRef.current.on('room_joined', (data) => {
-      console.log('🔌 SocketIO: Room joined successfully', data);
+      // console.log('🔌 SocketIO: Room joined successfully', data);
     });
 
     socketRef.current.on('joined_room', (data) => {
-      console.log('🔌 SocketIO: Joined room', data);
+      // console.log('🔌 SocketIO: Joined room', data);
     });
 
     // Debug: Listen for any room-related events
@@ -321,7 +321,7 @@ export const useSocketIO = ({
     // Debug: Listen for vendor-specific events
     if (userType === 'vendor') {
       socketRef.current.on('vendor_room_joined', (data) => {
-        console.log('🔌 SocketIO: Vendor room joined', data);
+        // console.log('🔌 SocketIO: Vendor room joined', data);
       });
       
       socketRef.current.on('vendor_room_error', (data) => {
@@ -334,7 +334,7 @@ export const useSocketIO = ({
 
   const disconnect = useCallback(() => {
     if (socketRef.current) {
-      console.log('🔌 SocketIO: Disconnecting...');
+      // console.log('🔌 SocketIO: Disconnecting...');
       socketRef.current.disconnect();
       socketRef.current = null;
       setIsConnected(false);
@@ -343,7 +343,7 @@ export const useSocketIO = ({
 
   const sendMessage = useCallback((event: string, data: any) => {
     if (socketRef.current && isConnected) {
-      console.log('📤 SocketIO: Sending message', event, data);
+      // console.log('📤 SocketIO: Sending message', event, data);
       socketRef.current.emit(event, data);
       return true;
     }
@@ -354,10 +354,10 @@ export const useSocketIO = ({
   // Auto-connect when component mounts and user is authenticated
   useEffect(() => {
     if (autoConnect && user && token) {
-      console.log('🔌 SocketIO: Auto-connecting...');
+      // console.log('🔌 SocketIO: Auto-connecting...');
       connect();
     } else if (!user || !token) {
-      console.log('🔌 SocketIO: User or token not available for connection');
+      // console.log('🔌 SocketIO: User or token not available for connection');
     }
 
     return () => {

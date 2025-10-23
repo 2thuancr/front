@@ -22,7 +22,7 @@ export const fetchWishlist = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await wishlistApi.getWishlist();
-      console.log('📋 Raw wishlist response:', response);
+      // console.log('📋 Raw wishlist response:', response);
       
       // Handle different response formats
       let wishlistItems = [];
@@ -36,7 +36,7 @@ export const fetchWishlist = createAsyncThunk(
         wishlistItems = response.items;
       }
       
-      console.log('📋 Processed wishlist items:', wishlistItems);
+      // console.log('📋 Processed wishlist items:', wishlistItems);
       return wishlistItems;
     } catch (error: any) {
       console.error('❌ Error fetching wishlist:', error);
@@ -50,7 +50,7 @@ export const addToWishlist = createAsyncThunk(
   async (productId: number, { rejectWithValue }) => {
     try {
       const response = await wishlistApi.addToWishlist(productId);
-      console.log('✅ Added to wishlist:', response);
+      // console.log('✅ Added to wishlist:', response);
       return { 
         productId, 
         wishlistItem: response.wishlistItem, 
@@ -68,7 +68,7 @@ export const removeFromWishlist = createAsyncThunk(
   async (productId: number, { rejectWithValue }) => {
     try {
       await wishlistApi.removeProductFromWishlist(productId);
-      console.log('🗑️ Removed from wishlist:', productId);
+      // console.log('🗑️ Removed from wishlist:', productId);
       return productId;
     } catch (error: any) {
       console.error('❌ Error removing from wishlist:', error);
@@ -82,7 +82,7 @@ export const checkInWishlist = createAsyncThunk(
   async (productId: number, { rejectWithValue }) => {
     try {
       const response = await wishlistApi.checkInWishlist(productId);
-      console.log('🔍 Checked wishlist:', { productId, exists: response.exists });
+      // console.log('🔍 Checked wishlist:', { productId, exists: response.exists });
       return { productId, isInWishlist: response.exists };
     } catch (error: any) {
       console.error('❌ Error checking wishlist:', error);
@@ -98,17 +98,17 @@ export const toggleWishlist = createAsyncThunk(
       const state = getState() as { wishlist: WishlistState };
       const isInWishlist = state.wishlist.checkedItems[productId] || false;
       
-      console.log('🔄 Toggle wishlist:', { productId, isInWishlist });
+      // console.log('🔄 Toggle wishlist:', { productId, isInWishlist });
       
       if (isInWishlist) {
         // Remove from wishlist
         const response = await wishlistApi.removeProductFromWishlist(productId);
-        console.log('🗑️ Removed from wishlist:', response);
+        // console.log('🗑️ Removed from wishlist:', response);
         return { productId, action: 'removed' };
       } else {
         // Add to wishlist
         const response = await wishlistApi.addToWishlist(productId);
-        console.log('✅ Added to wishlist:', response);
+        // console.log('✅ Added to wishlist:', response);
         
         if (response.alreadyExists) {
           return { productId, action: 'already_exists' };

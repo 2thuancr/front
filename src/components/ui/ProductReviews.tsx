@@ -36,7 +36,7 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({
   const fetchReviews = async () => {
     try {
       const response = await reviewApi.getProductReviews(productId, 1, 10);
-      console.log('Reviews API response:', response);
+      // console.log('Reviews API response:', response);
       
       // Handle backend response format: { reviews, total, page, limit }
       let reviewsData = [];
@@ -48,7 +48,7 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({
         reviewsData = response;
       }
       
-      console.log('Processed reviews:', reviewsData);
+      // console.log('Processed reviews:', reviewsData);
       setReviews(reviewsData);
     } catch (error) {
       console.error('Error fetching reviews:', error);
@@ -102,7 +102,7 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({
         }
       ];
       
-      console.log('Using mock reviews data');
+      // console.log('Using mock reviews data');
       setReviews(mockReviews);
     } finally {
       setLoading(false);
@@ -112,7 +112,7 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({
   const fetchRatingStats = async () => {
     try {
       const response = await reviewApi.getProductRatingStats(productId);
-      console.log('Rating stats API response:', response);
+      // console.log('Rating stats API response:', response);
       
       // Handle different response structures
       let statsData = null;
@@ -122,7 +122,7 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({
         statsData = response;
       }
       
-      console.log('Processed rating stats:', statsData);
+      // console.log('Processed rating stats:', statsData);
       setRatingStats(statsData);
     } catch (error) {
       console.error('Error fetching rating stats:', error);
@@ -141,7 +141,7 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({
         }
       };
       
-      console.log('Using mock rating stats data');
+      // console.log('Using mock rating stats data');
       setRatingStats(mockRatingStats);
     }
   };
@@ -172,12 +172,12 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({
         reviewData.comment = trimmedComment;
       }
 
-      console.log('Submitting review with data:', reviewData);
-      console.log('User data:', user);
+      // console.log('Submitting review with data:', reviewData);
+      // console.log('User data:', user);
 
       const response = await reviewApi.createReview(reviewData);
       
-      console.log('Review submitted successfully:', response);
+      // console.log('Review submitted successfully:', response);
       
       // Refresh reviews and stats
       await fetchReviews();

@@ -42,7 +42,7 @@ export const useCategories = (options: UseCategoriesOptions = {}): UseCategories
         search: search || undefined
       });
 
-      console.log('✅ Categories API response:', response.data);
+      // console.log('✅ Categories API response:', response.data);
 
       // Handle API response format
       let categoriesData: Category[] = [];
@@ -52,12 +52,12 @@ export const useCategories = (options: UseCategoriesOptions = {}): UseCategories
         // API returns { categories: Category[], total: number, page: string, limit: string }
         categoriesData = response.data.categories;
         totalCount = response.data.total || categoriesData.length;
-        console.log('📊 Categories pagination info:', {
-          total: totalCount,
-          page: response.data.page,
-          limit: response.data.limit,
-          categoriesCount: categoriesData.length
-        });
+            // console.log('📊 Categories pagination info:', {
+            //   total: totalCount,
+            //   page: response.data.page,
+            //   limit: response.data.limit,
+            //   categoriesCount: categoriesData.length
+            // });
       } else if (Array.isArray(response.data)) {
         // API returns Category[] directly
         categoriesData = response.data;

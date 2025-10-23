@@ -261,7 +261,7 @@ export default function VendorStaffPage() {
             >
               {statuses.map(status => (
                 <option key={status} value={status}>
-                  {status === 'all' ? 'Tất cả trạng thái' : getStatusText(status)}
+                  {status === 'all' ? 'Tất cả trạng thái' : status === 'active' ? 'Hoạt động' : 'Tạm dừng'}
                 </option>
               ))}
             </select>

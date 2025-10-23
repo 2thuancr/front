@@ -61,7 +61,6 @@ export default function StaffOrders() {
   // Real-time order status sync
   const { isConnected, connectionError } = useStaffOrderSync({
     onStatusUpdate: (update) => {
-      
       // Update orders in real-time
       setOrders(prevOrders => {
         const updatedOrders = prevOrders.map(order => 
@@ -96,7 +95,6 @@ export default function StaffOrders() {
   // Fallback polling mechanism if Socket.IO is not working
   useEffect(() => {
     if (!isConnected && allOrders.length > 0) {
-      
       const pollInterval = setInterval(async () => {
         try {
           const response = await staffOrderAPI.getAllOrders(1, 1000);
@@ -120,6 +118,7 @@ export default function StaffOrders() {
             }
           }
         } catch (error) {
+          // Silent error handling
         }
       }, 5000); // Poll every 5 seconds
       
@@ -148,6 +147,7 @@ export default function StaffOrders() {
         updateStatusCounts(normalizedOrders);
       }
     } catch (error) {
+      // Silent error handling
     }
   };
 
@@ -303,15 +303,11 @@ export default function StaffOrders() {
   const handleStatusChange = async (orderId: number, newStatus: string) => {
     setUpdatingStatus(orderId);
     try {
-      
-      
       // Call API to update order status
       const response = await staffOrderAPI.updateOrderStatus(orderId, newStatus);
       
       // Verify the status was actually updated in the response
       if (response.data && response.data.status) {
-      } else {
-        console.warn('⚠️ Status not found in response, checking if update was successful');
       }
       
       // Update local state after successful API call
@@ -331,8 +327,6 @@ export default function StaffOrders() {
         )
       );
 
-      
-      
       // Verify the update by fetching the order again
       setTimeout(async () => {
         try {
@@ -341,19 +335,12 @@ export default function StaffOrders() {
             toastError('Cảnh báo!', 'Trạng thái có thể chưa được lưu vào database');
           } 
         } catch (verifyError) {
+          // Silent error handling
         }
       }, 1000);
       
       toastSuccess('Thành công!', `Đã cập nhật trạng thái đơn hàng #${orderId}`);
     } catch (error: any) {
-      console.error('❌ Error details:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        message: error.message,
-        orderId,
-        newStatus
-      });
       
       // Handle specific error cases
       if (error.response?.status === 401) {
