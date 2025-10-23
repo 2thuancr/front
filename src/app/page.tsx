@@ -1,4 +1,4 @@
-import Hero from '@/components/home/Hero';
+import Carousel from '@/components/home/Carousel';
 import Features from '@/components/home/Features';
 import ProductGrid from '@/components/home/ProductGrid';
 import ProductShowcase from '@/components/home/ProductShowcase';
@@ -6,7 +6,7 @@ import ProductShowcase from '@/components/home/ProductShowcase';
 export default function Home() {
   return (
     <main>
-      <Hero />
+      <Carousel />
       <Features />
       <ProductGrid />
       <ProductShowcase />
