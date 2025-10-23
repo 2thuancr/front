@@ -35,6 +35,8 @@ export default function AdminProducts() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
+  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   const toastSuccess = useToastSuccess();
   const toastError = useToastError();
@@ -128,6 +130,58 @@ export default function AdminProducts() {
     fetchProducts(currentPage);
     setEditingProduct(null);
     setFormMode('create');
+  };
+
+  // Handle delete product
+  const handleDeleteProduct = (product: Product) => {
+    setDeletingProduct(product);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingProduct) return;
+
+    try {
+      // Log product data before deletion for debugging
+      console.log('🗑️ Deleting product:', {
+        id: deletingProduct.productId,
+        name: deletingProduct.productName,
+        images: deletingProduct.images,
+        createdAt: deletingProduct.createdAt,
+        hasImages: deletingProduct.images?.length > 0
+      });
+
+      await adminProductAPI.deleteProduct(deletingProduct.productId);
+      toastSuccess('Thành công', `Đã xóa sản phẩm "${deletingProduct.productName}"`);
+      
+      // Refresh the product list
+      await fetchProducts(currentPage);
+      
+      // Close confirmation
+      setShowDeleteConfirm(false);
+      setDeletingProduct(null);
+    } catch (error: any) {
+      console.error('Delete product error:', error);
+      
+      // Log more details about the error
+      if (error.response) {
+        console.error('❌ Delete API Error Details:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          url: error.config?.url
+        });
+      }
+      
+      // Show more specific error message
+      const errorMessage = error.response?.data?.message || 'Không thể xóa sản phẩm. Vui lòng thử lại.';
+      toastError('Lỗi', errorMessage);
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setDeletingProduct(null);
   };
 
   const handleEditProduct = (product: Product) => {
@@ -434,7 +488,11 @@ export default function AdminProducts() {
                             >
                               <Edit className="w-4 h-4" />
                             </button>
-                            <button className="text-gray-400 hover:text-gray-600" title="Xóa">
+                            <button 
+                              onClick={() => handleDeleteProduct(product)}
+                              className="text-gray-400 hover:text-red-600" 
+                              title="Xóa"
+                            >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
@@ -543,6 +601,54 @@ export default function AdminProducts() {
                   </button>
                 </nav>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && deletingProduct && (
+        <div 
+          className="fixed inset-0 flex items-center justify-center z-50 p-4"
+          style={{ backgroundColor: 'transparent' }}
+        >
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Xác nhận xóa sản phẩm</h3>
+                <p className="text-sm text-gray-600">Hành động này không thể hoàn tác</p>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-gray-700">
+                Bạn có chắc chắn muốn xóa sản phẩm <strong>"{deletingProduct.productName}"</strong>?
+              </p>
+              {deletingProduct.createdAt && new Date(deletingProduct.createdAt) < new Date('2024-01-01') && (
+                <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    ⚠️ Đây là sản phẩm cũ. Việc xóa có thể gặp lỗi do cấu trúc dữ liệu khác biệt.
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={cancelDelete}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                Xóa sản phẩm
+              </button>
             </div>
           </div>
         </div>

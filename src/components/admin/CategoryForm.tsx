@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -12,11 +12,14 @@ import {
 } from 'lucide-react';
 import { adminCategoryAPI } from '@/lib/api';
 import { useToastSuccess, useToastError } from '@/components/ui/Toast';
+import { Category } from '@/types/api';
 
 interface CategoryFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  category?: Category | null;
+  mode?: 'create' | 'edit';
 }
 
 interface CategoryFormData {
@@ -29,7 +32,7 @@ const schema = yup.object({
   description: yup.string().required('Mô tả danh mục là bắt buộc').min(10, 'Mô tả phải có ít nhất 10 ký tự'),
 });
 
-export default function CategoryForm({ isOpen, onClose, onSuccess }: CategoryFormProps) {
+export default function CategoryForm({ isOpen, onClose, onSuccess, category, mode = 'create' }: CategoryFormProps) {
   const [loading, setLoading] = useState(false);
   
   const toastSuccess = useToastSuccess();
@@ -41,6 +44,7 @@ export default function CategoryForm({ isOpen, onClose, onSuccess }: CategoryFor
     formState: { errors },
     reset,
     watch,
+    setValue,
   } = useForm<CategoryFormData>({
     resolver: yupResolver(schema),
     defaultValues: {
@@ -49,19 +53,38 @@ export default function CategoryForm({ isOpen, onClose, onSuccess }: CategoryFor
     }
   });
 
+  // Populate form when editing
+  useEffect(() => {
+    if (mode === 'edit' && category && isOpen) {
+      setValue('categoryName', category.categoryName);
+      setValue('description', category.description || '');
+    } else if (mode === 'create' && isOpen) {
+      reset();
+    }
+  }, [mode, category, isOpen, setValue, reset]);
+
   const onSubmit = async (data: CategoryFormData) => {
     try {
       setLoading(true);
       
-      const response = await adminCategoryAPI.createCategory(data);
+      let response;
+      if (mode === 'edit' && category) {
+        // Update existing category
+        response = await adminCategoryAPI.updateCategory(category.categoryId, data);
+        toastSuccess('Thành công', 'Đã cập nhật danh mục');
+      } else {
+        // Create new category
+        response = await adminCategoryAPI.createCategory(data);
+        toastSuccess('Thành công', 'Đã thêm danh mục mới');
+      }
       
-      toastSuccess('Thành công', 'Đã thêm danh mục mới');
       handleClose();
       onSuccess();
       
     } catch (error: any) {
-      console.error('❌ Error creating category:', error);
-      toastError('Lỗi', error.response?.data?.message || 'Không thể tạo danh mục mới');
+      console.error('❌ Error saving category:', error);
+      const action = mode === 'edit' ? 'cập nhật' : 'tạo';
+      toastError('Lỗi', error.response?.data?.message || `Không thể ${action} danh mục`);
     } finally {
       setLoading(false);
     }
@@ -75,13 +98,18 @@ export default function CategoryForm({ isOpen, onClose, onSuccess }: CategoryFor
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-900 bg-opacity-10 flex items-center justify-center z-50 p-4">
+    <div 
+      className="fixed inset-0 flex items-center justify-center z-50 p-4"
+      style={{ backgroundColor: 'transparent' }}
+    >
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
             <FolderOpen className="w-6 h-6 text-blue-600" />
-            <h2 className="text-xl font-semibold text-gray-900">Thêm danh mục mới</h2>
+            <h2 className="text-xl font-semibold text-gray-900">
+              {mode === 'edit' ? 'Chỉnh sửa danh mục' : 'Thêm danh mục mới'}
+            </h2>
           </div>
           <button
             onClick={handleClose}
@@ -168,12 +196,12 @@ export default function CategoryForm({ isOpen, onClose, onSuccess }: CategoryFor
               {loading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Đang tạo...</span>
+                  <span>{mode === 'edit' ? 'Đang cập nhật...' : 'Đang tạo...'}</span>
                 </>
               ) : (
                 <>
                   <FolderOpen className="w-4 h-4" />
-                  <span>Tạo danh mục</span>
+                  <span>{mode === 'edit' ? 'Cập nhật danh mục' : 'Tạo danh mục'}</span>
                 </>
               )}
             </button>
