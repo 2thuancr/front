@@ -80,22 +80,22 @@ export const useAuth = () => {
         
         // Check if token is valid before making API calls
         if (token && !isTokenValid()) {
-          console.log('🔒 Token is expired or invalid, clearing auth data...');
-          console.log('🔍 useAuth: Current path:', window.location.pathname);
+          // console.log('🔒 Token is expired or invalid, clearing auth data...');
+          // console.log('🔍 useAuth: Current path:', window.location.pathname);
           
           // Don't redirect if we're on public pages (home, products, about, contact)
           const publicPaths = ['/', '/products', '/about', '/contact', '/login'];
           const isPublicPage = publicPaths.includes(window.location.pathname);
           
           if (!isPublicPage) {
-            console.log('🔄 useAuth: Redirecting to login');
+            // console.log('🔄 useAuth: Redirecting to login');
             localStorage.removeItem('token');
             localStorage.removeItem('refresh_token');
             localStorage.removeItem('user');
             dispatch(logoutUser());
             router.push('/login');
           } else {
-            console.log('🔍 useAuth: On public page, clearing auth data but not redirecting');
+            // console.log('🔍 useAuth: On public page, clearing auth data but not redirecting');
             localStorage.removeItem('token');
             localStorage.removeItem('refresh_token');
             localStorage.removeItem('user');
@@ -109,18 +109,18 @@ export const useAuth = () => {
         if (token && !userProfile && !didFetchProfile.current && isTokenValid()) {
           isCheckingAuth.current = true;
           didFetchProfile.current = true;
-          console.log('🔄 Auto-fetching user profile...');
-          console.log('🔍 useAuth: Current path during profile fetch:', window.location.pathname);
+          // console.log('🔄 Auto-fetching user profile...');
+          // console.log('🔍 useAuth: Current path during profile fetch:', window.location.pathname);
           
           try {
             await dispatch(fetchUserProfile()).unwrap();
-            console.log('✅ User profile fetched successfully');
-            console.log('🔍 useAuth: Current path after profile fetch:', window.location.pathname);
+            // console.log('✅ User profile fetched successfully');
+            // console.log('🔍 useAuth: Current path after profile fetch:', window.location.pathname);
           } catch (error: any) {
             console.error('❌ Failed to fetch user profile:', error);
             // If 401 Unauthorized, token is invalid/expired
             if (error?.response?.status === 401) {
-              console.log('🔒 useAuth: Token expired, redirecting to login');
+              // console.log('🔒 useAuth: Token expired, redirecting to login');
               localStorage.removeItem('token');
               localStorage.removeItem('refresh_token');
               localStorage.removeItem('user');
@@ -144,18 +144,18 @@ export const useAuth = () => {
 
   const login = async (credentials: LoginCredentials) => {
     try {
-      console.log('🚀 Login attempt with:', credentials);
+      // console.log('🚀 Login attempt with:', credentials);
       const result = await dispatch(loginUser(credentials)).unwrap();
-      console.log('📡 Login result:', result);
+      // console.log('📡 Login result:', result);
       
       // Check what we got from the API
       if (result.access_token) {
-        console.log('💾 Saving token to localStorage:', result.access_token ? 'exists' : 'null');
-        console.log('🔍 Token format check:', {
-          length: result.access_token.length,
-          parts: result.access_token.split('.').length,
-          firstChars: result.access_token.substring(0, 20) + '...'
-        });
+        // console.log('💾 Saving token to localStorage:', result.access_token ? 'exists' : 'null');
+        // console.log('🔍 Token format check:', {
+        //   length: result.access_token.length,
+        //   parts: result.access_token.split('.').length,
+        //   firstChars: result.access_token.substring(0, 20) + '...'
+        // });
         
         localStorage.setItem('token', result.access_token);
         
@@ -172,23 +172,23 @@ export const useAuth = () => {
         } else if (result.userType === 'staff') {
           // Handle staff data from both customer API and staff API
           if (result.staff) {
-            console.log('🔐 Setting staff user from staff API:', result.staff);
+            // console.log('🔐 Setting staff user from staff API:', result.staff);
             userData = result.staff;
           } else if (result.user && result.user.role === 'staff') {
-            console.log('🔐 Setting staff user from customer API:', result.user);
+            // console.log('🔐 Setting staff user from customer API:', result.user);
             userData = result.user;
           }
           
           // Log staff ID for debugging
           if (userData) {
-            console.log('🔐 Staff ID:', userData.staffId || userData.id);
+            // console.log('🔐 Staff ID:', userData.staffId || userData.id);
           }
         } else {
           userData = result.user;
         }
         
         if (userData) {
-          console.log('👤 User data to save:', userData);
+          // console.log('👤 User data to save:', userData);
           localStorage.setItem('user', JSON.stringify(userData));
           localStorage.setItem('userType', result.userType);
           
@@ -208,24 +208,24 @@ export const useAuth = () => {
             localStorage.setItem('userId', JSON.stringify(userData.vendorId));
           }
           
-          console.log('👤 User ID saved to localStorage:', userIdToSave);
+          // console.log('👤 User ID saved to localStorage:', userIdToSave);
         }
         
-        console.log('✅ Auth data saved to localStorage');
-        console.log('🔍 localStorage check:', {
-          token: localStorage.getItem('token'),
-          user: localStorage.getItem('user'),
-          userType: localStorage.getItem('userType')
-        });
+            // console.log('✅ Auth data saved to localStorage');
+            // console.log('🔍 localStorage check:', {
+            //   token: localStorage.getItem('token'),
+            //   user: localStorage.getItem('user'),
+            //   userType: localStorage.getItem('userType')
+            // });
         
         // Auto-redirect based on user type
         const redirectPath = getRedirectPath(result.userType);
-        console.log('🔄 Auto-redirecting to:', redirectPath);
-        console.log('🔍 Current path before redirect:', window.location.pathname);
+        // console.log('🔄 Auto-redirecting to:', redirectPath);
+        // console.log('🔍 Current path before redirect:', window.location.pathname);
         
         // Force redirect using window.location.href (like vendor login)
         setTimeout(() => {
-          console.log('🔄 Executing redirect to:', redirectPath);
+          // console.log('🔄 Executing redirect to:', redirectPath);
           window.location.href = redirectPath;
         }, 100);
       } else {
@@ -251,7 +251,7 @@ export const useAuth = () => {
 
   const logout = async () => {
     try {
-      console.log('🚪 Logout attempt...');
+      // console.log('🚪 Logout attempt...');
       await dispatch(logoutUser()).unwrap();
       
       // Clear wishlist state
@@ -268,8 +268,8 @@ export const useAuth = () => {
         localStorage.removeItem('persist:root');
       }
       
-      console.log('✅ All auth data and wishlist cleared from localStorage and Redux Persist');
-      console.log('🔄 Redirecting to home...');
+      // console.log('✅ All auth data and wishlist cleared from localStorage and Redux Persist');
+      // console.log('🔄 Redirecting to home...');
       
       router.push('/');
     } catch (error) {

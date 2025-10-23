@@ -49,8 +49,8 @@ export default function VendorCategoriesPage() {
   // Filter categories based on search and status
   const filteredCategories = categories.filter(category => {
     const matchesSearch = 
-      category.categoryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      category.description.toLowerCase().includes(searchTerm.toLowerCase());
+      category.categoryName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()));
     // Since API doesn't have status field, we'll show all as active
     const matchesStatus = selectedStatus === 'all' || selectedStatus === 'active';
     return matchesSearch && matchesStatus;

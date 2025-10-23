@@ -68,7 +68,7 @@ export default function CheckoutPage() {
         const items = JSON.parse(savedCheckoutItems);
         setCheckoutItems(items);
       } catch (error) {
-        console.error('❌ Failed to parse checkout items:', error);
+        // Silent error handling
       }
     }
   }, []);
@@ -204,7 +204,6 @@ export default function CheckoutPage() {
         }
       }
     } catch (error: any) {
-      console.error("Checkout error:", error);
       
       // Extract error message
       let errorMessage = "Đã có lỗi xảy ra khi đặt hàng";

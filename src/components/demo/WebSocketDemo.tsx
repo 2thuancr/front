@@ -29,17 +29,17 @@ export const WebSocketDemo: React.FC = () => {
 
   const { isConnected, connectionError, sendMessage } = useSocketIO({
     onOrderStatusUpdate: (data) => {
-      console.log('📦 Demo received order update:', data);
+      // console.log('📦 Demo received order update:', data);
       setMessages(prev => [...prev, { type: 'ORDER_STATUS_UPDATE', data }]);
       toastSuccess(`Order #${data.orderId} status updated to ${data.status}`);
     },
     onNewOrder: (data) => {
-      console.log('🆕 Demo received new order:', data);
+      // console.log('🆕 Demo received new order:', data);
       setMessages(prev => [...prev, { type: 'NEW_ORDER', data }]);
       toastSuccess(`New order #${data.orderId} created`);
     },
     onOrderCancelled: (data) => {
-      console.log('❌ Demo received order cancellation:', data);
+      // console.log('❌ Demo received order cancellation:', data);
       setMessages(prev => [...prev, { type: 'ORDER_CANCELLED', data }]);
       toastError(`Order #${data.orderId} was cancelled`);
     }

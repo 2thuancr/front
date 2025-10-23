@@ -62,7 +62,7 @@ const schema = yup.object({
     is: 'create',
     then: (schema) => schema.required('Mật khẩu là bắt buộc').min(6, 'Mật khẩu tối thiểu 6 ký tự'),
     otherwise: (schema) => schema.optional().test('min-length', 'Mật khẩu tối thiểu 6 ký tự', function(value) {
-      if (!value || value.length === 0) return true; // Không bắt buộc nếu để trống
+      if (!value || (value as any).length === 0) return true; // Không bắt buộc nếu để trống
       return value.length >= 6;
     })
   }),
@@ -72,11 +72,11 @@ const schema = yup.object({
     otherwise: (schema) => schema.optional()
   }),
   avatar: yup.mixed().test('fileSize', 'File quá lớn (tối đa 5MB)', (value) => {
-    if (!value || value.length === 0) return true;
-    return value[0]?.size <= 5 * 1024 * 1024;
+    if (!value || (value as any).length === 0) return true;
+    return (value as any)[0]?.size <= 5 * 1024 * 1024;
   }).test('fileType', 'Chỉ chấp nhận file ảnh (JPG, PNG, GIF)', (value) => {
-    if (!value || value.length === 0) return true;
-    return ['image/jpeg', 'image/png', 'image/gif'].includes(value[0]?.type);
+    if (!value || (value as any).length === 0) return true;
+    return ['image/jpeg', 'image/png', 'image/gif'].includes((value as any)[0]?.type);
   }),
 });
 
@@ -264,11 +264,11 @@ export default function StaffForm({ isOpen, onClose, onSuccess, staffData, mode 
         requestData.password = data.password;
       }
       
-      console.log('📝 Staff form data:', {
-        mode,
-        staffId: staffData?.id,
-        requestData
-      });
+          // console.log('📝 Staff form data:', {
+          //   mode,
+          //   staffId: staffData?.id,
+          //   requestData
+          // });
       
       // Call API
       if (mode === 'create') {

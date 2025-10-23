@@ -72,7 +72,7 @@ const ViewedProductsPage: React.FC = () => {
       }
       
       if (!isAuthenticated || !userId) {
-        console.log('⚠️ No user ID found:', { isAuthenticated, userId, user });
+        // console.log('⚠️ No user ID found:', { isAuthenticated, userId, user });
         setLoading(false);
         return;
       }
@@ -80,14 +80,14 @@ const ViewedProductsPage: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        console.log('🔍 Fetching viewed products for user ID:', userId);
+        // console.log('🔍 Fetching viewed products for user ID:', userId);
         const response: ViewedProductsResponse = await productStatsApi.getUserViewHistory(userId, currentPage, limit);
         
         // Fetch detailed product info including images for each product
         const viewsWithImages = await Promise.all(
           (response.views || []).map(async (view: ProductView) => {
             try {
-              console.log(`🔍 Fetching detailed info for product ${view.productId}`);
+              // console.log(`🔍 Fetching detailed info for product ${view.productId}`);
               const productDetail = await productAPI.getProductById(view.productId);
               const detailedProduct = productDetail.data?.product || productDetail.data;
               
@@ -105,7 +105,7 @@ const ViewedProductsPage: React.FC = () => {
           })
         );
         
-        console.log('✅ Views with images:', viewsWithImages);
+        // console.log('✅ Views with images:', viewsWithImages);
         
         setViewedProducts(viewsWithImages);
         setTotalItems(response.total || 0);
@@ -144,16 +144,16 @@ const ViewedProductsPage: React.FC = () => {
   };
 
   const getProductImage = (product: any): string => {
-    console.log('🖼️ getProductImage called with:', product);
+    // console.log('🖼️ getProductImage called with:', product);
     
     if (!product) {
-      console.log('❌ No product provided');
+      // console.log('❌ No product provided');
       return '/images/placeholder.svg';
     }
     
     // Check if product has images array
     if (!product.images || !Array.isArray(product.images)) {
-      console.log('❌ No images array found in product:', product);
+      // console.log('❌ No images array found in product:', product);
       
       // Fallback: Use default images based on product name or category
       const productName = product.productName?.toLowerCase() || '';
@@ -176,21 +176,21 @@ const ViewedProductsPage: React.FC = () => {
       return '/images/placeholder.svg';
     }
     
-    console.log('✅ Images array found:', product.images);
+    // console.log('✅ Images array found:', product.images);
     
     // Handle both boolean and number types for isPrimary
     const primaryImage = product.images.find((img: any) => 
       Boolean(img.isPrimary) || img.isPrimary === 1
     );
     
-    console.log('🔍 Primary image found:', primaryImage);
+    // console.log('🔍 Primary image found:', primaryImage);
     
     const imageUrl = primaryImage?.imageUrl || product.images[0]?.imageUrl;
     
-    console.log('🖼️ Final image URL:', imageUrl);
+    // console.log('🖼️ Final image URL:', imageUrl);
     
     if (!imageUrl) {
-      console.log('❌ No image URL found, using placeholder');
+      // console.log('❌ No image URL found, using placeholder');
       return '/images/placeholder.svg';
     }
     

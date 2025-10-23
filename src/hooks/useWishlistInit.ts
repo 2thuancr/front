@@ -20,7 +20,7 @@ export const useWishlistInit = () => {
     // Fetch wishlist when user is authenticated and we haven't fetched yet
     if (isAuthenticated && !hasFetched.current) {
       hasFetched.current = true;
-      console.log("🔄 Initializing wishlist state...");
+      // console.log("🔄 Initializing wishlist state...");
       dispatch(fetchWishlist());
     }
   }, [dispatch])

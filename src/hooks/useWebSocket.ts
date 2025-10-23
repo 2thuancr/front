@@ -40,12 +40,12 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
 
   const connect = useCallback(() => {
     if (!token || !user) {
-      console.log('🔌 WebSocket: No token or user, skipping connection');
+      // console.log('🔌 WebSocket: No token or user, skipping connection');
       return;
     }
 
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      console.log('🔌 WebSocket: Already connected');
+      // console.log('🔌 WebSocket: Already connected');
       return;
     }
 
@@ -55,12 +55,12 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
         ? 'wss://your-backend-domain.com/ws'
         : 'ws://localhost:3001/ws';
 
-      console.log('🔌 WebSocket: Connecting to', wsUrl);
+      // console.log('🔌 WebSocket: Connecting to', wsUrl);
       
       wsRef.current = new WebSocket(`${wsUrl}?token=${token}`);
 
       wsRef.current.onopen = () => {
-        console.log('✅ WebSocket: Connected successfully');
+        // console.log('✅ WebSocket: Connected successfully');
         setIsConnected(true);
         setConnectionError(null);
         reconnectAttempts.current = 0;
@@ -69,7 +69,7 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
       wsRef.current.onmessage = (event) => {
         try {
           const message: WebSocketMessage = JSON.parse(event.data);
-          console.log('📨 WebSocket: Received message', message);
+          // console.log('📨 WebSocket: Received message', message);
 
           switch (message.type) {
             case 'ORDER_STATUS_UPDATE':
@@ -90,13 +90,13 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
       };
 
       wsRef.current.onclose = (event) => {
-        console.log('🔌 WebSocket: Connection closed', event.code, event.reason);
+        // console.log('🔌 WebSocket: Connection closed', event.code, event.reason);
         setIsConnected(false);
         
         // Attempt to reconnect if not manually closed
         if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
           const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
-          console.log(`🔄 WebSocket: Reconnecting in ${delay}ms (attempt ${reconnectAttempts.current + 1})`);
+          // console.log(`🔄 WebSocket: Reconnecting in ${delay}ms (attempt ${reconnectAttempts.current + 1})`);
           
           reconnectTimeoutRef.current = setTimeout(() => {
             reconnectAttempts.current++;
@@ -146,7 +146,7 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
   useEffect(() => {
     // Temporarily disable auto-connect until backend WebSocket server is ready
     if (autoConnect && user && token && process.env.NODE_ENV === 'development') {
-      console.log('🔌 WebSocket: Auto-connect disabled in development mode');
+      // console.log('🔌 WebSocket: Auto-connect disabled in development mode');
       // connect(); // Commented out until backend is ready
     }
 

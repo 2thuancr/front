@@ -20,12 +20,12 @@ export const fetchCart = createAsyncThunk("cart/fetchCart", async (userId: numbe
     // Check if user is authenticated before making API call
     const authToken = localStorage.getItem('token') || localStorage.getItem('authToken') || localStorage.getItem('accessToken');
     if (!authToken) {
-      console.log("🔒 User not authenticated - skipping cart fetch");
+      // console.log("🔒 User not authenticated - skipping cart fetch");
       throw new Error("User not authenticated");
     }
 
     const response = await cartApi.getCartByUser(userId);
-    console.log("🛒 API Cart Response:", response);
+    // console.log("🛒 API Cart Response:", response);
     
     // Kiểm tra response có tồn tại không
     if (!response) {
@@ -33,11 +33,11 @@ export const fetchCart = createAsyncThunk("cart/fetchCart", async (userId: numbe
     }
 
     const apiData = response.data || response;
-    console.log("🛒 API Data:", apiData);
+    // console.log("🛒 API Data:", apiData);
 
     // Kiểm tra cartItems có tồn tại và là array không
     const cartItems = apiData.cartItems || [];
-    console.log("🛒 Cart Items:", cartItems);
+    // console.log("🛒 Cart Items:", cartItems);
 
     // Chuẩn hóa dữ liệu từ API
     const cart: Cart = {
@@ -60,7 +60,7 @@ export const fetchCart = createAsyncThunk("cart/fetchCart", async (userId: numbe
       updatedAt: apiData.updatedAt,
     };
 
-    console.log("🛒 Processed Cart:", cart);
+    // console.log("🛒 Processed Cart:", cart);
     return cart;
   } catch (error) {
     console.error("❌ Error in fetchCart:", error);

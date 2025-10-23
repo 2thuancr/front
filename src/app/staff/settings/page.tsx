@@ -60,7 +60,7 @@ export default function StaffSettingsPage() {
 
   const handleProfileSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Profile update:', profileForm);
+    // console.log('Profile update:', profileForm);
     // Handle profile update logic here
   };
 
@@ -70,7 +70,7 @@ export default function StaffSettingsPage() {
       alert('Mật khẩu mới không khớp!');
       return;
     }
-    console.log('Security update:', securityForm);
+    // console.log('Security update:', securityForm);
     // Handle password change logic here
   };
 

@@ -195,7 +195,7 @@ export default function AdminProducts() {
             <div>
               <p className="text-sm font-medium text-gray-600">Có giảm giá</p>
               <p className="text-2xl font-bold text-gray-900">
-                {products.filter(p => parseFloat(p.discountPercent) > 0).length}
+                {products.filter(p => p.discountPercent && parseFloat(p.discountPercent) > 0).length}
               </p>
             </div>
             <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
@@ -335,10 +335,10 @@ export default function AdminProducts() {
                   </tr>
                 ) : (
                   filteredProducts.map((product) => {
-                    const averageRating = getAverageRating(product.reviews);
+                    const averageRating = getAverageRating(product.reviews || []);
                     const stockStatus = getStockStatus(product.stockQuantity);
                     const primaryImage = getPrimaryImage(product.images);
-                    const discountPercent = parseFloat(product.discountPercent);
+                    const discountPercent = product.discountPercent ? parseFloat(product.discountPercent) : 0;
                     
                     return (
                       <tr key={product.productId} className="hover:bg-gray-50">
@@ -369,7 +369,7 @@ export default function AdminProducts() {
                           </div>
                           {discountPercent > 0 && (
                             <div className="text-sm text-gray-500 line-through">
-                              {formatPrice(getDiscountPrice(product.price, product.discountPercent).toString())}
+                              {formatPrice(getDiscountPrice(product.price, product.discountPercent || '0').toString())}
                             </div>
                           )}
                         </td>

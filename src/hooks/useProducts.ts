@@ -41,12 +41,12 @@ export const useProducts = (options: UseProductsOptions = {}): UseProductsReturn
       setLoading(true);
       setError(null);
       
-      console.log('🔍 Fetching products with params:', {
-        page,
-        limit,
-        category: category || undefined,
-        search: search || undefined
-      });
+          // console.log('🔍 Fetching products with params:', {
+          //   page,
+          //   limit,
+          //   category: category || undefined,
+          //   search: search || undefined
+          // });
 
       const response = await productAPI.getAllProducts({
         page,
@@ -55,7 +55,7 @@ export const useProducts = (options: UseProductsOptions = {}): UseProductsReturn
         search: search || undefined
       });
 
-      console.log('✅ Products API response:', response.data);
+      // console.log('✅ Products API response:', response.data);
 
       // Handle different response formats
       let productsData: Product[] = [];
@@ -65,12 +65,12 @@ export const useProducts = (options: UseProductsOptions = {}): UseProductsReturn
         // API returns { products: Product[], total: number, page: string, limit: string }
         productsData = response.data.products;
         totalCount = response.data.total || productsData.length;
-        console.log('📊 Pagination info:', {
-          total: totalCount,
-          page: response.data.page,
-          limit: response.data.limit,
-          productsCount: productsData.length
-        });
+            // console.log('📊 Pagination info:', {
+            //   total: totalCount,
+            //   page: response.data.page,
+            //   limit: response.data.limit,
+            //   productsCount: productsData.length
+            // });
       } else if (Array.isArray(response.data)) {
         // API returns Product[] directly
         productsData = response.data;

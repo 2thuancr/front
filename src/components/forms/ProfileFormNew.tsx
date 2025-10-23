@@ -128,7 +128,7 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
           formData.append('avatar', file);
           
           await userAPI.uploadAvatar(formData);
-          console.log('Avatar uploaded successfully');
+          // console.log('Avatar uploaded successfully');
         }
       }
       
@@ -214,11 +214,11 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
   };
 
   // Debug log
-  console.log('ProfileFormNew - Profile data:', profile);
-  console.log('ProfileFormNew - Avatar URL:', profile?.avatar);
+  // console.log('ProfileFormNew - Profile data:', profile);
+  // console.log('ProfileFormNew - Avatar URL:', profile?.avatar);
   if (profile?.avatar) {
     const fullAvatarUrl = profile.avatar.startsWith('http') ? profile.avatar : `http://localhost:3001${profile.avatar}`;
-    console.log('ProfileFormNew - Full Avatar URL:', fullAvatarUrl);
+    // console.log('ProfileFormNew - Full Avatar URL:', fullAvatarUrl);
   }
 
   // Early return if profile is null
@@ -276,7 +276,7 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
                           alt="Avatar preview"
                           className="w-32 h-32 rounded-full object-cover"
                           onError={(e) => {
-                            console.log('Avatar preview load error');
+                            // console.log('Avatar preview load error');
                             e.currentTarget.style.display = 'none';
                           }}
                         />
@@ -286,7 +286,7 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
                           alt="Profile avatar"
                           className="w-32 h-32 rounded-full object-cover"
                           onError={(e) => {
-                            console.log('Profile avatar load error:', profile.avatar);
+                            // console.log('Profile avatar load error:', profile.avatar);
                             e.currentTarget.style.display = 'none';
                           }}
                         />

@@ -72,7 +72,7 @@ export default function VendorSettingsPage() {
     try {
       // TODO: Replace with actual API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Store info updated:', storeInfo);
+      // console.log('Store info updated:', storeInfo);
     } catch (error) {
       console.error('Error updating store info:', error);
     } finally {
@@ -86,7 +86,7 @@ export default function VendorSettingsPage() {
     try {
       // TODO: Replace with actual API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Account info updated:', accountInfo);
+      // console.log('Account info updated:', accountInfo);
     } catch (error) {
       console.error('Error updating account info:', error);
     } finally {
@@ -100,7 +100,7 @@ export default function VendorSettingsPage() {
     try {
       // TODO: Replace with actual API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Notifications updated:', notifications);
+      // console.log('Notifications updated:', notifications);
     } catch (error) {
       console.error('Error updating notifications:', error);
     } finally {

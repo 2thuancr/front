@@ -188,7 +188,7 @@ export default function VendorVouchers() {
       }
 
       // Add max discount only for percentage type
-      if (formData.discountType === 'percentage' && formData.maxDiscount > 0) {
+      if (formData.discountType === 'percentage' && formData.maxDiscount && formData.maxDiscount > 0) {
         createData.maxDiscount = formData.maxDiscount;
       }
 
@@ -197,9 +197,9 @@ export default function VendorVouchers() {
         createData.usageLimit = formData.usageLimit || null;
       }
 
-      console.log('Creating voucher with data:', createData);
+      // console.log('Creating voucher with data:', createData);
       const response = await voucherAPI.create(createData);
-      console.log('Voucher created successfully:', response.data);
+      // console.log('Voucher created successfully:', response.data);
       
       // Add new voucher to list
       setVouchers(prev => [response.data, ...prev]);
@@ -258,15 +258,15 @@ export default function VendorVouchers() {
     const endDate = new Date(voucher.endDate);
     const startDate = new Date(voucher.startDate);
     
-    console.log('Checking voucher status:', {
-      code: voucher.code,
-      isActive: voucher.isActive,
-      startDate: voucher.startDate,
-      endDate: voucher.endDate,
-      now: now.toISOString(),
-      isBeforeStart: now < startDate,
-      isAfterEnd: now > endDate
-    });
+    // console.log('Checking voucher status:', {
+    //   code: voucher.code,
+    //   isActive: voucher.isActive,
+    //   startDate: voucher.startDate,
+    //   endDate: voucher.endDate,
+    //   now: now.toISOString(),
+    //   isBeforeStart: now < startDate,
+    //   isAfterEnd: now > endDate
+    // });
     
     if (!voucher.isActive) {
       return statusConfig.inactive;

@@ -60,7 +60,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   // Kiểm tra trạng thái wishlist khi component mount (chỉ khi đã đăng nhập)
   useEffect(() => {
     if (isAuthenticated && userId && product.id && checkedItems[product.id] === undefined) {
-      console.log("🔍 Checking wishlist status for product:", product.id);
+      // console.log("🔍 Checking wishlist status for product:", product.id);
       dispatch(checkInWishlist(product.id));
     }
   }, [dispatch, isAuthenticated, userId, product.id, checkedItems]);
@@ -69,22 +69,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   useEffect(() => {
     const fetchCart = async () => {
       if (!userId || userId <= 0) {
-        console.log("👤 Guest user - skipping cart fetch");
+        // console.log("👤 Guest user - skipping cart fetch");
         setCartId(null);
         return;
       }
 
       // Check if user is actually authenticated
       if (!isAuthenticated || !authToken) {
-        console.log("🔒 User not authenticated - skipping cart fetch");
+        // console.log("🔒 User not authenticated - skipping cart fetch");
         setCartId(null);
         return;
       }
 
       try {
-        console.log("🛒 Lấy giỏ hàng cho user:", userId);
+        // console.log("🛒 Lấy giỏ hàng cho user:", userId);
         const cart = await cartApi.getCartByUser(userId);
-        console.log("✅ Dữ liệu giỏ hàng:", cart);
+        // console.log("✅ Dữ liệu giỏ hàng:", cart);
 
         if (cart && cart.cartId) {
           setCartId(cart.cartId);
@@ -96,10 +96,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         
         // Thử tạo giỏ hàng mới nếu không tìm thấy
         if (error.response?.status === 404) {
-          console.log("🛒 Cart not found, attempting to create new cart for user:", userId);
+          // console.log("🛒 Cart not found, attempting to create new cart for user:", userId);
           try {
             const newCart = await cartApi.createCart(userId);
-            console.log("✅ Created new cart:", newCart);
+            // console.log("✅ Created new cart:", newCart);
             if (newCart && newCart.cartId) {
               setCartId(newCart.cartId);
             }
@@ -122,11 +122,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   const handleAddToCart = async () => {
-    console.log("🔥 handleAddToCart được gọi từ ProductCard!", { product, onAddToCart });
+    // console.log("🔥 handleAddToCart được gọi từ ProductCard!", { product, onAddToCart });
 
     // Redirect to login if not authenticated
     if (!userId || userId <= 0 || !isAuthenticated || !authToken) {
-      console.log("🔒 User not authenticated - redirecting to login");
+      // console.log("🔒 User not authenticated - redirecting to login");
       router.push('/login');
       return;
     }
@@ -134,10 +134,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     setIsAddingToCart(true);
     try {
       if (onAddToCart) {
-        console.log("🔄 Gọi onAddToCart callback");
+        // console.log("🔄 Gọi onAddToCart callback");
         await onAddToCart(product.id);
       } else {
-        console.log("🔄 Không có onAddToCart callback, sử dụng logic mặc định");
+        // console.log("🔄 Không có onAddToCart callback, sử dụng logic mặc định");
         // Fallback logic nếu không có callback
         toastSuccess("Thành công!", "Đã thêm sản phẩm vào giỏ hàng");
       }
@@ -151,10 +151,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   const handleToggleWishlist = async () => {
-    console.log("🔥 handleToggleWishlist được gọi!", { productId: product.id, isWishlisted, userId });
+    // console.log("🔥 handleToggleWishlist được gọi!", { productId: product.id, isWishlisted, userId });
 
     if (!isAuthenticated) {
-      console.log("❌ User not authenticated for wishlist");
+      // console.log("❌ User not authenticated for wishlist");
       toastError("Cần đăng nhập", "Vui lòng đăng nhập để sử dụng tính năng yêu thích");
       return;
     }
@@ -166,12 +166,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
     try {
       if (onToggleWishlist) {
-        console.log("🔄 Gọi onToggleWishlist callback");
+        // console.log("🔄 Gọi onToggleWishlist callback");
         await onToggleWishlist(product.id);
       } else {
-        console.log("🔄 Gọi Redux toggleWishlist");
+        // console.log("🔄 Gọi Redux toggleWishlist");
         const result = await dispatch(toggleWishlist(product.id)).unwrap();
-        console.log("✅ Toggle wishlist result:", result);
+        // console.log("✅ Toggle wishlist result:", result);
         
         if (result.action === 'added') {
           toastSuccess("Thành công!", "Đã thêm sản phẩm vào danh sách yêu thích");

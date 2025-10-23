@@ -112,7 +112,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                   alt="Avatar"
                   className="w-20 h-20 rounded-full object-cover"
                   onError={(e) => {
-                    console.log('Sidebar avatar load error:', userProfile?.avatar);
+                    // console.log('Sidebar avatar load error:', userProfile?.avatar);
                     e.currentTarget.style.display = 'none';
                   }}
                 />

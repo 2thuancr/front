@@ -81,8 +81,6 @@ export default function VendorDashboard() {
         const response = await vendorOrderAPI.getAllOrders(1, 3); // Get only 3 most recent
         const orders = response.data?.orders || [];
         
-        console.log('📦 Recent orders data:', orders);
-        console.log('📦 First order structure:', orders[0]);
         
         // Sort by createdAt date (most recent first)
         const sortedOrders = orders.sort((a: any, b: any) => 
@@ -91,7 +89,6 @@ export default function VendorDashboard() {
         
         setRecentOrders(sortedOrders.slice(0, 3)); // Take only 3
       } catch (error) {
-        console.error('Error fetching recent orders:', error);
         setRecentOrders([]);
       } finally {
         setOrdersLoading(false);

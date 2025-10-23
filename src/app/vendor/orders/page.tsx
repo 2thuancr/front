@@ -63,39 +63,39 @@ export default function VendorOrders() {
       counts[status] = orders.filter(o => o.status === status).length;
     });
     setStatusCounts(counts);
-    console.log('📊 Vendor status counts updated:', counts);
+    // console.log('📊 Vendor status counts updated:', counts);
   };
 
   // Real-time order status sync
   const { isConnected, connectionError } = useVendorOrderSync({
     onStatusUpdate: (update) => {
-      console.log('📦 Vendor received order update:', update);
-      console.log('📦 Vendor order update details:', {
-        orderId: update.orderId,
-        oldStatus: update.oldStatus,
-        newStatus: update.status,
-        updatedBy: update.updatedBy,
-        timestamp: update.timestamp
-      });
-      console.log('📦 Vendor update source check:', {
-        updatedBy: update.updatedBy,
-        updatedByUsername: update.updatedByUsername,
-        isFromStaff: update.updatedByUsername && update.updatedByUsername !== 'vendor',
-        isFromCustomer: update.updatedByUsername && update.updatedByUsername !== 'vendor' && update.updatedByUsername !== 'staff'
-      });
+          // console.log('📦 Vendor received order update:', update);
+          // console.log('📦 Vendor order update details:', {
+          //   orderId: update.orderId,
+          //   oldStatus: update.oldStatus,
+          //   newStatus: update.status,
+          //   updatedBy: update.updatedBy,
+          //   timestamp: update.timestamp
+          // });
+          // console.log('📦 Vendor update source check:', {
+          //   updatedBy: update.updatedBy,
+          //   updatedByUsername: update.updatedByUsername,
+          //   isFromStaff: update.updatedByUsername && update.updatedByUsername !== 'vendor',
+          //   isFromCustomer: update.updatedByUsername && update.updatedByUsername !== 'vendor' && update.updatedByUsername !== 'staff'
+          // });
       
       
     // Special debug for staff updates
     if (update.updatedByUsername && update.updatedByUsername !== 'vendor') {
-      console.log('🎯 Vendor received update from staff/customer:', {
-        orderId: update.orderId,
-        oldStatus: update.oldStatus,
-        newStatus: update.status,
-        updatedBy: update.updatedBy,
-        updatedByUsername: update.updatedByUsername,
-        timestamp: update.timestamp,
-        isRealTime: true
-      });
+      // console.log('🎯 Vendor received update from staff/customer:', {
+      //   orderId: update.orderId,
+      //   oldStatus: update.oldStatus,
+      //   newStatus: update.status,
+      //   updatedBy: update.updatedBy,
+      //   updatedByUsername: update.updatedByUsername,
+      //   timestamp: update.timestamp,
+      //   isRealTime: true
+      // });
       
     }
       
@@ -106,7 +106,7 @@ export default function VendorOrders() {
             ? { ...order, status: update.status }
             : order
         );
-        console.log('🔄 Vendor orders updated:', updatedOrders);
+        // console.log('🔄 Vendor orders updated:', updatedOrders);
         return updatedOrders;
       });
       
@@ -146,8 +146,8 @@ export default function VendorOrders() {
           return order;
         });
         
-        console.log('📦 Vendor fetched orders from API:', fetchedOrders);
-        console.log('📦 Vendor normalized orders:', normalizedOrders);
+        // console.log('📦 Vendor fetched orders from API:', fetchedOrders);
+        // console.log('📦 Vendor normalized orders:', normalizedOrders);
         
         setAllOrders(normalizedOrders);
         
@@ -188,13 +188,13 @@ export default function VendorOrders() {
         const calculatedTotalPages = Math.ceil(total / limit);
         setTotalPages(calculatedTotalPages);
         
-        console.log('📊 Vendor Orders loaded:', {
-          ordersCount: response.data.orders.length,
-          totalFromBackend: response.data.total,
-          totalPages: calculatedTotalPages,
-          currentPage: currentPage,
-          limit: limit
-        });
+            // console.log('📊 Vendor Orders loaded:', {
+            //   ordersCount: response.data.orders.length,
+            //   totalFromBackend: response.data.total,
+            //   totalPages: calculatedTotalPages,
+            //   currentPage: currentPage,
+            //   limit: limit
+            // });
         
       } else {
         console.warn('⚠️ No orders data in response');
@@ -219,7 +219,7 @@ export default function VendorOrders() {
   // Fallback polling mechanism if Socket.IO is not working
   useEffect(() => {
     if (!isConnected && allOrders.length > 0) {
-      console.log('🔄 Socket.IO not connected, starting fallback polling...');
+      // console.log('🔄 Socket.IO not connected, starting fallback polling...');
       
       const pollInterval = setInterval(async () => {
         try {
@@ -240,7 +240,7 @@ export default function VendorOrders() {
             
             // Check if orders have changed
             if (JSON.stringify(currentOrderIds) !== JSON.stringify(fetchedOrderIds)) {
-              console.log('🔄 Vendor polling detected order changes, updating...');
+              // console.log('🔄 Vendor polling detected order changes, updating...');
               setAllOrders(normalizedOrders);
               updateStatusCounts(normalizedOrders);
             }
@@ -359,16 +359,16 @@ export default function VendorOrders() {
   const handleStatusChange = async (orderId: number, newStatus: string) => {
     setUpdatingStatus(orderId);
     try {
-      console.log('🔄 Vendor updating order status:', { orderId, newStatus });
+      // console.log('🔄 Vendor updating order status:', { orderId, newStatus });
       
       
       // Call API to update order status
       const response = await vendorOrderAPI.updateOrderStatus(orderId, newStatus);
-      console.log('✅ Vendor API call successful:', response.data);
+      // console.log('✅ Vendor API call successful:', response.data);
       
       // Verify the status was actually updated in the response
       if (response.data && response.data.status) {
-        console.log('✅ Vendor status confirmed in response:', response.data.status);
+        // console.log('✅ Vendor status confirmed in response:', response.data.status);
       } else {
         console.warn('⚠️ Vendor status not found in response, checking if update was successful');
       }
@@ -395,13 +395,13 @@ export default function VendorOrders() {
       setTimeout(async () => {
         try {
           const verifyResponse = await vendorOrderAPI.getOrderById(orderId);
-          console.log('🔍 Vendor verification - Current order status:', verifyResponse.data.status);
+          // console.log('🔍 Vendor verification - Current order status:', verifyResponse.data.status);
           
           if (verifyResponse.data.status !== newStatus) {
             console.warn('⚠️ Vendor status mismatch! Expected:', newStatus, 'Got:', verifyResponse.data.status);
             toastError('Cảnh báo!', 'Trạng thái có thể chưa được lưu vào database');
           } else {
-            console.log('✅ Vendor status verified in database:', verifyResponse.data.status);
+            // console.log('✅ Vendor status verified in database:', verifyResponse.data.status);
           }
         } catch (verifyError) {
           console.error('❌ Vendor error verifying order status:', verifyError);

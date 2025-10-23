@@ -118,7 +118,7 @@ class ViewTracker {
     // Check if user is authenticated (optional check)
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) {
-      console.log(`📊 Product ${productId} view tracking skipped - user not authenticated`);
+      // console.log(`📊 Product ${productId} view tracking skipped - user not authenticated`);
       return {
         tracked: false,
         message: 'User not authenticated'
@@ -127,7 +127,7 @@ class ViewTracker {
 
     // Check if tracking endpoint has failed before
     if (this.failedEndpoints.has('product-views/track')) {
-      console.log(`📊 Product ${productId} view tracking skipped - endpoint known to fail`);
+      // console.log(`📊 Product ${productId} view tracking skipped - endpoint known to fail`);
       return {
         tracked: false,
         message: 'Tracking endpoint not available'
@@ -136,7 +136,7 @@ class ViewTracker {
 
     // Check cache first
     if (this.isAlreadyTracked(productId)) {
-      console.log(`📊 Product ${productId} already tracked today (cached)`);
+      // console.log(`📊 Product ${productId} already tracked today (cached)`);
       return {
         tracked: false,
         message: 'View already tracked today (cached)'
@@ -145,7 +145,7 @@ class ViewTracker {
 
     // Check if already pending
     if (this.pendingCalls.has(productId)) {
-      console.log(`📊 Product ${productId} tracking already in progress`);
+      // console.log(`📊 Product ${productId} tracking already in progress`);
       return {
         tracked: false,
         message: 'Tracking already in progress'
@@ -158,15 +158,15 @@ class ViewTracker {
     try {
       // Call API
       this.apiCallCount++;
-      console.log(`📊 Tracking view for product ${productId}... (API call #${this.apiCallCount})`);
+      // console.log(`📊 Tracking view for product ${productId}... (API call #${this.apiCallCount})`);
       const result = await apiCall(productId);
       
       // If successfully tracked, update cache
       if (result.tracked) {
         this.markAsTracked(productId);
-        console.log(`✅ Product ${productId} view tracked successfully`);
+        // console.log(`✅ Product ${productId} view tracked successfully`);
       } else {
-        console.log(`ℹ️ Product ${productId} view not tracked: ${result.message}`);
+        // console.log(`ℹ️ Product ${productId} view not tracked: ${result.message}`);
       }
       
       return result;
@@ -214,7 +214,7 @@ class ViewTracker {
    */
   clearCacheForNewDay(): void {
     this.clearCache();
-    console.log('🔄 View tracking cache cleared for new day');
+    // console.log('🔄 View tracking cache cleared for new day');
   }
 
   /**
@@ -222,7 +222,7 @@ class ViewTracker {
    */
   resetFailedEndpoints(): void {
     this.failedEndpoints.clear();
-    console.log('🔄 Failed endpoints reset');
+    // console.log('🔄 Failed endpoints reset');
   }
 
   /**
