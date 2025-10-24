@@ -7,7 +7,7 @@ export interface Order {
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
   paymentMethod: string;
   paymentStatus: 'pending' | 'completed' | 'failed';
-  shippingInfo: ShippingInfo;
+  shippingInfo?: ShippingInfo; // Made optional to handle cases where it might be null/undefined
   orderItems?: OrderItem[];
   orderDetails?: OrderItem[]; // Backend uses this field name
   createdAt: string;

@@ -221,22 +221,28 @@ export default function OrderDetailPage() {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
                 Thông tin giao hàng
               </h2>
-              <div className="space-y-2">
-                <p className="text-gray-900">
-                  <span className="font-medium">{currentOrder.shippingInfo.customerName}</span>
-                </p>
-                <p className="text-gray-600">
-                  {currentOrder.shippingInfo.customerPhone}
-                </p>
-                <p className="text-gray-600">
-                  {currentOrder.shippingInfo.shippingAddress}, {currentOrder.shippingInfo.ward}, {currentOrder.shippingInfo.district}, {currentOrder.shippingInfo.city}
-                </p>
-                {currentOrder.shippingInfo.notes && (
-                  <p className="text-gray-500 text-sm mt-2">
-                    <span className="font-medium">Ghi chú:</span> {currentOrder.shippingInfo.notes}
+              {currentOrder.shippingInfo ? (
+                <div className="space-y-2">
+                  <p className="text-gray-900">
+                    <span className="font-medium">{currentOrder.shippingInfo.customerName}</span>
                   </p>
-                )}
-              </div>
+                  <p className="text-gray-600">
+                    {currentOrder.shippingInfo.customerPhone}
+                  </p>
+                  <p className="text-gray-600">
+                    {currentOrder.shippingInfo.shippingAddress}, {currentOrder.shippingInfo.ward}, {currentOrder.shippingInfo.district}, {currentOrder.shippingInfo.city}
+                  </p>
+                  {currentOrder.shippingInfo.notes && (
+                    <p className="text-gray-500 text-sm mt-2">
+                      <span className="font-medium">Ghi chú:</span> {currentOrder.shippingInfo.notes}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Thông tin giao hàng chưa có</p>
+                </div>
+              )}
             </motion.div>
           </div>
 

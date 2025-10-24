@@ -121,22 +121,28 @@ export function CheckoutSuccess({ order }: CheckoutSuccessProps) {
               Thông tin giao hàng
             </h2>
 
-            <div className="space-y-2">
-              <p className="text-gray-900">
-                <span className="font-medium">{order.shippingInfo.customerName}</span>
-              </p>
-              <p className="text-gray-600">
-                {order.shippingInfo.customerPhone}
-              </p>
-              <p className="text-gray-600">
-                {order.shippingInfo.shippingAddress}, {order.shippingInfo.ward}, {order.shippingInfo.district}, {order.shippingInfo.city}
-              </p>
-              {order.shippingInfo.notes && (
-                <p className="text-gray-500 text-sm mt-2">
-                  <span className="font-medium">Ghi chú:</span> {order.shippingInfo.notes}
+            {order.shippingInfo ? (
+              <div className="space-y-2">
+                <p className="text-gray-900">
+                  <span className="font-medium">{order.shippingInfo.customerName}</span>
                 </p>
-              )}
-            </div>
+                <p className="text-gray-600">
+                  {order.shippingInfo.customerPhone}
+                </p>
+                <p className="text-gray-600">
+                  {order.shippingInfo.shippingAddress}, {order.shippingInfo.ward}, {order.shippingInfo.district}, {order.shippingInfo.city}
+                </p>
+                {order.shippingInfo.notes && (
+                  <p className="text-gray-500 text-sm mt-2">
+                    <span className="font-medium">Ghi chú:</span> {order.shippingInfo.notes}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Thông tin giao hàng chưa có</p>
+              </div>
+            )}
           </motion.div>
 
           {/* COD Notice */}

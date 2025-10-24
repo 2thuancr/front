@@ -2,6 +2,48 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { Order, OrderItem, PaymentMethod, Payment, CheckoutRequest, CheckoutResponse } from "../types/order";
 import { orderApi, paymentApi } from "@/lib/api";
 
+// Helper function to transform backend order data to frontend format
+const transformOrderData = (backendOrder: any): Order => {
+  return {
+    orderId: backendOrder.orderId,
+    orderNumber: backendOrder.orderId.toString(), // Use orderId as orderNumber if not provided
+    userId: backendOrder.userId,
+    totalAmount: parseFloat(backendOrder.totalAmount),
+    status: backendOrder.status.toLowerCase(), // Convert to lowercase
+    paymentMethod: backendOrder.paymentMethod,
+    paymentStatus: backendOrder.paymentStatus,
+    shippingInfo: backendOrder.shippingAddress ? {
+      customerName: backendOrder.user?.firstName + ' ' + backendOrder.user?.lastName || 'N/A',
+      customerPhone: backendOrder.user?.phone || 'N/A',
+      shippingAddress: backendOrder.shippingAddress,
+      city: backendOrder.user?.city || 'N/A',
+      district: 'N/A', // Not provided by backend
+      ward: 'N/A', // Not provided by backend
+      notes: backendOrder.notes || ''
+    } : undefined,
+    orderItems: backendOrder.orderDetails?.map((detail: any) => ({
+      orderItemId: detail.orderDetailId,
+      orderId: detail.orderId,
+      productId: detail.productId,
+      quantity: detail.quantity,
+      price: parseFloat(detail.unitPrice),
+      product: detail.product ? {
+        productId: detail.product.productId,
+        productName: detail.product.productName,
+        price: parseFloat(detail.product.price),
+        images: detail.product.images?.map((img: any) => ({
+          imageId: img.imageId,
+          productId: img.productId,
+          imageUrl: img.imageUrl,
+          isPrimary: img.isPrimary
+        })) || []
+      } : undefined
+    })) || [],
+    createdAt: backendOrder.orderDate,
+    updatedAt: backendOrder.orderDate
+  };
+};
+
 // Order State Interface
 interface OrderState {
   // Orders
@@ -50,8 +92,15 @@ export const fetchOrders = createAsyncThunk(
   "order/fetchOrders",
   async ({ userId, page = 1, limit = 10 }: { userId: number; page?: number; limit?: number }) => {
     const response = await orderApi.getOrdersByUser(userId, page, limit);
+    const backendOrders = response.data || response;
+    
+    // Transform each order
+    const transformedOrders = Array.isArray(backendOrders) 
+      ? backendOrders.map(transformOrderData)
+      : [];
+    
     return {
-      orders: response.data || response,
+      orders: transformedOrders,
       pagination: response.pagination || { currentPage: page, totalPages: 1, total: 0 }
     };
   }
@@ -62,7 +111,10 @@ export const fetchOrderById = createAsyncThunk(
   "order/fetchOrderById",
   async (orderId: number) => {
     const response = await orderApi.getOrderById(orderId);
-    return response.data || response;
+    const backendOrder = response.data || response;
+    
+    // Transform backend data to frontend format
+    return transformOrderData(backendOrder);
   }
 );
 
