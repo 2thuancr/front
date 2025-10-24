@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
@@ -66,7 +66,13 @@ const slides: Slide[] = [
 ];
 
 const Carousel: React.FC = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const [currentSlide, setCurrentSlide] = useState<number>(0);
+  
+  // Get current slide data with proper type safety
+  const currentSlideData = useMemo((): Slide => {
+    // Using non-null assertion since we know slides array is not empty
+    return slides[currentSlide]!;
+  }, [currentSlide]);
   const [isPlaying, setIsPlaying] = useState(true);
 
   // Auto-play functionality
@@ -109,7 +115,7 @@ const Carousel: React.FC = () => {
             <div 
               className="absolute inset-0 bg-cover bg-center bg-no-repeat"
               style={{
-                backgroundImage: `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.1)), url(${slides[currentSlide].image})`,
+                backgroundImage: `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.1)), url(${slides[currentSlide]?.image || ''})`,
                 backgroundSize: 'cover',
                 backgroundPosition: currentSlide === 0 ? 'center' : 'center top'
               }}
@@ -167,7 +173,7 @@ const Carousel: React.FC = () => {
                             Khám phá <span className="bg-gradient-to-r from-pink-500 to-red-500 bg-clip-text text-transparent">Gift Shop HCMUTE</span> ngay hôm nay!
                           </>
                         ) : (
-                          <span className="bg-gradient-to-r from-pink-500 to-red-500 bg-clip-text text-transparent">{slides[currentSlide].title}</span>
+                          <span className="bg-gradient-to-r from-pink-500 to-red-500 bg-clip-text text-transparent">{currentSlideData.title}</span>
                         )}
                       </h1>
                     )}
@@ -176,27 +182,27 @@ const Carousel: React.FC = () => {
                     {(currentSlide === 0 || currentSlide === 3) && (
                       <p className="text-xl sm:text-2xl mb-8 max-w-2xl mx-auto leading-relaxed">
                         {currentSlide === 0 ? (
-                          slides[currentSlide].description
+                          currentSlideData.description
                         ) : (
-                          slides[currentSlide].description
+                          currentSlideData.description
                         )}
                       </p>
                     )}
 
                     {/* CTA Button */}
                     <div className={`${(currentSlide === 1 || currentSlide === 2) ? 'mt-24' : ''}`}>
-                      <Link href={slides[currentSlide].buttonLink}>
+                      <Link href={currentSlideData.buttonLink}>
                         <Button
                           className={`${
                             currentSlide === 0 
-                              ? slides[currentSlide].buttonVariant === 'primary'
+                              ? currentSlideData.buttonVariant === 'primary'
                                 ? 'bg-white text-gray-900 hover:bg-gray-100'
                                 : 'bg-transparent border-2 border-white text-white hover:bg-white hover:text-gray-900'
-                              : slides[currentSlide].buttonVariant === 'primary'
+                              : currentSlideData.buttonVariant === 'primary'
                                 ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
                                 : 'bg-gradient-to-r from-gray-800 to-gray-900 text-white border-2 border-gray-800 hover:from-gray-700 hover:to-gray-800'
                           } font-semibold px-8 py-4 rounded-xl shadow-xl transform transition-all duration-200 hover:scale-105 hover:shadow-2xl`}
-                          label={slides[currentSlide].buttonText}
+                          label={currentSlideData.buttonText}
                         />
                       </Link>
                     </div>

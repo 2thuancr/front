@@ -20,6 +20,7 @@ export const useSocketIO = ({
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const connectionAttemptsRef = useRef(0);
   const { user, userType, token } = useAuth();
   
   // Stable references for callbacks to prevent re-connections
@@ -46,11 +47,24 @@ export const useSocketIO = ({
       return;
     }
 
+    // Check if WebSocket is disabled
+    if (process.env.NEXT_PUBLIC_DISABLE_WEBSOCKET === 'true') {
+      console.log('SocketIO: WebSocket disabled by environment variable');
+      return;
+    }
+
+    // Stop trying after 3 failed attempts
+    if (connectionAttemptsRef.current >= 3) {
+      console.log('SocketIO: Too many connection failures, stopping attempts');
+      return;
+    }
+
     // Disconnect existing connection
     if (socketRef.current) {
       socketRef.current.disconnect();
     }
 
+    connectionAttemptsRef.current += 1;
     const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
     
     // console.log('🔌 SocketIO: Connecting to', socketUrl);
@@ -73,6 +87,7 @@ export const useSocketIO = ({
       // console.log('🔌 SocketIO: Tab ID:', tabId);
       setIsConnected(true);
       setConnectionError(null);
+      connectionAttemptsRef.current = 0; // Reset attempts on success
     });
 
     socketRef.current.on('disconnect', (reason) => {
@@ -81,7 +96,7 @@ export const useSocketIO = ({
     });
 
     socketRef.current.on('connect_error', (error) => {
-      console.error('❌ SocketIO: Connection error', error);
+      console.warn('⚠️ SocketIO: Connection error (backend may not have WebSocket server)', error);
       setConnectionError(error.message);
       setIsConnected(false);
     });

@@ -28,13 +28,14 @@ export const fetchWishlist = createAsyncThunk(
       let wishlistItems = [];
       if (response.wishlist && Array.isArray(response.wishlist)) {
         wishlistItems = response.wishlist;
-      } else if (response.data && Array.isArray(response.data)) {
-        wishlistItems = response.data;
-      } else if (Array.isArray(response)) {
-        wishlistItems = response;
-      } else if (response.items && Array.isArray(response.items)) {
-        wishlistItems = response.items;
-      }
+      } 
+      // else if (response.data && Array.isArray(response.data)) {
+      //   wishlistItems = response.data;
+      // } else if (Array.isArray(response)) {
+      //   wishlistItems = response;
+      // } else if (response.items && Array.isArray(response.items)) {
+      //   wishlistItems = response.items;
+      // }
       
       // console.log('📋 Processed wishlist items:', wishlistItems);
       return wishlistItems;
@@ -163,17 +164,17 @@ const wishlistSlice = createSlice({
         state.loading = false;
         
         // Handle different response formats
-        let wishlistItems = [];
-        if (action.payload.wishlists && Array.isArray(action.payload.wishlists)) {
-          // Format: { wishlists: [...], total: 2, page: "1", limit: "10" }
-          wishlistItems = action.payload.wishlists;
-        } else if (Array.isArray(action.payload)) {
-          // Format: [...] (direct array)
-          wishlistItems = action.payload;
-        } else if (action.payload.data && Array.isArray(action.payload.data)) {
-          // Format: { data: [...] }
-          wishlistItems = action.payload.data;
-        }
+        let wishlistItems = action.payload;
+        // if (action.payload.wishlists && Array.isArray(action.payload.wishlists)) {
+        //   // Format: { wishlists: [...], total: 2, page: "1", limit: "10" }
+        //   wishlistItems = action.payload.wishlists;
+        // } else if (Array.isArray(action.payload)) {
+        //   // Format: [...] (direct array)
+        //   wishlistItems = action.payload;
+        // } else if (action.payload.data && Array.isArray(action.payload.data)) {
+        //   // Format: { data: [...] }
+        //   wishlistItems = action.payload.data;
+        // }
         
         state.items = wishlistItems;
         
