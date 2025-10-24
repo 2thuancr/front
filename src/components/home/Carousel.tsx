@@ -30,39 +30,39 @@ const slides: Slide[] = [
     buttonVariant: 'primary',
     gradient: 'from-blue-500/30 via-purple-500/30 to-pink-500/30'
   },
-  {
-    id: 2,
-    title: 'MỞ BÁN SẢN PHẨM LOGO HCMUTE',
-    subtitle: 'Trung tâm dịch vụ sinh viên',
-    description: 'Khám phá các sản phẩm độc đáo với logo HCMUTE, giao hàng tận nhà và nhiều ưu đãi hấp dẫn.',
-    image: '/images/giftshop_banner.jpg',
-    buttonText: 'Mua ngay',
-    buttonLink: '/products',
-    buttonVariant: 'primary',
-    gradient: 'from-blue-600 via-purple-600 to-pink-600'
-  },
-  {
-    id: 3,
-    title: 'Chào đón Fanpage',
-    subtitle: 'Nhận quà liền tay',
-    description: 'Like & Share Page, Tag bạn bè và CMT số may mắn để nhận những phần quà hấp dẫn từ Gift Shop UTE.',
-    image: '/images/giftshop_ute.jpg',
-    buttonText: 'Tham gia ngay',
-    buttonLink: '/products',
-    buttonVariant: 'primary',
-    gradient: 'from-green-600 via-teal-600 to-blue-600'
-  },
-  {
-    id: 4,
-    title: 'Gift Shop UTE',
-    subtitle: 'Sản phẩm đa dạng',
-    description: 'Từ đồng xu, cặp sách đến gấu bông và cốc - tất cả đều mang đậm dấu ấn trường đại học thân yêu.',
-    image: '/images/giftshop_ute2.jpg',
-    buttonText: 'Khám phá',
-    buttonLink: '/products',
-    buttonVariant: 'secondary',
-    gradient: 'from-yellow-600 via-orange-600 to-red-600'
-  }
+  // {
+  //   id: 2,
+  //   title: 'MỞ BÁN SẢN PHẨM LOGO HCMUTE',
+  //   subtitle: 'Trung tâm dịch vụ sinh viên',
+  //   description: 'Khám phá các sản phẩm độc đáo với logo HCMUTE, giao hàng tận nhà và nhiều ưu đãi hấp dẫn.',
+  //   image: '/images/giftshop_banner.jpg',
+  //   buttonText: 'Mua ngay',
+  //   buttonLink: '/products',
+  //   buttonVariant: 'primary',
+  //   gradient: 'from-blue-600 via-purple-600 to-pink-600'
+  // },
+  // {
+  //   id: 3,
+  //   title: 'Chào đón Fanpage',
+  //   subtitle: 'Nhận quà liền tay',
+  //   description: 'Like & Share Page, Tag bạn bè và CMT số may mắn để nhận những phần quà hấp dẫn từ Gift Shop UTE.',
+  //   image: '/images/giftshop_ute.jpg',
+  //   buttonText: 'Tham gia ngay',
+  //   buttonLink: '/products',
+  //   buttonVariant: 'primary',
+  //   gradient: 'from-green-600 via-teal-600 to-blue-600'
+  // },
+  // {
+  //   id: 4,
+  //   title: 'Gift Shop UTE',
+  //   subtitle: 'Sản phẩm đa dạng',
+  //   description: 'Từ đồng xu, cặp sách đến gấu bông và cốc - tất cả đều mang đậm dấu ấn trường đại học thân yêu.',
+  //   image: '/images/giftshop_ute2.jpg',
+  //   buttonText: 'Khám phá',
+  //   buttonLink: '/products',
+  //   buttonVariant: 'secondary',
+  //   gradient: 'from-yellow-600 via-orange-600 to-red-600'
+  // }
 ];
 
 const Carousel: React.FC = () => {
