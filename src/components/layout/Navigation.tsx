@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, X, ShoppingCart, User, Heart } from 'lucide-react';
+import { Menu, X, ShoppingCart, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import Logo from '@/components/ui/Logo';
 import ClientOnly from '@/components/ui/ClientOnly';
 import UserDropdown from './UserDropdown';
+import NotificationBell from '@/components/ui/NotificationBell';
 
 const Navigation: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -108,9 +109,7 @@ const Navigation: React.FC = () => {
 
             {/* Action buttons */}
             <div className="flex items-center space-x-2">
-              <Link href="/wishlist" className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                <Heart className="h-5 w-5" />
-              </Link>
+              <NotificationBell />
               <button onClick= {goToCart } className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                 <ShoppingCart className="h-5 w-5" />
               </button>

@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { User, LogOut, Package, Settings, ChevronDown, Eye } from 'lucide-react';
+import { User, LogOut, Package, Settings, ChevronDown, Eye, Heart } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -116,6 +116,12 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ className = '' }) => {
       icon: Package,
       label: 'Đơn hàng của tôi',
       href: '/orders',
+      onClick: () => setIsOpen(false),
+    },
+    {
+      icon: Heart,
+      label: 'Danh sách yêu thích',
+      href: '/wishlist',
       onClick: () => setIsOpen(false),
     },
     {

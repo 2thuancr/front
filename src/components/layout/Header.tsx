@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, User, Home, LogIn, UserPlus, Key, LogOut, Gift, ShoppingBag, Heart, Package } from 'lucide-react';
+import { Menu, X, User, Home, LogIn, UserPlus, Key, LogOut, Gift, ShoppingBag, Bell, Package } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import Logo from '@/components/ui/Logo';
 
