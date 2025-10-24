@@ -146,8 +146,12 @@ export const staffAuthAPI = {
 export const userAPI = {
   getProfile: () => api.get('/users/profile'),
   
-  updateProfile: (userId: number, data: any) =>
-    api.post(`/users/update/${userId}`, data),
+  updateProfile: (formData: FormData) =>
+    api.put('/users/update-profile', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }),
   
   changePassword: (data: {
     currentPassword: string;

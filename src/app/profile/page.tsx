@@ -7,7 +7,7 @@ import ProfileSidebar from '@/components/layout/ProfileSidebar';
 import { useProfile } from '@/hooks/useProfile';
 
 export default function ProfilePage() {
-  const { profile, isLoading, error, fetchProfile, updateProfile } = useProfile();
+  const { profile, isLoading, error, fetchProfile } = useProfile();
   const [activeSection, setActiveSection] = useState('profile');
 
   useEffect(() => {
@@ -15,17 +15,6 @@ export default function ProfilePage() {
     fetchProfile();
   }, [fetchProfile]);
 
-  const handleUpdateProfile = async (data: any) => {
-    try {
-      await updateProfile(data);
-      // Refresh profile to get updated data
-      await fetchProfile();
-      // console.log('Profile updated successfully');
-    } catch (error) {
-      console.error('Update profile error:', error);
-      alert('Có lỗi xảy ra khi cập nhật hồ sơ!');
-    }
-  };
 
   if (isLoading && !profile) {
     return (
@@ -75,37 +64,37 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Main Layout */}
-      <div className="flex">
-        {/* Sidebar */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <ProfileSidebar
-            activeSection={activeSection}
-            onSectionChange={setActiveSection}
-            userProfile={profile as any}
-          />
-        </motion.div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Sidebar */}
+          <motion.div
+            className="lg:col-span-1"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <ProfileSidebar
+              activeSection={activeSection}
+              onSectionChange={setActiveSection}
+              userProfile={profile as any}
+            />
+          </motion.div>
 
-        {/* Main Content */}
-        <motion.div
-          className="flex-1"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
-          <ProfileFormNew
-            profile={profile}
-            onUpdate={handleUpdateProfile}
-            isLoading={isLoading}
-            error={error as any}
-            onRefresh={fetchProfile}
-          />
-        </motion.div>
+          {/* Main Content */}
+          <motion.div
+            className="lg:col-span-3"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+                <ProfileFormNew
+                  profile={profile}
+                  onRefresh={fetchProfile}
+                />
+          </motion.div>
+        </div>
       </div>
     </div>
   );

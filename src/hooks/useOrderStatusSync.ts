@@ -41,7 +41,7 @@ export const useStaffOrderSync = ({ onStatusUpdate, showNotifications = true }: 
         'CANCELLATION_REQUESTED': 'Yêu cầu hủy'
       }[data.status] || data.status;
       
-      toastSuccess(`Đơn hàng #${data.orderId} đã cập nhật: ${statusText}`);
+      toastSuccess?.(`Đơn hàng #${data.orderId} đã cập nhật: ${statusText}`);
     }
 
     onStatusUpdate?.(data);
@@ -61,7 +61,7 @@ export const useStaffOrderSync = ({ onStatusUpdate, showNotifications = true }: 
     // console.log('❌ Staff received order cancellation:', data);
     
     if (showNotifications) {
-      toastError(`Đơn hàng #${data.orderId} đã bị hủy`);
+      toastError?.(`Đơn hàng #${data.orderId} đã bị hủy`);
     }
 
     onStatusUpdate?.(data);
@@ -99,7 +99,7 @@ export const useVendorOrderSync = ({ onStatusUpdate, showNotifications = true }:
         'CANCELLATION_REQUESTED': 'Yêu cầu hủy'
       }[data.status] || data.status;
       
-      toastSuccess(`Đơn hàng #${data.orderId} đã cập nhật: ${statusText}`);
+      toastSuccess?.(`Đơn hàng #${data.orderId} đã cập nhật: ${statusText}`);
     }
 
     onStatusUpdate?.(data);
@@ -119,7 +119,7 @@ export const useVendorOrderSync = ({ onStatusUpdate, showNotifications = true }:
     // console.log('❌ Vendor received order cancellation:', data);
     
     if (showNotifications) {
-      toastError(`Đơn hàng #${data.orderId} đã bị hủy`);
+      toastError?.(`Đơn hàng #${data.orderId} đã bị hủy`);
     }
 
     onStatusUpdate?.(data);
@@ -140,8 +140,10 @@ export const useVendorOrderSync = ({ onStatusUpdate, showNotifications = true }:
 
 export const useCustomerOrderSync = ({ onStatusUpdate, showNotifications = true }: UseOrderStatusSyncOptions = {}) => {
   const { user, userType } = useAuth();
-  const toastSuccess = useToastSuccess();
-  const toastError = useToastError();
+  
+  // Only use toast hooks if showNotifications is true
+  const toastSuccess = showNotifications ? useToastSuccess() : null;
+  const toastError = showNotifications ? useToastError() : null;
 
   const handleOrderStatusUpdate = useCallback((data: OrderStatusUpdate) => {
     // console.log('📦 Customer received order status update:', data);
@@ -157,7 +159,7 @@ export const useCustomerOrderSync = ({ onStatusUpdate, showNotifications = true 
         'CANCELLATION_REQUESTED': 'Yêu cầu hủy'
       }[data.status] || data.status;
       
-      toastSuccess(`Đơn hàng #${data.orderId} đã cập nhật: ${statusText}`);
+      toastSuccess?.(`Đơn hàng #${data.orderId} đã cập nhật: ${statusText}`);
     }
 
     onStatusUpdate?.(data);
@@ -167,7 +169,7 @@ export const useCustomerOrderSync = ({ onStatusUpdate, showNotifications = true 
     // console.log('🆕 Customer received new order:', data);
     
     if (showNotifications) {
-      toastSuccess(`Đơn hàng #${data.orderId} đã được tạo thành công`);
+      toastSuccess?.(`Đơn hàng #${data.orderId} đã được tạo thành công`);
     }
 
     onStatusUpdate?.(data);
@@ -184,7 +186,7 @@ export const useCustomerOrderSync = ({ onStatusUpdate, showNotifications = true 
         // });
     
     if (showNotifications) {
-      toastError(`Đơn hàng #${data.orderId} đã bị hủy`);
+      toastError?.(`Đơn hàng #${data.orderId} đã bị hủy`);
     }
 
     onStatusUpdate?.(data);

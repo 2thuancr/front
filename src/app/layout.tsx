@@ -6,6 +6,7 @@ import ConditionalLayout from '@/components/layout/ConditionalLayout';
 import { ViewTrackingProvider } from '@/components/providers/ViewTrackingProvider';
 import { AuthInitializer } from '@/components/providers/AuthInitializer';
 import { WishlistInitializer } from '@/components/providers/WishlistInitializer';
+import { NotificationProvider } from '@/components/providers/NotificationProvider';
 import { ToastProvider } from '@/components/ui/Toast';
 import { APP_CONFIG } from '@/lib/constants';
 import { ErrorBoundary, ChunkErrorFallback } from '@/components/ErrorBoundary';
@@ -88,11 +89,13 @@ export default function RootLayout({
             <AuthInitializer />
             <WishlistInitializer />
             <ToastProvider>
-              <ViewTrackingProvider>
-                <ConditionalLayout>
-                  {children}
-                </ConditionalLayout>
-              </ViewTrackingProvider>
+              <NotificationProvider>
+                <ViewTrackingProvider>
+                  <ConditionalLayout>
+                    {children}
+                  </ConditionalLayout>
+                </ViewTrackingProvider>
+              </NotificationProvider>
             </ToastProvider>
           </Providers>
         </ErrorBoundary>

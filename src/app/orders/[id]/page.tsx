@@ -176,7 +176,21 @@ export default function OrderDetailPage() {
                   const productName = item.productName || item.product?.productName || 'Sản phẩm';
                   const price = item.price || item.unitPrice || item.product?.price || 0;
                   const totalPrice = item.totalPrice || (price * item.quantity);
-                  const imageUrl = item.imageUrl || item.product?.images?.find(img => img.isPrimary)?.imageUrl;
+                  
+                  // Debug logging to see what data we have
+                  console.log('Order item data:', {
+                    itemId,
+                    productName,
+                    hasProduct: !!item.product,
+                    hasImages: !!item.product?.images,
+                    images: item.product?.images,
+                    imageUrl: item.imageUrl
+                  });
+                  
+                  const imageUrl = item.imageUrl || 
+                    item.product?.images?.find(img => img.isPrimary)?.imageUrl ||
+                    item.product?.images?.[0]?.imageUrl ||
+                    'https://picsum.photos/200';
                   
                   return (
                     <div key={itemId} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
@@ -221,22 +235,28 @@ export default function OrderDetailPage() {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
                 Thông tin giao hàng
               </h2>
-              <div className="space-y-2">
-                <p className="text-gray-900">
-                  <span className="font-medium">{currentOrder.shippingInfo.customerName}</span>
-                </p>
-                <p className="text-gray-600">
-                  {currentOrder.shippingInfo.customerPhone}
-                </p>
-                <p className="text-gray-600">
-                  {currentOrder.shippingInfo.shippingAddress}, {currentOrder.shippingInfo.ward}, {currentOrder.shippingInfo.district}, {currentOrder.shippingInfo.city}
-                </p>
-                {currentOrder.shippingInfo.notes && (
-                  <p className="text-gray-500 text-sm mt-2">
-                    <span className="font-medium">Ghi chú:</span> {currentOrder.shippingInfo.notes}
+              {currentOrder.shippingInfo ? (
+                <div className="space-y-2">
+                  <p className="text-gray-900">
+                    <span className="font-medium">{currentOrder.shippingInfo.customerName}</span>
                   </p>
-                )}
-              </div>
+                  <p className="text-gray-600">
+                    {currentOrder.shippingInfo.customerPhone}
+                  </p>
+                  <p className="text-gray-600">
+                    {currentOrder.shippingInfo.shippingAddress}, {currentOrder.shippingInfo.ward}, {currentOrder.shippingInfo.district}, {currentOrder.shippingInfo.city}
+                  </p>
+                  {currentOrder.shippingInfo.notes && (
+                    <p className="text-gray-500 text-sm mt-2">
+                      <span className="font-medium">Ghi chú:</span> {currentOrder.shippingInfo.notes}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Thông tin giao hàng chưa có</p>
+                </div>
+              )}
             </motion.div>
           </div>
 
