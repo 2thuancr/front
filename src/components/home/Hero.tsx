@@ -22,9 +22,9 @@ const Hero: React.FC = () => {
 
   const popularCategories = [
     { name: 'Áo thun HCMUTE', icon: ShoppingBag, color: 'from-blue-500 to-blue-600' },
-    { name: 'Móc khóa', icon: Gift, color: 'from-pink-500 to-pink-600' },
-    { name: 'Balo, Túi xách', icon: ShoppingBag, color: 'from-green-500 to-green-600' },
-    { name: 'Đồ lưu niệm', icon: Heart, color: 'from-red-500 to-red-600' },
+    { name: 'Dây đeo', icon: Gift, color: 'from-pink-500 to-pink-600' },
+    { name: 'Balo, Sổ tay', icon: ShoppingBag, color: 'from-green-500 to-green-600' },
+    { name: 'Quà tặng', icon: Heart, color: 'from-red-500 to-red-600' },
   ];
 
   return (

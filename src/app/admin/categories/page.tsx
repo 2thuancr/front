@@ -32,6 +32,10 @@ export default function AdminCategories() {
   const [totalPages, setTotalPages] = useState(0);
   const [limit] = useState(10);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
+  const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   const toastSuccess = useToastSuccess();
   const toastError = useToastError();
@@ -87,8 +91,74 @@ export default function AdminCategories() {
   };
 
   const handleFormSuccess = () => {
-    // Refresh the categories list after successful creation
+    // Refresh the categories list after successful creation/update
     fetchCategories(currentPage);
+    setEditingCategory(null);
+    setFormMode('create');
+  };
+
+  // Handle edit category
+  const handleEditCategory = (category: Category) => {
+    setEditingCategory(category);
+    setFormMode('edit');
+    setIsFormOpen(true);
+  };
+
+  const handleAddCategory = () => {
+    setEditingCategory(null);
+    setFormMode('create');
+    setIsFormOpen(true);
+  };
+
+  // Handle delete category
+  const handleDeleteCategory = (category: Category) => {
+    setDeletingCategory(category);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingCategory) return;
+
+    try {
+      // Log category data before deletion for debugging
+      console.log('🗑️ Deleting category:', {
+        id: deletingCategory.categoryId,
+        name: deletingCategory.categoryName,
+        productCount: deletingCategory.productCount,
+        createdAt: deletingCategory.createdAt
+      });
+
+      await adminCategoryAPI.deleteCategory(deletingCategory.categoryId);
+      toastSuccess('Thành công', `Đã xóa danh mục "${deletingCategory.categoryName}"`);
+      
+      // Refresh the category list
+      await fetchCategories(currentPage);
+      
+      // Close confirmation
+      setShowDeleteConfirm(false);
+      setDeletingCategory(null);
+    } catch (error: any) {
+      console.error('Delete category error:', error);
+      
+      // Log more details about the error
+      if (error.response) {
+        console.error('❌ Delete Category API Error Details:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          url: error.config?.url
+        });
+      }
+      
+      // Show more specific error message
+      const errorMessage = error.response?.data?.message || 'Không thể xóa danh mục. Vui lòng thử lại.';
+      toastError('Lỗi', errorMessage);
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setDeletingCategory(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -122,7 +192,7 @@ export default function AdminCategories() {
             <span>Làm mới</span>
           </button>
           <button 
-            onClick={() => setIsFormOpen(true)}
+            onClick={handleAddCategory}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
           >
             <Plus className="w-4 h-4" />
@@ -312,10 +382,18 @@ export default function AdminCategories() {
                           <button className="text-gray-400 hover:text-gray-600" title="Xem chi tiết">
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button className="text-gray-400 hover:text-gray-600" title="Chỉnh sửa">
+                          <button 
+                            onClick={() => handleEditCategory(category)}
+                            className="text-gray-400 hover:text-gray-600" 
+                            title="Chỉnh sửa"
+                          >
                             <Edit className="w-4 h-4" />
                           </button>
-                          <button className="text-gray-400 hover:text-gray-600" title="Xóa">
+                          <button 
+                            onClick={() => handleDeleteCategory(category)}
+                            className="text-gray-400 hover:text-red-600" 
+                            title="Xóa"
+                          >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -399,11 +477,66 @@ export default function AdminCategories() {
         </div>
       )}
 
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && deletingCategory && (
+        <div 
+          className="fixed inset-0 flex items-center justify-center z-50 p-4"
+          style={{ backgroundColor: 'transparent' }}
+        >
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Xác nhận xóa danh mục</h3>
+                <p className="text-sm text-gray-600">Hành động này không thể hoàn tác</p>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-gray-700">
+                Bạn có chắc chắn muốn xóa danh mục <strong>"{deletingCategory.categoryName}"</strong>?
+              </p>
+              {deletingCategory.productCount > 0 && (
+                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-800">
+                    ⚠️ Danh mục này có <strong>{deletingCategory.productCount} sản phẩm</strong>. 
+                    Việc xóa có thể ảnh hưởng đến các sản phẩm liên quan.
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={cancelDelete}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                Xóa danh mục
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Category Form Modal */}
       <CategoryForm
         isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
+        onClose={() => {
+          setIsFormOpen(false);
+          setEditingCategory(null);
+          setFormMode('create');
+        }}
         onSuccess={handleFormSuccess}
+        category={editingCategory}
+        mode={formMode}
       />
     </div>
   );

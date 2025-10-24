@@ -32,9 +32,9 @@ const PrimeDemoContent: React.FC = () => {
   useEffect(() => {
     setProducts([
       { id: 1, name: 'Áo Thun HCMUTE', category: 'Áo thun', price: 299000, rating: 4.8, date: new Date() },
-      { id: 2, name: 'Ba Lô HCMUTE', category: 'Ba lô', price: 599000, rating: 4.9, date: new Date() },
-      { id: 3, name: 'Mũ Nón HCMUTE', category: 'Mũ nón', price: 199000, rating: 4.7, date: new Date() },
-      { id: 4, name: 'Túi Xách HCMUTE', category: 'Túi xách', price: 399000, rating: 4.6, date: new Date() },
+      { id: 2, name: 'Balo HCMUTE', category: 'Balo', price: 599000, rating: 4.9, date: new Date() },
+      { id: 3, name: 'Nón HCMUTE', category: 'Nón', price: 199000, rating: 4.7, date: new Date() },
+      { id: 4, name: 'Sổ tay HCMUTE', category: 'Sổ tay', price: 399000, rating: 4.6, date: new Date() },
     ]);
   }, []);
 

@@ -210,7 +210,7 @@ export const adminProductAPI = {
     api.get(`/products/${productId}`),
   
   createProduct: (data: FormData) =>
-    api.post('/products', data, {
+    api.post('/products/with-images', data, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -218,6 +218,13 @@ export const adminProductAPI = {
   
   updateProduct: (productId: number, data: any) =>
     api.put(`/products/${productId}`, data),
+  
+  updateProductWithImages: (productId: number, data: FormData) =>
+    api.put(`/products/${productId}/with-images`, data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }),
   
   deleteProduct: (productId: number) =>
     api.delete(`/products/${productId}`),

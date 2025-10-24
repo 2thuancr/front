@@ -38,13 +38,17 @@ export const CURRENCY = {
   SYMBOL: '₫',
 } as const;
 
-// Product Categories
+// Product Categories for HCMUTE Gift Shop
 export const PRODUCT_CATEGORIES = [
   { label: 'Tất cả', value: '' },
+  { label: 'Dây đeo', value: 'Dây đeo' },
+  { label: 'Balo', value: 'Balo' },
   { label: 'Áo thun', value: 'Áo thun' },
-  { label: 'Ba lô', value: 'Ba lô' },
-  { label: 'Mũ nón', value: 'Mũ nón' },
-  { label: 'Túi xách', value: 'Túi xách' },
+  { label: 'Ô dù', value: 'Ô dù' },
+  { label: 'Sổ tay', value: 'Sổ tay' },
+  { label: 'Quạt', value: 'Quạt' },
+  { label: 'Nón', value: 'Nón' },
+  { label: 'Quà tặng', value: 'Quà tặng' },
 ] as Array<{ label: string; value: string }>;
 
 // Routes

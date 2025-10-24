@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -17,13 +17,16 @@ import {
   FileText,
   Tag
 } from 'lucide-react';
-import { adminProductAPI } from '@/lib/api';
+import { adminProductAPI, adminCategoryAPI } from '@/lib/api';
 import { useToastSuccess, useToastError } from '@/components/ui/Toast';
+import { Category, CategoriesResponse, Product } from '@/types/api';
 
 interface ProductFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  product?: Product | null; // Thêm product data cho edit mode
+  mode?: 'create' | 'edit'; // Thêm mode để phân biệt create/edit
 }
 
 interface ProductFormData {
@@ -50,9 +53,13 @@ const schema = yup.object({
   categoryId: yup.string().required('Danh mục là bắt buộc'),
 });
 
-export default function ProductForm({ isOpen, onClose, onSuccess }: ProductFormProps) {
+export default function ProductForm({ isOpen, onClose, onSuccess, product, mode = 'create' }: ProductFormProps) {
   const [images, setImages] = useState<ImageFile[]>([]);
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const categoriesLoadedRef = useRef(false); // Use ref instead of state
+  const isFetchingRef = useRef(false); // Track if currently fetching
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const toastSuccess = useToastSuccess();
@@ -77,30 +84,118 @@ export default function ProductForm({ isOpen, onClose, onSuccess }: ProductFormP
     } as ProductFormData
   });
 
-  // Mock categories - thay thế bằng API call thực tế
-  const categories = [
-    { categoryId: 1, categoryName: 'Điện thoại' },
-    { categoryId: 2, categoryName: 'Laptop' },
-    { categoryId: 3, categoryName: 'Máy tính bảng' },
-    { categoryId: 4, categoryName: 'Đồng hồ thông minh' },
-    { categoryId: 5, categoryName: 'Phụ kiện' },
-    { categoryId: 6, categoryName: 'Tivi & Âm thanh' },
-  ];
+  // Fetch categories from API
+  useEffect(() => {
+    let isMounted = true; // Flag to prevent state updates after component unmounts
+    
+    const fetchCategories = async () => {
+      // Prevent multiple simultaneous calls
+      if (isFetchingRef.current) {
+        console.log('🔄 Categories fetch already in progress, skipping...');
+        return;
+      }
+      
+      try {
+        isFetchingRef.current = true;
+        setCategoriesLoading(true);
+        const response = await adminCategoryAPI.getAllCategories(1, 100); // Get all categories
+        const data: CategoriesResponse = response.data;
+        
+        if (isMounted) {
+          if (data && data.categories) {
+            setCategories(data.categories);
+            categoriesLoadedRef.current = true; // Mark as loaded using ref
+            console.log('✅ Categories loaded:', data.categories.length);
+          } else {
+            console.warn('⚠️ No categories data in response:', data);
+            setCategories([]);
+          }
+        }
+      } catch (error: any) {
+        if (isMounted) {
+          console.error('❌ Error fetching categories:', error);
+          toastError('Lỗi', 'Không thể tải danh mục sản phẩm');
+          setCategories([]);
+        }
+      } finally {
+        if (isMounted) {
+          setCategoriesLoading(false);
+        }
+        isFetchingRef.current = false;
+      }
+    };
+
+    if (isOpen && !categoriesLoadedRef.current) {
+      fetchCategories();
+    }
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen]); // Only depend on isOpen, no other dependencies
+
+  // Populate form when in edit mode
+  useEffect(() => {
+    if (mode === 'edit' && product && isOpen) {
+      // Set form values
+      setValue('productName', product.productName);
+      setValue('description', product.description || '');
+      setValue('price', product.price);
+      setValue('discountPercent', product.discountPercent || '0');
+      setValue('stockQuantity', product.stockQuantity.toString());
+      setValue('categoryId', product.categoryId.toString());
+
+      // Set existing images
+      if (product.images && product.images.length > 0) {
+        const existingImages: ImageFile[] = product.images.map((img, index) => ({
+          file: new File([], `existing-${index}.jpg`, { type: 'image/jpeg' }), // Dummy file with size 0
+          preview: img.imageUrl,
+          isPrimary: img.isPrimary === true || img.isPrimary === 1
+        }));
+        setImages(existingImages);
+      }
+    } else if (mode === 'create' && isOpen) {
+      // Reset form for create mode
+      reset();
+      setImages([]);
+    }
+  }, [mode, product, isOpen, setValue, reset]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
 
+    const maxImages = 10; // Giới hạn số lượng ảnh
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
     Array.from(files).forEach(file => {
-      if (file.type.startsWith('image/')) {
-        const preview = URL.createObjectURL(file);
-        const newImage: ImageFile = {
-          file,
-          preview,
-          isPrimary: images.length === 0 // First image is primary
-        };
-        setImages(prev => [...prev, newImage]);
+      // Validation số lượng ảnh
+      if (images.length >= maxImages) {
+        toastError('Lỗi', `Chỉ được tải tối đa ${maxImages} ảnh`);
+        return;
       }
+
+      // Validation định dạng file
+      if (!allowedTypes.includes(file.type)) {
+        toastError('Lỗi', 'Chỉ chấp nhận file ảnh (JPEG, PNG, WebP)');
+        return;
+      }
+
+      // Validation kích thước file
+      if (file.size > maxSize) {
+        toastError('Lỗi', 'Kích thước file không được vượt quá 5MB');
+        return;
+      }
+
+      const preview = URL.createObjectURL(file);
+      const newImage: ImageFile = {
+        file,
+        preview,
+        isPrimary: images.length === 0 // First image is primary
+      };
+      setImages(prev => [...prev, newImage]);
     });
 
     // Reset file input
@@ -130,8 +225,21 @@ export default function ProductForm({ isOpen, onClose, onSuccess }: ProductFormP
   };
 
   const onSubmit = async (data: ProductFormData) => {
+    // Validation số lượng ảnh
     if (images.length === 0) {
       toastError('Lỗi', 'Vui lòng thêm ít nhất một ảnh sản phẩm');
+      return;
+    }
+
+    if (images.length > 10) {
+      toastError('Lỗi', 'Chỉ được tải tối đa 10 ảnh');
+      return;
+    }
+
+    // Validation có ảnh chính không
+    const hasPrimaryImage = images.some(img => img.isPrimary);
+    if (!hasPrimaryImage) {
+      toastError('Lỗi', 'Vui lòng chọn ảnh chính cho sản phẩm');
       return;
     }
 
@@ -147,15 +255,81 @@ export default function ProductForm({ isOpen, onClose, onSuccess }: ProductFormP
       formData.append('stockQuantity', data.stockQuantity);
       formData.append('categoryId', data.categoryId);
 
-      // Add images
-      images.forEach((image, index) => {
-        formData.append('images', image.file);
-        formData.append(`imagePrimary_${index}`, image.isPrimary.toString());
-      });
-
-      const response = await adminProductAPI.createProduct(formData);
+      // Add images with improved structure
+      let primaryImageIndex = -1;
+      let hasNewImages = false;
       
-      toastSuccess('Thành công', 'Đã thêm sản phẩm mới');
+      images.forEach((image, index) => {
+        // Only append actual files (not dummy files for existing images)
+        if (image.file && image.file.size > 0) {
+          formData.append('images', image.file);
+          hasNewImages = true;
+        }
+        
+        if (image.isPrimary) {
+          primaryImageIndex = index;
+        }
+      });
+      
+      // For edit mode without new images, don't send any files
+      // Backend should handle this case by checking hasNewImages flag
+      
+      // Add primary image index (simpler approach)
+      if (primaryImageIndex !== -1) {
+        formData.append('primaryImageIndex', primaryImageIndex.toString());
+      }
+      
+      // Add flag to indicate if there are new images
+      formData.append('hasNewImages', hasNewImages.toString());
+      
+      // For edit mode, also send information about existing images
+      if (mode === 'edit' && product && product.images) {
+        const existingImageIds = product.images.map(img => img.imageId).join(',');
+        formData.append('existingImageIds', existingImageIds);
+        
+        // Send information about which images to keep/delete
+        const remainingImageIds = images
+          .filter(img => img.preview && img.preview.includes('http')) // Only existing images
+          .map((img, index) => {
+            // Find the original image ID by matching with product.images
+            const originalImg = product.images?.find(pImg => pImg.imageUrl === img.preview);
+            return originalImg?.imageId;
+          })
+          .filter(id => id !== undefined)
+          .join(',');
+        
+        formData.append('remainingImageIds', remainingImageIds);
+        console.log('Existing image IDs:', existingImageIds);
+        console.log('Remaining image IDs:', remainingImageIds);
+      }
+
+      // Debug: Log FormData contents
+      console.log('📤 FormData contents:');
+      console.log('Mode:', mode);
+      console.log('Product ID:', product?.productId);
+      console.log('Images count:', images.length);
+      console.log('Has new images:', hasNewImages);
+      console.log('Primary image index:', primaryImageIndex);
+      
+      for (let [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          console.log(`${key}:`, value.name, `(${value.size} bytes)`);
+        } else {
+          console.log(`${key}:`, value);
+        }
+      }
+
+      let response;
+      if (mode === 'edit' && product) {
+        // Update existing product with images
+        response = await adminProductAPI.updateProductWithImages(product.productId, formData);
+        toastSuccess('Thành công', 'Đã cập nhật sản phẩm');
+      } else {
+        // Create new product
+        response = await adminProductAPI.createProduct(formData);
+        toastSuccess('Thành công', 'Đã thêm sản phẩm mới');
+      }
+      
       handleClose();
       onSuccess();
       
@@ -176,13 +350,18 @@ export default function ProductForm({ isOpen, onClose, onSuccess }: ProductFormP
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-900 bg-opacity-10 flex items-center justify-center z-50 p-4">
+    <div 
+      className="fixed inset-0 flex items-center justify-center z-50 p-4"
+      style={{ backgroundColor: 'transparent' }}
+    >
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
             <Package className="w-6 h-6 text-blue-600" />
-            <h2 className="text-xl font-semibold text-gray-900">Thêm sản phẩm mới</h2>
+            <h2 className="text-xl font-semibold text-gray-900">
+              {mode === 'edit' ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}
+            </h2>
           </div>
           <button
             onClick={handleClose}
@@ -224,9 +403,12 @@ export default function ProductForm({ isOpen, onClose, onSuccess }: ProductFormP
               </label>
               <select
                 {...register('categoryId')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={categoriesLoading}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <option value="">Chọn danh mục</option>
+                <option value="">
+                  {categoriesLoading ? 'Đang tải danh mục...' : 'Chọn danh mục'}
+                </option>
                 {categories.map(category => (
                   <option key={category.categoryId} value={category.categoryId}>
                     {category.categoryName}
@@ -238,6 +420,12 @@ export default function ProductForm({ isOpen, onClose, onSuccess }: ProductFormP
                   <AlertCircle className="w-4 h-4 mr-1" />
                   {errors.categoryId.message}
                 </p>
+              )}
+              {categoriesLoading && (
+                <div className="mt-1 text-sm text-blue-600 flex items-center">
+                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-1" />
+                  Đang tải danh mục...
+                </div>
               )}
             </div>
 
@@ -326,7 +514,7 @@ export default function ProductForm({ isOpen, onClose, onSuccess }: ProductFormP
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <Upload className="w-4 h-4 inline mr-2" />
-              Hình ảnh sản phẩm *
+              Hình ảnh sản phẩm * (Tối đa 10 ảnh, mỗi ảnh ≤ 5MB)
             </label>
             
             {/* Upload Button */}
@@ -335,7 +523,7 @@ export default function ProductForm({ isOpen, onClose, onSuccess }: ProductFormP
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept="image/*"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
                 onChange={handleImageUpload}
                 className="hidden"
               />
@@ -417,12 +605,12 @@ export default function ProductForm({ isOpen, onClose, onSuccess }: ProductFormP
               {loading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Đang tạo...</span>
+                  <span>{mode === 'edit' ? 'Đang cập nhật...' : 'Đang tạo...'}</span>
                 </>
               ) : (
                 <>
                   <Plus className="w-4 h-4" />
-                  <span>Tạo sản phẩm</span>
+                  <span>{mode === 'edit' ? 'Cập nhật sản phẩm' : 'Tạo sản phẩm'}</span>
                 </>
               )}
             </button>
