@@ -86,9 +86,7 @@ export const updateUserProfile = createAsyncThunk(
         throw new Error('User ID not found');
       }
 
-      // console.log('📡 Calling userAPI.updateProfile() with userId:', userId);
-      const response = await userAPI.updateProfile(userId, profileData);
-      // console.log('✅ Update profile API response:', response.data);
+      const response = await userAPI.updateProfile(userId);
       return response.data;
     } catch (error: any) {
       console.error('💥 updateUserProfile error:', error);

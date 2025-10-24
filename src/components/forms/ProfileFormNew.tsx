@@ -137,7 +137,7 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
         }
       } 
       
-      const response = await userAPI.updateProfile(formData, data);
+      const response = await userAPI.updateProfile(formData);
  
       // Simple refresh - just call API to get updated data
       if (onRefresh) {

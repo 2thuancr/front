@@ -1,9 +1,33 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { Order, OrderItem, PaymentMethod, Payment, CheckoutRequest, CheckoutResponse } from "../types/order";
+import { Order, OrderItem, PaymentMethod, Payment, CheckoutRequest, CheckoutResponse, ShippingInfo } from "../types/order";
 import { orderApi, paymentApi } from "@/lib/api";
 
 // Helper function to transform backend order data to frontend format
 const transformOrderData = (backendOrder: any): Order => {
+  // Create a default shipping info object
+  const defaultShippingInfo: ShippingInfo = {
+    customerName: 'N/A',
+    customerPhone: 'N/A',
+    shippingAddress: 'N/A',
+    city: 'N/A',
+    district: 'N/A',
+    ward: 'N/A',
+    notes: ''
+  };
+
+  // If we have shipping address, use it, otherwise use defaults
+  const shippingInfo: ShippingInfo = backendOrder.shippingAddress ? {
+    customerName: backendOrder.user?.firstName && backendOrder.user?.lastName 
+      ? `${backendOrder.user.firstName} ${backendOrder.user.lastName}`
+      : 'N/A',
+    customerPhone: backendOrder.user?.phone || 'N/A',
+    shippingAddress: backendOrder.shippingAddress,
+    city: backendOrder.user?.city || 'N/A',
+    district: 'N/A', // Not provided by backend
+    ward: 'N/A', // Not provided by backend
+    notes: backendOrder.notes || ''
+  } : defaultShippingInfo;
+
   return {
     orderId: backendOrder.orderId,
     orderNumber: backendOrder.orderId.toString(), // Use orderId as orderNumber if not provided
@@ -12,15 +36,7 @@ const transformOrderData = (backendOrder: any): Order => {
     status: backendOrder.status.toLowerCase(), // Convert to lowercase
     paymentMethod: backendOrder.paymentMethod,
     paymentStatus: backendOrder.paymentStatus,
-    shippingInfo: backendOrder.shippingAddress ? {
-      customerName: backendOrder.user?.firstName + ' ' + backendOrder.user?.lastName || 'N/A',
-      customerPhone: backendOrder.user?.phone || 'N/A',
-      shippingAddress: backendOrder.shippingAddress,
-      city: backendOrder.user?.city || 'N/A',
-      district: 'N/A', // Not provided by backend
-      ward: 'N/A', // Not provided by backend
-      notes: backendOrder.notes || ''
-    } : undefined,
+    shippingInfo: shippingInfo,
     orderItems: backendOrder.orderDetails?.map((detail: any) => ({
       orderItemId: detail.orderDetailId,
       orderId: detail.orderId,

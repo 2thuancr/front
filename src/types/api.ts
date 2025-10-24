@@ -210,7 +210,7 @@ export interface AdminProductStats {
 export interface Category {
   categoryId: number;
   categoryName: string;
-  description: string;
+  description?: string;
   productCount: number;
   createdAt: string;
   updatedAt?: string;
