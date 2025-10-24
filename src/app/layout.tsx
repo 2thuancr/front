@@ -10,6 +10,7 @@ import { NotificationProvider } from '@/components/providers/NotificationProvide
 import { ToastProvider } from '@/components/ui/Toast';
 import { APP_CONFIG } from '@/lib/constants';
 import { ErrorBoundary, ChunkErrorFallback } from '@/components/ErrorBoundary';
+import GoogleAnalytics from '@/components/GoogleAnalytics';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -44,6 +45,7 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <head>
+        <GoogleAnalytics />
         {/* PrimeReact CSS */}
         <link 
           rel="stylesheet" 
