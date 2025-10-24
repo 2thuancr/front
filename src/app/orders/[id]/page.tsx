@@ -176,7 +176,21 @@ export default function OrderDetailPage() {
                   const productName = item.productName || item.product?.productName || 'Sản phẩm';
                   const price = item.price || item.unitPrice || item.product?.price || 0;
                   const totalPrice = item.totalPrice || (price * item.quantity);
-                  const imageUrl = item.imageUrl || item.product?.images?.find(img => img.isPrimary)?.imageUrl;
+                  
+                  // Debug logging to see what data we have
+                  console.log('Order item data:', {
+                    itemId,
+                    productName,
+                    hasProduct: !!item.product,
+                    hasImages: !!item.product?.images,
+                    images: item.product?.images,
+                    imageUrl: item.imageUrl
+                  });
+                  
+                  const imageUrl = item.imageUrl || 
+                    item.product?.images?.find(img => img.isPrimary)?.imageUrl ||
+                    item.product?.images?.[0]?.imageUrl ||
+                    'https://picsum.photos/200';
                   
                   return (
                     <div key={itemId} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
