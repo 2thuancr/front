@@ -2,80 +2,25 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Bell, CheckCircle, AlertCircle, Info, X, Filter } from 'lucide-react';
+import { Bell, CheckCircle, AlertCircle, Info, X, Filter, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-
-interface Notification {
-  id: number;
-  type: 'success' | 'warning' | 'info' | 'error';
-  title: string;
-  message: string;
-  isRead: boolean;
-  createdAt: string;
-  actionUrl?: string;
-}
+import { useNotifications } from '@/components/providers/NotificationProvider';
 
 const NotificationsPage = () => {
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const { 
+    notifications, 
+    unreadCount, 
+    markAsRead, 
+    markAllAsRead, 
+    deleteNotification,
+    isConnected,
+    connectionError,
+    isLoading,
+    refreshNotifications
+  } = useNotifications();
+  
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Mock data - trong thực tế sẽ fetch từ API
-  useEffect(() => {
-    const mockNotifications: Notification[] = [
-      {
-        id: 1,
-        type: 'success',
-        title: 'Đơn hàng đã được xác nhận',
-        message: 'Đơn hàng #12345 của bạn đã được xác nhận và đang được chuẩn bị.',
-        isRead: false,
-        createdAt: '2024-01-15T10:30:00Z',
-        actionUrl: '/orders/12345'
-      },
-      {
-        id: 2,
-        type: 'info',
-        title: 'Sản phẩm mới',
-        message: 'Áo thun HCMUTE mới đã được thêm vào cửa hàng.',
-        isRead: false,
-        createdAt: '2024-01-15T09:15:00Z',
-        actionUrl: '/products'
-      },
-      {
-        id: 3,
-        type: 'warning',
-        title: 'Sản phẩm sắp hết hàng',
-        message: 'Balo HCMUTE trong danh sách yêu thích của bạn sắp hết hàng.',
-        isRead: true,
-        createdAt: '2024-01-14T16:45:00Z',
-        actionUrl: '/wishlist'
-      },
-      {
-        id: 4,
-        type: 'success',
-        title: 'Thanh toán thành công',
-        message: 'Thanh toán cho đơn hàng #12340 đã được xử lý thành công.',
-        isRead: true,
-        createdAt: '2024-01-14T14:20:00Z',
-        actionUrl: '/orders/12340'
-      },
-      {
-        id: 5,
-        type: 'info',
-        title: 'Chương trình khuyến mãi',
-        message: 'Giảm giá 20% cho tất cả sản phẩm áo thun trong tuần này.',
-        isRead: false,
-        createdAt: '2024-01-13T11:00:00Z',
-        actionUrl: '/products?category=Áo thun'
-      }
-    ];
-
-    setTimeout(() => {
-      setNotifications(mockNotifications);
-      setIsLoading(false);
-    }, 1000);
-  }, []);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -103,33 +48,11 @@ const NotificationsPage = () => {
     }
   };
 
-  const markAsRead = (id: number) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === id 
-          ? { ...notification, isRead: true }
-          : notification
-      )
-    );
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notification => ({ ...notification, isRead: true }))
-    );
-  };
-
-  const deleteNotification = (id: number) => {
-    setNotifications(prev => prev.filter(notification => notification.id !== id));
-  };
-
   const filteredNotifications = notifications.filter(notification => {
     if (filter === 'unread') return !notification.isRead;
     if (filter === 'read') return notification.isRead;
     return true;
   });
-
-  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -172,6 +95,16 @@ const NotificationsPage = () => {
                 <p className="text-gray-600 mt-1">
                   {unreadCount > 0 ? `${unreadCount} thông báo chưa đọc` : 'Tất cả thông báo đã được đọc'}
                 </p>
+                {/* Socket.IO Connection Status */}
+                <div className="flex items-center space-x-2 mt-2">
+                  <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                  <span className="text-xs text-gray-500">
+                    {isConnected ? 'Cập nhật thời gian thực' : 'Chế độ tải thủ công'}
+                  </span>
+                  {connectionError && (
+                    <span className="text-xs text-red-500">({connectionError})</span>
+                  )}
+                </div>
               </div>
             </div>
             
@@ -183,6 +116,15 @@ const NotificationsPage = () => {
                 Đánh dấu tất cả đã đọc
               </button>
             )}
+            
+            <button
+              onClick={refreshNotifications}
+              disabled={isLoading}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <span>Làm mới</span>
+            </button>
           </div>
         </div>
 

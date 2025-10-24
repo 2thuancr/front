@@ -1,23 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNotifications } from '@/components/providers/NotificationProvider';
 
 interface NotificationBellProps {
   className?: string;
 }
 
 const NotificationBell: React.FC<NotificationBellProps> = ({ className = '' }) => {
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  // Mock data - trong thực tế sẽ fetch từ API
-  useEffect(() => {
-    // Simulate unread notifications count
-    const mockUnreadCount = 3; // Số thông báo chưa đọc
-    setUnreadCount(mockUnreadCount);
-  }, []);
+  const { unreadCount } = useNotifications();
 
   return (
     <Link 
