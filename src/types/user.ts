@@ -7,6 +7,8 @@ export interface UserProfile {
   phone?: string;
   address?: string;
   city?: string;
+  province?: string;
+  ward?: string;
   bio?: string;
   avatar?: string;
   dateOfBirth?: string;
@@ -23,6 +25,8 @@ export interface UpdateProfileData {
   phone?: string;
   address?: string;
   city?: string;
+  province?: string;
+  ward?: string;
   bio?: string;
   dateOfBirth?: string;
   gender?: 'male' | 'female' | 'other';

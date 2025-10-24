@@ -96,16 +96,16 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   };
 
   return (
-    <div className="w-80 bg-white shadow-lg">
+    <div className="w-full bg-white rounded-xl shadow-lg overflow-hidden">
       {/* User Profile Summary */}
-      <div className="p-6 border-b border-gray-100">
+      <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-orange-500 to-red-500">
         <div className="flex flex-col items-center space-y-4">
           <motion.div 
             className="relative"
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.2 }}
           >
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg relative overflow-hidden">
+            <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center text-orange-600 text-2xl font-bold shadow-lg relative overflow-hidden">
               {getAvatarUrl(userProfile?.avatar) ? (
                 <img
                   src={getAvatarUrl(userProfile?.avatar)!}
@@ -127,16 +127,13 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
             </div>
           </motion.div>
           
-          <div className="text-center">
-            <h3 className="text-lg font-semibold text-gray-800">
-              {userProfile?.username || 'username'}
+          <div className="text-center text-white">
+            <h3 className="text-lg font-semibold">
+              {userProfile?.firstName && userProfile?.lastName 
+                ? `${userProfile.firstName} ${userProfile.lastName}`
+                : userProfile?.username || 'username'
+              }
             </h3>
-            <Button
-              label="Sửa Hồ Sơ"
-              icon={<Edit3 className="w-4 h-4" />}
-              className="p-button-text p-button-sm text-orange-600 hover:text-orange-700 mt-2"
-              onClick={() => onSectionChange('profile')}
-            />
           </div>
         </div>
       </div>
