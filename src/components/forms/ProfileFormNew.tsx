@@ -48,16 +48,6 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
-  // Debug avatarPreview changes
-  useEffect(() => {
-    console.log('🔄 avatarPreview state changed:', avatarPreview ? 'Has preview' : 'No preview');
-    if (avatarPreview) {
-      console.log('📸 Avatar preview URL length:', avatarPreview.length);
-    }
-    console.log('🔄 Current profile.avatar:', profile?.avatar);
-    console.log('🔄 Timestamp:', new Date().toISOString());
-  }, [avatarPreview, profile?.avatar]);
-
   const {
     register,
     handleSubmit,
@@ -72,12 +62,6 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
   // Set form values when profile changes
   useEffect(() => {
     if (profile) {
-      console.log('🔄 ProfileFormNew - Profile data updated:', profile);
-      console.log('🔄 ProfileFormNew - Avatar field:', profile.avatar);
-      console.log('🔄 ProfileFormNew - Avatar type:', typeof profile.avatar);
-      console.log('🔄 ProfileFormNew - Avatar length:', profile.avatar?.length);
-      console.log('🔄 ProfileFormNew - Avatar starts with http:', profile.avatar?.startsWith('http'));
-      console.log('🎯 CURRENT AVATAR URL:', profile.avatar);
       setValue('firstName', profile.firstName || '');
       setValue('lastName', profile.lastName || '');
       setValue('phone', profile.phone || '');
@@ -92,12 +76,7 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
   const watchedValues = watch();
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('🔥 handleAvatarChange called');
     const file = e.target.files?.[0];
-    console.log('📁 Selected file:', file);
-    console.log('📁 File name:', file?.name);
-    console.log('📁 File size:', file?.size);
-    console.log('📁 File type:', file?.type);
     
     if (file) {
       // Validate file size (1MB = 1024 * 1024 bytes)
@@ -117,14 +96,9 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
         const reader = new FileReader();
         reader.onload = (e) => {
           const result = e.target?.result as string;
-          console.log('📖 FileReader loaded, result length:', result?.length);
-          console.log('📖 Setting avatar preview to:', result?.substring(0, 50) + '...');
-          console.log('📖 About to call setAvatarPreview...');
           setAvatarPreview(result);
-          console.log('✅ Avatar preview state updated!');
         };
         reader.onerror = (error) => {
-          console.error('FileReader error:', error);
           alert('Có lỗi xảy ra khi đọc file');
         };
         reader.readAsDataURL(file);
@@ -132,14 +106,10 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
         console.error('Error reading file:', error);
         alert('Có lỗi xảy ra khi xử lý file');
       }
-    } else {
-      console.log('No file selected');
-    }
+    } 
   };
 
   const handleSave = async (data: UpdateProfileData) => {
-    console.log('handleSave called with data:', data);
-    console.log('avatarPreview:', avatarPreview);
     
     try {
       setIsLoading(true);
@@ -159,34 +129,19 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
       
       // Add avatar file if there's a preview
       if (avatarPreview) {
-        console.log('Adding avatar to FormData...');
         const fileInput = document.getElementById('avatar-upload') as HTMLInputElement;
         const file = fileInput?.files?.[0];
         
         if (file) {
           formData.append('avatar', file);
-          console.log('Avatar file added to FormData:', file.name);
         }
-      } else {
-        console.log('No avatar file to upload');
-      }
+      } 
       
-      // Call API with FormData
-      console.log('Sending FormData to API...');
-      console.log('FormData contents:');
-      for (let [key, value] of formData.entries()) {
-        console.log(`${key}:`, value);
-      }
-      const response = await userAPI.updateProfile(formData);
-      console.log('Profile updated successfully:', response.data);
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
-      
+      const response = await userAPI.updateProfile(formData, data);
+ 
       // Simple refresh - just call API to get updated data
       if (onRefresh) {
-        console.log('🔄 Refreshing profile data...');
         await onRefresh();
-        console.log('✅ Profile data refreshed');
       }
       
       setIsEditing(false);
