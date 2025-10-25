@@ -105,6 +105,34 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ className = '' }) => {
     return 'U';
   };
 
+  const getUserAvatar = () => {
+    // Always prioritize Redux state if available
+    if (user && (user as any).avatar) {
+      return (user as any).avatar;
+    }
+    
+    // Only fallback to localStorage if Redux state is empty
+    if (typeof window !== 'undefined') {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        try {
+          const localUser = JSON.parse(userData);
+          return localUser.avatar || null;
+        } catch (error) {
+          console.error('Error parsing user avatar from localStorage:', error);
+        }
+      }
+    }
+    
+    return null;
+  };
+
+  const getAvatarUrl = (avatar: string | null | undefined) => {
+    if (!avatar) return null;
+    const fullUrl = avatar.startsWith('http') ? avatar : `http://localhost:3001${avatar}`;
+    return fullUrl;
+  };
+
   const menuItems = [
     {
       icon: User,
@@ -146,8 +174,17 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ className = '' }) => {
         className="flex items-center space-x-2 p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
       >
         {/* Avatar */}
-        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-          {getUserInitials()}
+        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium overflow-hidden">
+          {getAvatarUrl(getUserAvatar()) ? (
+            <img 
+              src={getAvatarUrl(getUserAvatar())!} 
+              alt="User avatar" 
+              className="w-full h-full object-cover"
+              onError={() => console.log('Avatar failed to load in navigation')}
+            />
+          ) : (
+            getUserInitials()
+          )}
         </div>
         
         {/* User Name (Desktop only) */}
@@ -176,8 +213,17 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ className = '' }) => {
             {/* User Info Header */}
             <div className="px-4 py-3 border-b border-gray-100">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium">
-                  {getUserInitials()}
+                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium overflow-hidden">
+                  {getAvatarUrl(getUserAvatar()) ? (
+                    <img 
+                      src={getAvatarUrl(getUserAvatar())!} 
+                      alt="User avatar" 
+                      className="w-full h-full object-cover"
+                      onError={() => console.log('Avatar failed to load in dropdown')}
+                    />
+                  ) : (
+                    getUserInitials()
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">

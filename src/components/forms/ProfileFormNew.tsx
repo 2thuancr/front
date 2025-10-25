@@ -13,6 +13,9 @@ import { motion } from 'framer-motion';
 import { UserProfile, UpdateProfileData } from '@/types/user';
 import { userAPI } from '@/lib/api';
 import { useToastSuccess, useToastError } from '@/components/ui/Toast';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '@/store';
+import { updateUserProfile } from '@/store/authSlice';
 import { 
   User, 
   Mail, 
@@ -51,6 +54,7 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
   
   const toastSuccess = useToastSuccess();
   const toastError = useToastError();
+  const dispatch = useDispatch<AppDispatch>();
 
   const {
     register,
@@ -224,6 +228,19 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
       if (!hasNewAvatar) {
         setAvatarPreview(null);
       }
+      
+      // Cập nhật Redux store với thông tin mới
+      dispatch(updateUserProfile({
+        firstName: updatedData.firstName,
+        lastName: updatedData.lastName,
+        phone: updatedData.phone,
+        province: updatedData.province,
+        ward: updatedData.ward,
+        gender: updatedData.gender,
+        dateOfBirth: updatedData.dateOfBirth,
+        bio: updatedData.bio,
+        avatar: updatedData.avatar
+      }));
       
       // Hiển thị thông báo thành công
       toastSuccess("Thành công!", "Hồ sơ đã được cập nhật thành công!");
