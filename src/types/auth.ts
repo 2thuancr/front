@@ -69,6 +69,10 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface GoogleLoginCredentials {
+  googleToken: string;
+}
+
 export interface AdminLoginCredentials {
   username: string;
   password: string;

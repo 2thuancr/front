@@ -16,6 +16,7 @@ import { Message } from 'primereact/message';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import Input from '@/components/ui/Input';
+import { GoogleLoginButton } from '@/components/ui';
 
 const loginSchema = yup.object({
   username: yup
@@ -30,7 +31,7 @@ const loginSchema = yup.object({
 const LoginForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState('');
-  const { login, isLoading, error, clearAuthError } = useAuth();
+  const { login, googleLogin, isLoading, error, clearAuthError } = useAuth();
   const router = useRouter(); 
 
   const {
@@ -94,6 +95,15 @@ const onSubmit = async (data: LoginCredentials) => {
   }
 };
 
+const handleGoogleSuccess = (result: any) => {
+  console.log('✅ Google login successful:', result);
+  // The googleLogin function in useAuth already handles redirect
+};
+
+const handleGoogleError = (error: any) => {
+  console.error('❌ Google login error:', error);
+  // You can add toast notification here if needed
+};
 
   return (
     <div className="w-full max-w-md mx-auto">
@@ -179,6 +189,23 @@ const onSubmit = async (data: LoginCredentials) => {
             onClick={clearAuthError}
           />
         </form>
+
+        {/* Divider */}
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-500">Hoặc</span>
+          </div>
+        </div>
+
+        {/* Google Login Button */}
+        <GoogleLoginButton
+          onSuccess={handleGoogleSuccess}
+          onError={handleGoogleError}
+          disabled={isLoading}
+        />
 
         <div className="mt-6 text-center space-y-4">
           <p className="text-sm text-gray-600">

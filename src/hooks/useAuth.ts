@@ -28,7 +28,8 @@ import {
   isAdmin,
   isVendor,
   isStaff,
-  isCustomer
+  isCustomer,
+  GoogleLoginCredentials
 } from '@/types/auth';
 import { isTokenValid } from '@/lib/auth';
 import { useEffect, useRef } from 'react';
@@ -249,6 +250,68 @@ export const useAuth = () => {
     }
   };
 
+  const googleLogin = async (googleToken: string) => {
+    try {
+      // Import authAPI dynamically to avoid circular dependency
+      const { authAPI } = await import('@/lib/api');
+      
+      const response = await authAPI.googleLogin(googleToken);
+      const result = response.data;
+      
+      if (result.access_token) {
+        localStorage.setItem('token', result.access_token);
+        
+        if (result.refresh_token) {
+          localStorage.setItem('refresh_token', result.refresh_token);
+        }
+        
+        // Save user data based on userType
+        let userData;
+        if (result.userType === 'admin') {
+          userData = result.admin;
+        } else if (result.userType === 'vendor') {
+          userData = result.vendor;
+        } else if (result.userType === 'staff') {
+          userData = result.staff;
+        } else {
+          userData = result.user;
+        }
+        
+        if (userData) {
+          localStorage.setItem('user', JSON.stringify(userData));
+          localStorage.setItem('userType', result.userType);
+          
+          // Set userId based on user type
+          let userIdToSave = null;
+          if (userData.id) {
+            userIdToSave = userData.id;
+            localStorage.setItem('userId', JSON.stringify(userData.id));
+          } else if (userData.staffId) {
+            userIdToSave = userData.staffId;
+            localStorage.setItem('userId', JSON.stringify(userData.staffId));
+          } else if (userData.adminId) {
+            userIdToSave = userData.adminId;
+            localStorage.setItem('userId', JSON.stringify(userData.adminId));
+          } else if (userData.vendorId) {
+            userIdToSave = userData.vendorId;
+            localStorage.setItem('userId', JSON.stringify(userData.vendorId));
+          }
+        }
+        
+        // Auto-redirect based on user type
+        const redirectPath = getRedirectPath(result.userType);
+        setTimeout(() => {
+          window.location.href = redirectPath;
+        }, 100);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('❌ Google login error:', error);
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
       // console.log('🚪 Logout attempt...');
@@ -332,6 +395,7 @@ export const useAuth = () => {
     error,
     login,
     register,
+    googleLogin,
     logout,
     verifyOTPCode,
     resendOTPCode,
