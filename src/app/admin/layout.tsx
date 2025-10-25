@@ -23,7 +23,8 @@ import {
   ChevronRight,
   LogOut,
   User,
-  FolderOpen
+  FolderOpen,
+  Ticket
 } from 'lucide-react';
 
 interface SidebarItem {
@@ -112,6 +113,11 @@ const adminMenuItems: SidebarItem[] = [
     name: 'Nhà cung cấp',
     href: '/admin/vendors',
     icon: Store
+  },
+  {
+    name: 'Voucher',
+    href: '/admin/vouchers',
+    icon: Ticket
   },
   {
     name: 'Báo cáo',
