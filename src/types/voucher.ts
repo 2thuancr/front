@@ -1,8 +1,10 @@
+export type DiscountType = 'percentage' | 'fixed' | 'freeship';
+
 export interface Voucher {
   id: number;
   code: string;
   description: string;
-  discountType: 'percentage' | 'fixed' | 'freeship';
+  discountType: DiscountType;
   discountValue: string | null;
   minOrderValue: string;
   maxDiscount: string | null;
@@ -29,7 +31,7 @@ export interface VoucherStats {
 export interface CreateVoucherData {
   code: string;
   description: string;
-  discountType: 'percentage' | 'fixed' | 'freeship';
+  discountType: DiscountType;
   discountValue?: number;
   minOrderValue: number;
   maxDiscount?: number;

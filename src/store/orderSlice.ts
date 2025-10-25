@@ -36,7 +36,7 @@ const transformOrderData = (backendOrder: any): Order => {
     status: backendOrder.status.toLowerCase(), // Convert to lowercase
     paymentMethod: backendOrder.paymentMethod,
     paymentStatus: backendOrder.paymentStatus,
-    shippingInfo: shippingInfo,
+    shippingInfo,
     orderItems: backendOrder.orderDetails?.map((detail: any) => ({
       orderItemId: detail.orderDetailId,
       orderId: detail.orderId,

@@ -17,7 +17,7 @@ const convertProductForDisplay = (product: Product) => {
   // Shorten description to about 3 lines (around 150 characters)
   let shortDescription = product.description || 'Sản phẩm chất lượng cao với logo HCMUTE độc đáo.';
   if (shortDescription.length > 150) {
-    shortDescription = shortDescription.substring(0, 150).trim() + '...';
+    shortDescription = `${shortDescription.substring(0, 150).trim()  }...`;
   }
   
   return {

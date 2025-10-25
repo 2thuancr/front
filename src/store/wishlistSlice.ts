@@ -164,7 +164,7 @@ const wishlistSlice = createSlice({
         state.loading = false;
         
         // Handle different response formats
-        let wishlistItems = action.payload;
+        const wishlistItems = action.payload;
         // if (action.payload.wishlists && Array.isArray(action.payload.wishlists)) {
         //   // Format: { wishlists: [...], total: 2, page: "1", limit: "10" }
         //   wishlistItems = action.payload.wishlists;
