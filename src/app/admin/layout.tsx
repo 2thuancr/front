@@ -11,14 +11,12 @@ import {
   Users, 
   Package, 
   ShoppingCart, 
-  Store, 
   BarChart3, 
   Settings, 
   Search, 
   Bell, 
   MessageSquare, 
   Maximize2, 
-  Eye,
   ChevronDown,
   ChevronRight,
   LogOut,
@@ -55,18 +53,6 @@ const sidebarItems: SidebarItem[] = [
     badgeColor: 'bg-orange-500'
   },
   {
-    name: 'Điều hướng',
-    href: '/admin/navigation',
-    icon: Eye
-  },
-  {
-    name: 'Widget',
-    href: '/admin/widget',
-    icon: BarChart3,
-    badge: '10+',
-    badgeColor: 'bg-red-500'
-  },
-  {
     name: 'Cơ bản',
     href: '/admin/basic',
     icon: Settings
@@ -79,11 +65,6 @@ const sidebarItems: SidebarItem[] = [
   {
     name: 'Bổ sung',
     href: '/admin/extra',
-    icon: Settings
-  },
-  {
-    name: 'Hoạt ảnh',
-    href: '/admin/animations',
     icon: Settings
   }
 ];
@@ -108,11 +89,6 @@ const adminMenuItems: SidebarItem[] = [
     name: 'Đơn hàng',
     href: '/admin/orders',
     icon: ShoppingCart
-  },
-  {
-    name: 'Nhà cung cấp',
-    href: '/admin/vendors',
-    icon: Store
   },
   {
     name: 'Voucher',
@@ -246,7 +222,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           onClick={onToggle}
           className="p-1 hover:bg-gray-700 rounded"
         >
-          <Eye className="w-4 h-4" />
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
