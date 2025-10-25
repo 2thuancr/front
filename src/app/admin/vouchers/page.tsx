@@ -21,26 +21,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/api';
 import { useToastSuccess, useToastError } from '@/components/ui/Toast';
-
-interface Voucher {
-  id: number;
-  code: string;
-  description: string;
-  discountType: 'percentage' | 'fixed' | 'freeship';
-  discountValue: string | null;
-  minOrderValue: string;
-  maxDiscount: string | null;
-  startDate: string;
-  endDate: string;
-  usageLimit: number;
-  usedCount: number;
-  perUserLimit: number | null;
-  combinable: boolean;
-  isActive: boolean;
-  isDeleted: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+import { Voucher, DiscountType } from '@/types/voucher';
 
 export default function AdminVouchers() {
   const toastSuccess = useToastSuccess();
@@ -63,7 +44,7 @@ export default function AdminVouchers() {
   // Form state
   const [formData, setFormData] = useState({
     code: '',
-    discountType: 'percentage' as 'percentage' | 'fixed' | 'freeship',
+    discountType: 'percentage' as DiscountType,
     minOrderValue: '',
     startDate: '',
     endDate: '',
@@ -306,7 +287,7 @@ export default function AdminVouchers() {
   const resetForm = () => {
     setFormData({
       code: '',
-      discountType: 'percentage',
+      discountType: 'percentage' as DiscountType,
       minOrderValue: '',
       startDate: '',
       endDate: '',
@@ -378,7 +359,7 @@ export default function AdminVouchers() {
       
       setFormData({
         code: voucher.code,
-        discountType: voucher.discountType,
+        discountType: voucher.discountType as DiscountType,
         minOrderValue: parseFloat(voucher.minOrderValue).toString(),
         startDate: startDate.toISOString().slice(0, 16), // Format for datetime-local input
         endDate: endDate.toISOString().slice(0, 16),
@@ -824,7 +805,7 @@ export default function AdminVouchers() {
                   <select
                     required
                     value={formData.discountType}
-                    onChange={(e) => setFormData({...formData, discountType: e.target.value as any})}
+                    onChange={(e) => setFormData({...formData, discountType: e.target.value as DiscountType})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   >
                     <option value="percentage">Giảm giá phần trăm</option>
@@ -842,7 +823,7 @@ export default function AdminVouchers() {
                     <div className="flex items-center space-x-2">
                       <input
                         type="number"
-                        required={formData.discountType !== 'freeship'}
+                        required
                         min="0"
                         step={formData.discountType === 'percentage' ? '0.01' : '1'}
                         value={formData.discountValue}
@@ -1081,7 +1062,7 @@ export default function AdminVouchers() {
                   <select
                     required
                     value={formData.discountType}
-                    onChange={(e) => setFormData({...formData, discountType: e.target.value as any})}
+                    onChange={(e) => setFormData({...formData, discountType: e.target.value as DiscountType})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   >
                     <option value="percentage">Giảm giá phần trăm</option>
@@ -1099,7 +1080,7 @@ export default function AdminVouchers() {
                     <div className="flex items-center space-x-2">
                       <input
                         type="number"
-                        required={formData.discountType !== 'freeship'}
+                        required
                         min="0"
                         step={formData.discountType === 'percentage' ? '0.01' : '1'}
                         value={formData.discountValue}
