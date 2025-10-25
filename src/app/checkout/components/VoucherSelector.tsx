@@ -57,7 +57,7 @@ export function VoucherSelector({
             {selectedVoucher ? (
               <>
                 <div className="font-medium text-gray-900">
-                  {selectedVoucher.code}
+                  <span className="font-bold tracking-wider">{selectedVoucher.code}</span>
                 </div>
                 <div className="text-sm text-gray-600">
                   {selectedVoucher.description}
@@ -88,7 +88,7 @@ export function VoucherSelector({
               </div>
               <div>
                 <div className="font-medium text-green-800">
-                  Voucher: {selectedVoucher.code}
+                  Voucher: <span className="font-bold tracking-wider">{selectedVoucher.code}</span>
                 </div>
                 <div className="text-sm text-green-600">
                   {selectedVoucher.description}

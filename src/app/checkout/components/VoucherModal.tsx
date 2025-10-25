@@ -45,7 +45,9 @@ export function VoucherModal({
       setError(null);
       
       const response = await voucherAPI.getAll();
+      console.log('Voucher API Response:', response);
       const allVouchers = response.data || [];
+      console.log('All Vouchers:', allVouchers);
       
       // Process vouchers to add status and discount amount
       const processedVouchers: VoucherWithStatus[] = allVouchers.map((voucher: Voucher) => {
@@ -106,21 +108,21 @@ export function VoucherModal({
         };
       });
       
-      // Sort vouchers: applicable ones first, then expired ones
-      const sortedVouchers = processedVouchers.sort((a, b) => {
+      // Filter out only expired vouchers - keep active vouchers even if not applicable due to order value
+      const activeVouchers = processedVouchers.filter(voucher => {
+        const now = new Date();
+        const endDate = new Date(voucher.endDate);
+        return now <= endDate && voucher.isActive; // Only filter out expired and inactive vouchers
+      });
+      
+      // Sort vouchers: applicable ones first, then non-applicable but active ones
+      const sortedVouchers = activeVouchers.sort((a, b) => {
         // First priority: applicable vouchers come first
         if (a.isApplicable && !b.isApplicable) return -1;
         if (!a.isApplicable && b.isApplicable) return 1;
         
-        // Second priority: among applicable vouchers, sort by discount amount (highest first)
-        if (a.isApplicable && b.isApplicable) {
-          return b.discountAmount - a.discountAmount;
-        }
-        
-        // Third priority: among non-applicable vouchers, sort by end date (most recent first)
-        const aEndDate = new Date(a.endDate).getTime();
-        const bEndDate = new Date(b.endDate).getTime();
-        return bEndDate - aEndDate;
+        // Second priority: among same applicability, sort by discount amount (highest first)
+        return b.discountAmount - a.discountAmount;
       });
       
       setVouchers(sortedVouchers);
@@ -144,18 +146,11 @@ export function VoucherModal({
         voucher.discountType.toLowerCase().includes(searchTerm.toLowerCase())
       );
       
-      // Maintain sorting after filtering
+      // Sort filtered vouchers: applicable first, then by discount amount
       const sortedFiltered = filtered.sort((a, b) => {
         if (a.isApplicable && !b.isApplicable) return -1;
         if (!a.isApplicable && b.isApplicable) return 1;
-        
-        if (a.isApplicable && b.isApplicable) {
-          return b.discountAmount - a.discountAmount;
-        }
-        
-        const aEndDate = new Date(a.endDate).getTime();
-        const bEndDate = new Date(b.endDate).getTime();
-        return bEndDate - aEndDate;
+        return b.discountAmount - a.discountAmount;
       });
       
       setFilteredVouchers(sortedFiltered);
@@ -231,10 +226,22 @@ export function VoucherModal({
                   </div>
                   <div>
                     <div className="font-medium text-green-800">
-                      Voucher đã chọn: {selectedVoucher.code}
+                      Voucher đã chọn: <span className="font-bold tracking-wider">{selectedVoucher.code}</span>
                     </div>
                     <div className="text-sm text-green-600">
                       {selectedVoucher.description}
+                    </div>
+                    <div className="text-xs text-green-500 mt-1">
+                      Giảm tối đa {formatCurrency(
+                        selectedVoucher.discountType === 'percentage' 
+                          ? Math.min(
+                              (orderTotal * parseFloat(selectedVoucher.discountValue || '0')) / 100,
+                              parseFloat(selectedVoucher.maxDiscount || '0') || Infinity
+                            )
+                          : selectedVoucher.discountType === 'freeship'
+                          ? 30000
+                          : parseFloat(selectedVoucher.discountValue || '0')
+                      )}
                     </div>
                   </div>
                 </div>
@@ -312,7 +319,7 @@ export function VoucherModal({
                     className="w-full"
                   >
                     {/* Voucher Card */}
-                    <div className="flex h-28">
+                    <div className="flex h-32">
                       {/* Left Teal Section */}
                       <div className={`flex-1 flex flex-col justify-center items-center text-white relative ${
                         voucher.isApplicable 
@@ -322,9 +329,16 @@ export function VoucherModal({
                         {/* Perforated Edge */}
                         <div className="absolute right-0 top-0 bottom-0 w-4 flex flex-col justify-center">
                           <div className="space-y-1">
-                            {[...Array(10)].map((_, i) => (
+                            {[...Array(12)].map((_, i) => (
                               <div key={i} className="w-2 h-2 bg-white rounded-full opacity-30"></div>
                             ))}
+                          </div>
+                        </div>
+                        
+                        {/* Voucher Code */}
+                        <div className="text-center px-4 mb-2">
+                          <div className="text-lg font-bold tracking-wider">
+                            {voucher.code}
                           </div>
                         </div>
                         
@@ -344,18 +358,37 @@ export function VoucherModal({
                       {/* Right White Section */}
                       <div className="flex-1 bg-white p-4 flex flex-col justify-between">
                         <div>
-                          {/* Discount Amount */}
+                          {/* Voucher Code */}
                           <div className="flex items-center justify-between mb-2">
-                            <span className={`text-lg font-bold ${
+                            <div className="flex items-center space-x-2">
+                              <Ticket className="w-4 h-4 text-blue-600" />
+                            <span className={`text-sm font-medium ${
                               voucher.isApplicable ? 'text-gray-900' : 'text-gray-400'
                             }`}>
-                              Giảm tối đa {formatCurrency(voucher.discountAmount)}
-                            </span>
+                                {voucher.code}
+                              </span>
+                            </div>
                             {voucher.usageLimit > 0 && (
                               <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
                                 x {voucher.usageLimit - voucher.usedCount}
                               </span>
                             )}
+                          </div>
+                          
+                          {/* Discount Amount */}
+                          <div className="mb-2">
+                            <span className={`text-lg font-bold ${
+                              voucher.isApplicable ? 'text-gray-900' : 'text-gray-400'
+                            }`}>
+                              Giảm tối đa {formatCurrency(voucher.discountAmount)}
+                            </span>
+                          </div>
+                          
+                          {/* Description */}
+                          <div className={`text-xs mb-2 ${
+                            voucher.isApplicable ? 'text-gray-500' : 'text-gray-400'
+                          }`}>
+                            {voucher.description}
                           </div>
                           
                           {/* Minimum Order */}
