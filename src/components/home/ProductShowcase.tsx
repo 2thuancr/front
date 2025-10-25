@@ -60,12 +60,21 @@ const ProductShowcase: React.FC = () => {
       }
 
       try {
-        const response = await cartApi.getCartByUser(userId);
+        // Try to get cart from localStorage first
+        const savedCartId = localStorage.getItem(`cart_${userId}`);
+        if (savedCartId) {
+          setCartId(parseInt(savedCartId));
+          return;
+        }
+
+        // If no saved cart, try to create a new one
+        const response = await cartApi.createCart(userId);
         if (response && response.cartId) {
           setCartId(response.cartId);
+          localStorage.setItem(`cart_${userId}`, response.cartId.toString());
         }
       } catch (error) {
-        console.error('Error fetching cart:', error);
+        console.error('Error fetching/creating cart:', error);
         setCartId(null);
       }
     };
@@ -166,6 +175,11 @@ const ProductShowcase: React.FC = () => {
     try {
       const res = await cartApi.addToCart(cartId, productId, 1);
       toastSuccess("Thành công!", "Đã thêm sản phẩm vào giỏ hàng");
+      
+      // Save cartId to localStorage for future use
+      if (userId) {
+        localStorage.setItem(`cart_${userId}`, cartId.toString());
+      }
     } catch (error: any) {
       console.error("❌ Lỗi khi thêm giỏ hàng:", error);
       
