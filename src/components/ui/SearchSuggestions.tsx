@@ -130,9 +130,6 @@ const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
       saveRecentSearch(searchQuery);
       onSearch?.(searchQuery);
       setIsOpen(false);
-      
-      // Navigate to products page with search query
-      window.location.href = `/products?search=${encodeURIComponent(searchQuery)}`;
     }
   };
 

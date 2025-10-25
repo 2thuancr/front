@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { productAPI, cartApi } from '@/lib/api';
 import Link from 'next/link';
 import { ProductCard } from '@/components/ui';
@@ -15,6 +16,7 @@ import { TrendingUp, Eye as EyeIcon, Percent, Clock } from 'lucide-react';
 import { Dropdown } from 'primereact/dropdown';
 import { Button } from 'primereact/button';
 import { motion } from 'framer-motion';
+import SearchSuggestions from '@/components/ui/SearchSuggestions';
 
 type ProductType = 'latest' | 'bestseller' | 'most-viewed' | 'highest-discount';
 
@@ -25,7 +27,11 @@ export default function ProductsPage() {
   const [cartId, setCartId] = useState<number | null>(null);
   const [selectedType, setSelectedType] = useState<ProductType>('latest');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchMode, setIsSearchMode] = useState(false);
   
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const userId = useUserId();
   const { isAuthenticated, user } = useAuth();
   const toastSuccess = useToastSuccess();
@@ -91,7 +97,7 @@ export default function ProductsPage() {
       name: product.productName,
       description: product.description,
       price: price,
-      originalPrice: originalPrice,
+      originalPrice: originalPrice || price,
       rating: 4.5, // Default rating since not in API
       reviewCount: viewCount, // Use totalViews for most-viewed, random for others
       image: imageUrl,
@@ -100,12 +106,44 @@ export default function ProductsPage() {
       categoryId: product.categoryId,
       isNew: false,
       isHot: false,
-      discount: discountPercent > 0 ? Math.round(discountPercent) : undefined,
+      discount: discountPercent > 0 ? Math.round(discountPercent) : 0,
       stock: product.stockQuantity,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     };
   };
+
+  // Handle search query from URL
+  useEffect(() => {
+    const searchParam = searchParams.get('search');
+    if (searchParam) {
+      setSearchQuery(searchParam);
+      setIsSearchMode(true);
+    } else {
+      setSearchQuery('');
+      setIsSearchMode(false);
+    }
+  }, [searchParams]);
+
+  // Handle search function
+  const handleSearch = useCallback((query: string) => {
+    if (query.trim()) {
+      setSearchQuery(query);
+      setIsSearchMode(true);
+      // Update URL without page reload
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('search', query);
+      router.push(`/products?${params.toString()}`, { scroll: false });
+    } else {
+      setSearchQuery('');
+      setIsSearchMode(false);
+      // Remove search param from URL
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('search');
+      const newUrl = params.toString() ? `/products?${params.toString()}` : '/products';
+      router.push(newUrl, { scroll: false });
+    }
+  }, [searchParams, router]);
 
   // Lấy cartId khi userId thay đổi và user đã đăng nhập
   useEffect(() => {
@@ -199,27 +237,45 @@ export default function ProductsPage() {
       
       try {
         let response;
-        switch (selectedType) {
-          case 'latest':
-            response = await productAPI.getLatestProducts(limit);
-            break;
-          case 'bestseller':
-            response = await productAPI.getBestsellerProducts(limit);
-            break;
-          case 'most-viewed':
-            response = await productAPI.getMostViewedProducts(limit);
-            break;
-          case 'highest-discount':
-            response = await productAPI.getHighestDiscountProducts(limit);
-            break;
-          default:
-            response = await productAPI.getLatestProducts(limit);
+        
+        if (isSearchMode && searchQuery.trim()) {
+          // Use search API when in search mode
+          response = await productAPI.search({
+            q: searchQuery,
+            page: 1,
+            limit: limit
+          });
+        } else {
+          // Use regular product APIs when not searching
+          switch (selectedType) {
+            case 'latest':
+              response = await productAPI.getLatestProducts(limit);
+              break;
+            case 'bestseller':
+              response = await productAPI.getBestsellerProducts(limit);
+              break;
+            case 'most-viewed':
+              response = await productAPI.getMostViewedProducts(limit);
+              break;
+            case 'highest-discount':
+              response = await productAPI.getHighestDiscountProducts(limit);
+              break;
+            default:
+              response = await productAPI.getLatestProducts(limit);
+          }
         }
         
         // Handle different response structures
-        const productsData = Array.isArray(response.data) ? response.data : (response.data.data || response.data);
+        let productsData;
+        if (isSearchMode && searchQuery.trim()) {
+          // Search API now returns { data: [...], meta: {...} } directly
+          productsData = response.data || [];
+        } else {
+          // Regular APIs return different structures
+          productsData = Array.isArray(response.data) ? response.data : (response.data.data || response.data);
+        }
+        
         const convertedProducts = productsData.map(convertToLegacyProduct);
-
         setProducts(convertedProducts);
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -230,7 +286,7 @@ export default function ProductsPage() {
     };
 
     fetchProducts();
-  }, [selectedType, limit]); // Only depend on selectedType and limit
+  }, [selectedType, limit, isSearchMode, searchQuery]); // Include search dependencies
 
   // Remove pagination useEffect - use same approach as ProductGrid
   // No pagination needed, just load products once per filter change
@@ -269,6 +325,17 @@ export default function ProductsPage() {
         </div>
       </div>
 
+      {/* Search Section */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+        <div className="max-w-2xl mx-auto">
+          <SearchSuggestions 
+            className="w-full"
+            placeholder="Tìm kiếm sản phẩm..."
+            onSearch={handleSearch}
+          />
+        </div>
+      </div>
+
       {/* Modern Filter Section */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
         {/* Filter Controls */}
@@ -278,8 +345,20 @@ export default function ProductsPage() {
             <span className="text-sm font-medium text-gray-700">Loại sản phẩm:</span>
             <select
               value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value as ProductType)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm min-w-[200px]"
+              onChange={(e) => {
+                setSelectedType(e.target.value as ProductType);
+                setIsSearchMode(false);
+                setSearchQuery('');
+                // Clear search from URL when changing filter
+                const params = new URLSearchParams(searchParams.toString());
+                params.delete('search');
+                const newUrl = params.toString() ? `/products?${params.toString()}` : '/products';
+                router.push(newUrl, { scroll: false });
+              }}
+              disabled={isSearchMode}
+              className={`px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm min-w-[200px] ${
+                isSearchMode ? 'bg-gray-100 cursor-not-allowed' : ''
+              }`}
             >
               {productTypes.map((type) => {
                 const IconComponent = type.icon;
@@ -342,6 +421,35 @@ export default function ProductsPage() {
           </div>
         </div>
       </div>
+
+      {/* Search Results Info */}
+      {isSearchMode && searchQuery && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-blue-700 font-medium">
+                Kết quả tìm kiếm cho: "{searchQuery}"
+              </span>
+              <span className="text-blue-600 text-sm">
+                ({products.length} sản phẩm)
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setIsSearchMode(false);
+                const params = new URLSearchParams(searchParams.toString());
+                params.delete('search');
+                const newUrl = params.toString() ? `/products?${params.toString()}` : '/products';
+                router.push(newUrl, { scroll: false });
+              }}
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            >
+              Xóa tìm kiếm
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Products Grid */}
       <div className={`grid gap-6 ${

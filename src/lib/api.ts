@@ -390,7 +390,7 @@ getLatestProducts: (limit: number = 8) =>
     categoryId?: number;
     page?: number;
     limit?: number;
-  }) => api.get('/products/search', { params }),
+  }) => api.get('/products/search', { params }).then((res) => res.data),
   
 };
 

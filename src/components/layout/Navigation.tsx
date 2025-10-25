@@ -49,6 +49,12 @@ const Navigation: React.FC = () => {
     router.push("/cart"); // ✅ điều hướng đến trang giỏ hàng
   };
 
+  const handleSearch = (query: string) => {
+    if (query.trim()) {
+      router.push(`/products?search=${encodeURIComponent(query)}`);
+    }
+  };
+
   return (
     <nav className={`sticky top-0 z-50 transition-all duration-300 ${
       isScrolled 
@@ -89,6 +95,7 @@ const Navigation: React.FC = () => {
               <SearchSuggestions 
                 className="w-64"
                 placeholder="Tìm kiếm sản phẩm..."
+                onSearch={handleSearch}
               />
             </div>
 
@@ -157,6 +164,7 @@ const Navigation: React.FC = () => {
               <SearchSuggestions 
                 className="w-full"
                 placeholder="Tìm kiếm sản phẩm..."
+                onSearch={handleSearch}
               />
             </div>
 
