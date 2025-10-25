@@ -77,7 +77,7 @@ const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
     
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/products/search?q=${encodeURIComponent(searchQuery)}&page=1&limit=8`
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/products/search?q=${encodeURIComponent(searchQuery)}&page=1&limit=5`
       );
       
       if (response.ok) {
@@ -170,30 +170,17 @@ const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
     inputRef.current?.focus();
   };
 
-  // Format price
-  const formatPrice = (price: string, discountPercent?: string) => {
+  // Format price - simple version for suggestions
+  const formatPriceSimple = (price: string, discountPercent?: string) => {
     const priceNum = parseFloat(price);
     const discount = discountPercent ? parseFloat(discountPercent) : 0;
     
     if (discount > 0) {
       const discountedPrice = priceNum * (1 - discount / 100);
-      return (
-        <div className="flex items-center gap-2">
-          <span className="text-red-600 font-semibold">
-            {discountedPrice.toLocaleString('vi-VN')}₫
-          </span>
-          <span className="text-gray-500 line-through text-sm">
-            {priceNum.toLocaleString('vi-VN')}₫
-          </span>
-        </div>
-      );
+      return `${discountedPrice.toLocaleString('vi-VN')}₫`;
     }
     
-    return (
-      <span className="text-gray-900 font-semibold">
-        {priceNum.toLocaleString('vi-VN')}₫
-      </span>
-    );
+    return `${priceNum.toLocaleString('vi-VN')}₫`;
   };
 
   // Get product image
@@ -247,53 +234,52 @@ const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
                 </div>
               ) : results && results.data.length > 0 ? (
                 <div>
-                  <div className="px-3 py-2 text-sm font-medium text-gray-700 border-b border-gray-100">
-                    Kết quả tìm kiếm ({results.meta.total})
+                  <div className="px-3 py-1.5 text-xs font-medium text-gray-600 border-b border-gray-100">
+                    {results.meta.total} kết quả
                   </div>
                   <div className="space-y-1">
                     {results.data.map((product) => (
                       <Link
                         key={product.productId}
                         href={`/products/${product.productId}`}
-                        className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                        className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-md transition-colors"
                         onClick={() => {
                           setIsOpen(false);
                           saveRecentSearch(query);
                         }}
                       >
-                        <div className="w-12 h-12 relative flex-shrink-0">
+                        <div className="w-10 h-10 relative flex-shrink-0">
                           <Image
                             src={getProductImage(product)}
                             alt={product.productName}
                             fill
-                            className="object-cover rounded-md"
-                            sizes="48px"
+                            className="object-cover rounded"
+                            sizes="40px"
                           />
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="text-sm font-medium text-gray-900 truncate">
                             {product.productName}
                           </h4>
-                          <p className="text-xs text-gray-500 truncate">
-                            {product.category?.categoryName}
-                          </p>
-                          <div className="mt-1">
-                            {formatPrice(product.price, product.discountPercent)}
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-sm font-semibold text-gray-900">
+                              {formatPriceSimple(product.price, product.discountPercent)}
+                            </span>
+                            {product.discountPercent && parseFloat(product.discountPercent) > 0 && (
+                              <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded">
+                                -{product.discountPercent}%
+                              </span>
+                            )}
                           </div>
                         </div>
-                        {product.discountPercent && parseFloat(product.discountPercent) > 0 && (
-                          <div className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">
-                            -{product.discountPercent}%
-                          </div>
-                        )}
                       </Link>
                     ))}
                   </div>
                   {results.meta.total > results.data.length && (
-                    <div className="px-3 py-2 border-t border-gray-100">
+                    <div className="px-3 py-1.5 border-t border-gray-100">
                       <button
                         onClick={() => handleSearch()}
-                        className="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium"
+                        className="w-full text-center text-xs text-blue-600 hover:text-blue-700 font-medium"
                       >
                         Xem tất cả {results.meta.total} kết quả
                       </button>
@@ -301,10 +287,10 @@ const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
                   )}
                 </div>
               ) : (
-                <div className="px-3 py-8 text-center text-gray-500">
-                  <Search className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                  <p>Không tìm thấy sản phẩm nào</p>
-                  <p className="text-sm">Thử từ khóa khác</p>
+                <div className="px-3 py-6 text-center text-gray-500">
+                  <Search className="h-6 w-6 mx-auto mb-1.5 text-gray-300" />
+                  <p className="text-sm">Không tìm thấy sản phẩm</p>
+                  <p className="text-xs text-gray-400">Thử từ khóa khác</p>
                 </div>
               )}
             </div>
@@ -312,12 +298,12 @@ const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
             // Empty State - Show Recent & Popular Searches
             <div className="p-2">
               {recentSearches.length > 0 && (
-                <div className="mb-4">
-                  <div className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700">
-                    <Clock className="h-4 w-4" />
-                    Tìm kiếm gần đây
+                <div className="mb-3">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600">
+                    <Clock className="h-3 w-3" />
+                    Gần đây
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     {recentSearches.map((search, index) => (
                       <button
                         key={index}
@@ -325,7 +311,7 @@ const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
                           setQuery(search);
                           handleSearch(search);
                         }}
-                        className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                        className="w-full text-left px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded transition-colors"
                       >
                         {search}
                       </button>
@@ -335,11 +321,11 @@ const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
               )}
               
               <div>
-                <div className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700">
-                  <TrendingUp className="h-4 w-4" />
-                  Tìm kiếm phổ biến
+                <div className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600">
+                  <TrendingUp className="h-3 w-3" />
+                  Phổ biến
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                   {popularSearches.map((search, index) => (
                     <button
                       key={index}
@@ -347,7 +333,7 @@ const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
                         setQuery(search);
                         handleSearch(search);
                       }}
-                      className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                      className="w-full text-left px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded transition-colors"
                     >
                       {search}
                     </button>
