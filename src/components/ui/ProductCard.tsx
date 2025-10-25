@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -46,6 +46,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const toastSuccess = useToastSuccess();
   const toastError = useToastError();
   const router = useRouter();
+  const fetchingCartRef = useRef(false);
   
   const dispatch = useDispatch<AppDispatch>();
   
@@ -68,6 +69,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   // Lấy cartId khi userId thay đổi
   useEffect(() => {
     const fetchCart = async () => {
+      if (fetchingCartRef.current) return; // Prevent duplicate calls
+      
       if (!userId || userId <= 0) {
         // console.log("👤 Guest user - skipping cart fetch");
         setCartId(null);
@@ -80,6 +83,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         setCartId(null);
         return;
       }
+
+      fetchingCartRef.current = true;
 
       try {
         // console.log("🛒 Lấy giỏ hàng cho user:", userId);
@@ -107,6 +112,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             console.error("❌ Failed to create cart:", createError);
           }
         }
+      } finally {
+        fetchingCartRef.current = false;
       }
     };
 

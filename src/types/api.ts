@@ -152,12 +152,33 @@ export interface ProductReview {
   comment?: string;
   createdAt: string;
   updatedAt: string;
+  product?: {
+    productId: number;
+    categoryId: number;
+    vendorId?: number | null;
+    productName: string;
+    description?: string;
+    price: string;
+    discountPercent?: string;
+    stockQuantity: number;
+    createdAt: string;
+    updatedAt: string;
+  };
   user?: {
-    userId: number;
+    id: number;
     firstName: string;
     lastName: string;
     email: string;
-    avatarUrl?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    gender?: string;
+    dateOfBirth?: string;
+    avatar?: string;
+    role: string;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
   };
 }
 
