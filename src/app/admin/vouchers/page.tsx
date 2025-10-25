@@ -815,7 +815,7 @@ export default function AdminVouchers() {
                 </div>
 
                 {/* Discount Value */}
-                {formData.discountType !== 'freeship' && (
+                {(formData.discountType as DiscountType) !== 'freeship' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Giá trị giảm giá <span className="text-red-500">*</span>
@@ -1072,7 +1072,7 @@ export default function AdminVouchers() {
                 </div>
 
                 {/* Discount Value */}
-                {formData.discountType !== 'freeship' && (
+                {(formData.discountType as DiscountType) !== 'freeship' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Giá trị giảm giá <span className="text-red-500">*</span>

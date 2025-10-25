@@ -157,7 +157,7 @@ export default function CheckoutPage() {
       const paymentMethodCode = paymentMethod?.code || 'COD';
 
       const checkoutData = {
-        userId: userId,
+        userId,
         totalAmount: totalAmount.toString(), // Backend expects string
         shippingFee: shippingFee.toString(), // Add shipping fee for backend calculation
         paymentMethod: paymentMethodCode, // Use payment method code instead of ID

@@ -169,8 +169,8 @@ const ProductGrid: React.FC = () => {
             id: product.productId,
             name: product.productName,
             description: product.description,
-            price: price,
-            originalPrice: originalPrice,
+            price,
+            originalPrice,
             rating: 4.5, // Default rating since not in API
             reviewCount: viewCount, // Use totalViews for most-viewed, random for others
             image: imageUrl,

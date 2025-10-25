@@ -57,47 +57,77 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({
       const mockReviews = [
         {
           reviewId: 1,
-          productId: productId,
+          productId,
           userId: 1,
           rating: 5,
           comment: 'Sản phẩm rất tốt, chất lượng cao và giá cả hợp lý. Tôi rất hài lòng với sản phẩm này!',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           user: {
-            userId: 1,
+            id: 1,
             firstName: 'Nguyễn',
             lastName: 'Văn A',
             email: 'nguyenvana@example.com',
+            phone: '0123456789',
+            address: '123 Đường ABC',
+            city: 'TP.HCM',
+            gender: 'male',
+            dateOfBirth: '1990-01-01',
+            avatar: '',
+            role: 'user',
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
           }
         },
         {
           reviewId: 2,
-          productId: productId,
+          productId,
           userId: 2,
           rating: 4,
           comment: 'Sản phẩm đẹp, giao hàng nhanh. Chỉ có một chút nhỏ về chất liệu nhưng tổng thể rất ổn.',
           createdAt: new Date(Date.now() - 86400000).toISOString(),
           updatedAt: new Date(Date.now() - 86400000).toISOString(),
           user: {
-            userId: 2,
+            id: 2,
             firstName: 'Trần',
             lastName: 'Thị B',
             email: 'tranthib@example.com',
+            phone: '0987654321',
+            address: '456 Đường XYZ',
+            city: 'Hà Nội',
+            gender: 'female',
+            dateOfBirth: '1992-05-15',
+            avatar: '',
+            role: 'user',
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
           }
         },
         {
           reviewId: 3,
-          productId: productId,
+          productId,
           userId: 3,
           rating: 5,
           comment: 'Tuyệt vời! Đúng như mô tả, chất lượng vượt mong đợi.',
           createdAt: new Date(Date.now() - 172800000).toISOString(),
           updatedAt: new Date(Date.now() - 172800000).toISOString(),
           user: {
-            userId: 3,
+            id: 3,
             firstName: 'Lê',
             lastName: 'Văn C',
             email: 'levanc@example.com',
+            phone: '0369852147',
+            address: '789 Đường DEF',
+            city: 'Đà Nẵng',
+            gender: 'male',
+            dateOfBirth: '1988-12-20',
+            avatar: '',
+            role: 'user',
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
           }
         }
       ];
@@ -129,7 +159,7 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({
       
       // Mock rating stats for testing when API is not available
       const mockRatingStats = {
-        productId: productId,
+        productId,
         averageRating: 4.7,
         totalReviews: 3,
         ratingDistribution: {

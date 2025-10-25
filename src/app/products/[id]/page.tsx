@@ -89,7 +89,7 @@ export default function ProductDetailPage() {
             statusText: error.response.statusText,
             data: error.response.data,
             url: error.config?.url,
-            userId: userId
+            userId
           });
           
           // Handle specific error cases

@@ -57,7 +57,7 @@ export default function ProductsPage() {
       id: product.productId,
       name: product.productName,
       description: product.description,
-      price: price,
+      price,
       originalPrice: originalPrice || price,
       rating: 4.5, // Default rating since not in API
       reviewCount: viewCount, // Use totalViews for most-viewed, random for others
@@ -177,7 +177,7 @@ export default function ProductsPage() {
           response = await productAPI.search({
             q: searchQuery,
             page: 1,
-            limit: limit
+            limit
           });
         } else {
           // Use regular product APIs when not searching
