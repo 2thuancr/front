@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { productAPI, cartApi } from '@/lib/api';
-import Link from 'next/link';
 import { ProductCard } from '@/components/ui';
 import { LegacyProduct } from '@/types/api';
 import { useToastSuccess, useToastError } from '@/components/ui/Toast';
@@ -12,71 +11,33 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/store';
 import { toggleWishlist } from '@/store/wishlistSlice';
-import { TrendingUp, Eye as EyeIcon, Percent, Clock } from 'lucide-react';
-import { Dropdown } from 'primereact/dropdown';
-import { Button } from 'primereact/button';
-import { motion } from 'framer-motion';
 import SearchSuggestions from '@/components/ui/SearchSuggestions';
-
-type ProductType = 'latest' | 'bestseller' | 'most-viewed' | 'highest-discount';
+import { 
+  PRODUCT_TYPES, 
+  QUANTITY_OPTIONS, 
+  DEFAULT_PRODUCT_LIMIT, 
+  DEFAULT_PRODUCT_TYPE, 
+  DEFAULT_VIEW_MODE,
+  ProductType 
+} from '@/lib/constants/products';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<LegacyProduct[]>([]);
-  const [limit, setLimit] = useState(6);
+  const [limit, setLimit] = useState(DEFAULT_PRODUCT_LIMIT);
   const [filterLoading, setFilterLoading] = useState(false);
   const [cartId, setCartId] = useState<number | null>(null);
-  const [selectedType, setSelectedType] = useState<ProductType>('latest');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [selectedType, setSelectedType] = useState<ProductType>(DEFAULT_PRODUCT_TYPE);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(DEFAULT_VIEW_MODE);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchMode, setIsSearchMode] = useState(false);
   
   const searchParams = useSearchParams();
   const router = useRouter();
   const userId = useUserId();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const toastSuccess = useToastSuccess();
   const toastError = useToastError();
   const dispatch = useDispatch<AppDispatch>();
-
-  const productTypes = [
-    {
-      value: 'latest' as ProductType,
-      label: 'Sản phẩm mới nhất',
-      icon: Clock,
-      description: 'Những sản phẩm mới được thêm vào'
-    },
-    {
-      value: 'bestseller' as ProductType,
-      label: 'Sản phẩm bán chạy',
-      icon: TrendingUp,
-      description: 'Sản phẩm được mua nhiều nhất'
-    },
-    {
-      value: 'most-viewed' as ProductType,
-      label: 'Sản phẩm xem nhiều',
-      icon: EyeIcon,
-      description: 'Sản phẩm được xem nhiều nhất'
-    },
-    {
-      value: 'highest-discount' as ProductType,
-      label: 'Khuyến mãi cao nhất',
-      icon: Percent,
-      description: 'Sản phẩm có giảm giá cao nhất'
-    }
-  ];
-
-  const quantityOptions = [
-    { label: '6 sản phẩm', value: 6 },
-    { label: '12 sản phẩm', value: 12 },
-    { label: '18 sản phẩm', value: 18 },
-    { label: '24 sản phẩm', value: 24 },
-    { label: '30 sản phẩm', value: 30 }
-  ];
-
-  // Helper function to get current product type info
-  const getCurrentProductType = () => {
-    return productTypes.find(type => type.value === selectedType) || productTypes[0];
-  };
 
   // Convert API Product to LegacyProduct format
   const convertToLegacyProduct = (product: any): LegacyProduct => {
@@ -159,12 +120,8 @@ export default function ProductsPage() {
 
         if (cart && cart.cartId) {
           setCartId(cart.cartId);
-        } else {
-          console.warn("⚠️ Cart data is invalid:", cart);
         }
       } catch (error: any) {
-        console.error("❌ Lỗi khi lấy giỏ hàng:", error);
-        
         // Thử tạo giỏ hàng mới nếu không tìm thấy
         if (error.response?.status === 404) {
           try {
@@ -173,10 +130,8 @@ export default function ProductsPage() {
               setCartId(newCart.cartId);
             }
           } catch (createError: any) {
+            // Silent fail
           }
-        } else if (error.response?.status === 401) {
-          console.warn("🔒 Unauthorized - user may need to login again");
-          // Không cần xử lý gì thêm, chỉ log warning
         }
       }
     };
@@ -200,36 +155,15 @@ export default function ProductsPage() {
     }
 
     try {
-      const res = await cartApi.addToCart(cartId, productId, 1);
+      await cartApi.addToCart(cartId, productId, 1);
       toastSuccess("Thành công!", "Đã thêm sản phẩm vào giỏ hàng");
     } catch (error: any) {
-      if (error.response) {
-        console.error("❌ AddToCart API Error Details:", {
-          status: error.response.status,
-          statusText: error.response.statusText,
-          data: error.response.data,
-          url: error.config?.url,
-          requestData: { cartId, productId, quantity: 1 }
-        });
-        
-        // Handle specific error cases
-        if (error.response.status === 400) {
-          console.warn("⚠️ Add to cart endpoint may not exist or requires different parameters");
-        } else if (error.response.status === 401) {
-          console.warn("⚠️ User not authenticated for cart operations");
-        } else if (error.response.status === 404) {
-          console.warn("⚠️ Cart or product not found");
-        }
-      }
-      
       const errorMessage = error.response?.data?.message || error.message || "Thêm giỏ hàng thất bại";
       toastError("Thất bại", errorMessage);
     }
   };
 
-  // Removed observer logic - no pagination needed
-
-  // Separate useEffect for initial load and filter changes
+  // Fetch products based on search or filter
   useEffect(() => {
     const fetchProducts = async () => {
       setFilterLoading(true);
@@ -278,7 +212,6 @@ export default function ProductsPage() {
         const convertedProducts = productsData.map(convertToLegacyProduct);
         setProducts(convertedProducts);
       } catch (error) {
-        console.error('Error fetching products:', error);
         setProducts([]);
       } finally {
         setFilterLoading(false);
@@ -286,10 +219,7 @@ export default function ProductsPage() {
     };
 
     fetchProducts();
-  }, [selectedType, limit, isSearchMode, searchQuery]); // Include search dependencies
-
-  // Remove pagination useEffect - use same approach as ProductGrid
-  // No pagination needed, just load products once per filter change
+  }, [selectedType, limit, isSearchMode, searchQuery]);
 
 
   if (filterLoading) {
@@ -315,27 +245,6 @@ export default function ProductsPage() {
 
   return (
     <div className="container mx-auto py-12">
-      {/* Header */}
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-          Sản Phẩm HCMUTE
-        </h1>
-        <div className="mt-6 flex justify-center">
-          <div className="w-24 h-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full"></div>
-        </div>
-      </div>
-
-      {/* Search Section */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-        <div className="max-w-2xl mx-auto">
-          <SearchSuggestions 
-            className="w-full"
-            placeholder="Tìm kiếm sản phẩm..."
-            onSearch={handleSearch}
-          />
-        </div>
-      </div>
-
       {/* Modern Filter Section */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
         {/* Filter Controls */}
@@ -360,14 +269,11 @@ export default function ProductsPage() {
                 isSearchMode ? 'bg-gray-100 cursor-not-allowed' : ''
               }`}
             >
-              {productTypes.map((type) => {
-                const IconComponent = type.icon;
-                return (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                );
-              })}
+              {PRODUCT_TYPES.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -379,7 +285,7 @@ export default function ProductsPage() {
               onChange={(e) => setLimit(Number(e.target.value))}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
             >
-              {quantityOptions.map((option) => (
+              {QUANTITY_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -494,7 +400,6 @@ export default function ProductsPage() {
         ))}
       </div>
 
-      {/* No pagination loading indicator - removed pagination */}
     </div>
   );
 }
