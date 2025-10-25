@@ -1,70 +1,204 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingCart, Star, Heart, Eye } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { productAPI, cartApi } from '@/lib/api';
+import { Product } from '@/types/api';
+import { useAuth } from '@/hooks/useAuth';
+import { useUserId } from '@/hooks/useUserId';
+import { useToastSuccess, useToastError } from '@/components/ui/Toast';
 
-interface Product {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  category: string;
-  rating: number;
-  reviews: number;
-  features: string[];
-}
-
-const products: Product[] = [
-  {
-    id: 1,
-    name: "Áo Thun HCMUTE Gift Shop",
-    description: "Áo thun chất liệu cotton cao cấp với logo HCMUTE độc đáo. Thiết kế thời trang, phù hợp mọi lứa tuổi. Món quà ý nghĩa cho sinh viên, giảng viên và cựu sinh viên HCMUTE.",
-    price: 299000,
-    image: "/images/ao-thun-hcmute.jpg",
-    category: "Áo thun",
-    rating: 4.8,
-    reviews: 156,
-    features: ["100% Cotton", "Logo HCMUTE độc đáo", "Nhiều size", "In bền màu"]
-  },
-  {
-    id: 2,
-    name: "Balo HCMUTE Premium",
-    description: "Balo cao cấp với thiết kế hiện đại, logo HCMUTE nổi bật. Chất liệu chống thấm nước, nhiều ngăn tiện lợi. Phù hợp cho sinh viên, dân văn phòng và du lịch.",
-    price: 599000,
-    image: "/images/ba-lo-hcmute.jpg",
-    category: "Balo",
-    rating: 4.9,
-    reviews: 89,
-    features: ["Chống thấm nước", "Nhiều ngăn", "Logo HCMUTE", "Đai đeo thoải mái"]
-  },
-  {
-    id: 3,
-    name: "Nón HCMUTE",
-    description: "Nón thời trang với logo HCMUTE độc đáo. Chất liệu vải cao cấp, thấm hút mồ hôi tốt. Thiết kế unisex, phù hợp mọi giới tính và độ tuổi.",
-    price: 199000,
-    image: "/images/mu-non-hcmute.jpg",
-    category: "Nón",
-    rating: 4.7,
-    reviews: 203,
-    features: ["Thấm hút mồ hôi", "Logo HCMUTE", "Nhiều màu sắc", "Size điều chỉnh"]
-  },
-  {
-    id: 4,
-    name: "Sổ tay HCMUTE",
-    description: "Sổ tay cao cấp với logo HCMUTE nổi bật. Chất liệu giấy cao cấp, thiết kế đẹp mắt. Phù hợp cho sinh viên ghi chép bài học và lưu giữ kỷ niệm.",
-    price: 399000,
-    image: "/images/sotay-hcmute.jpg",
-    category: "Sổ tay",
-    rating: 4.6,
-    reviews: 67,
-    features: ["Giấy cao cấp", "Logo HCMUTE", "Nhiều trang", "Bìa cứng bền"]
+// Convert API Product to display format
+const convertProductForDisplay = (product: Product) => {
+  // Shorten description to about 3 lines (around 150 characters)
+  let shortDescription = product.description || 'Sản phẩm chất lượng cao với logo HCMUTE độc đáo.';
+  if (shortDescription.length > 150) {
+    shortDescription = shortDescription.substring(0, 150).trim() + '...';
   }
-];
+  
+  return {
+    id: product.productId,
+    name: product.productName,
+    description: shortDescription,
+    price: parseFloat(product.price),
+    image: product.images?.[0]?.imageUrl || '/images/placeholder.svg',
+    category: product.category?.categoryName || 'Sản phẩm',
+    rating: 4.5, // Default rating since API doesn't provide this
+    reviews: product.reviews?.length || 0,
+    features: [
+      product.category?.categoryName || 'Sản phẩm HCMUTE',
+      'Logo HCMUTE độc đáo',
+      'Chất lượng cao',
+      'Thiết kế đẹp mắt'
+    ]
+  };
+};
 
 const ProductShowcase: React.FC = () => {
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [cartId, setCartId] = useState<number | null>(null);
+  const [addingToCart, setAddingToCart] = useState<number | null>(null);
+  
+  const { isAuthenticated, token } = useAuth();
+  const userId = useUserId();
+  const router = useRouter();
+  const toastSuccess = useToastSuccess();
+  const toastError = useToastError();
+
+  // Fetch cart ID when user is authenticated
+  useEffect(() => {
+    const fetchCart = async () => {
+      if (!isAuthenticated || !userId || userId <= 0) {
+        setCartId(null);
+        return;
+      }
+
+      try {
+        const response = await cartApi.getCartByUser(userId);
+        if (response && response.cartId) {
+          setCartId(response.cartId);
+        }
+      } catch (error) {
+        console.error('Error fetching cart:', error);
+        setCartId(null);
+      }
+    };
+
+    fetchCart();
+  }, [userId, isAuthenticated]);
+
+  useEffect(() => {
+    const fetchBestSellingProducts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Fetch best-selling products from API
+        const response = await productAPI.getBestSelling(4);
+        
+        console.log('API Response:', response.data);
+        
+        // Handle different response structures
+        let productsData: Product[] = [];
+        if (Array.isArray(response.data)) {
+          productsData = response.data;
+        } else if (response.data.data) {
+          productsData = response.data.data;
+        } else if (response.data.products) {
+          productsData = response.data.products;
+        }
+        
+        // If we don't have enough products, try to get more from other endpoints
+        if (productsData.length < 4) {
+          console.log(`Only got ${productsData.length} products, trying to get more...`);
+          
+          try {
+            // Try to get latest products to fill the gap
+            const latestResponse = await productAPI.getLatest(4 - productsData.length);
+            let latestProducts: Product[] = [];
+            
+            if (Array.isArray(latestResponse.data)) {
+              latestProducts = latestResponse.data;
+            } else if (latestResponse.data.data) {
+              latestProducts = latestResponse.data.data;
+            } else if (latestResponse.data.products) {
+              latestProducts = latestResponse.data.products;
+            }
+            
+            // Filter out duplicates and add to productsData
+            const existingIds = productsData.map(p => p.productId);
+            const newProducts = latestProducts.filter(p => !existingIds.includes(p.productId));
+            productsData = [...productsData, ...newProducts];
+            
+            console.log(`Added ${newProducts.length} more products. Total: ${productsData.length}`);
+          } catch (latestErr) {
+            console.warn('Could not fetch additional products:', latestErr);
+          }
+        }
+        
+        console.log('Final products data:', productsData);
+        console.log('Final number of products:', productsData.length);
+        
+        // Convert to display format
+        const displayProducts = productsData.map(convertProductForDisplay);
+        console.log('Display products:', displayProducts);
+        setProducts(displayProducts);
+        
+      } catch (err: any) {
+        console.error('Error fetching best-selling products:', err);
+        setError('Không thể tải sản phẩm bán chạy');
+        
+        // Fallback to empty array
+        setProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBestSellingProducts();
+  }, []);
+
+  // Handle add to cart functionality
+  const handleAddToCart = async (productId: number) => {
+    if (!isAuthenticated) {
+      toastError("Cần đăng nhập", "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
+      router.push('/login');
+      return;
+    }
+
+    if (!userId || userId <= 0) {
+      toastError("Lỗi đăng nhập", "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
+      return;
+    }
+
+    if (!cartId) {
+      toastError("Lỗi giỏ hàng", "Không tìm thấy giỏ hàng. Vui lòng đăng nhập để sử dụng giỏ hàng.");
+      return;
+    }
+
+    setAddingToCart(productId);
+    try {
+      const res = await cartApi.addToCart(cartId, productId, 1);
+      toastSuccess("Thành công!", "Đã thêm sản phẩm vào giỏ hàng");
+    } catch (error: any) {
+      console.error("❌ Lỗi khi thêm giỏ hàng:", error);
+      
+      if (error.response) {
+        console.error("❌ AddToCart API Error Details:", {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          url: error.config?.url,
+          requestData: { cartId, productId, quantity: 1 }
+        });
+        
+        if (error.response.status === 400) {
+          console.warn("⚠️ Add to cart endpoint may not exist or requires different parameters");
+        } else if (error.response.status === 401) {
+          console.warn("⚠️ User not authenticated for cart operations");
+        } else if (error.response.status === 404) {
+          console.warn("⚠️ Cart or product not found");
+        }
+      }
+      
+      const errorMessage = error.response?.data?.message || error.message || "Thêm giỏ hàng thất bại";
+      toastError("Thất bại", errorMessage);
+    } finally {
+      setAddingToCart(null);
+    }
+  };
+
+  // Handle view product details
+  const handleViewDetails = (productId: number) => {
+    router.push(`/products/${productId}`);
+  };
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -85,6 +219,43 @@ const ProductShowcase: React.FC = () => {
     ));
   };
 
+  if (loading) {
+    return (
+      <section className="py-16 bg-gradient-to-b from-white to-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Đang tải sản phẩm bán chạy...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="py-16 bg-gradient-to-b from-white to-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center">
+            <p className="text-red-500">{error}</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (products.length === 0) {
+    return (
+      <section className="py-16 bg-gradient-to-b from-white to-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center">
+            <p className="text-gray-500">Không có sản phẩm bán chạy nào</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-16 bg-gradient-to-b from-white to-gray-50">
       <div className="container mx-auto px-4">
@@ -96,10 +267,10 @@ const ProductShowcase: React.FC = () => {
           className="text-center mb-16"
         >
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Sản Phẩm Nổi Bật
+            Sản Phẩm Bán Chạy
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Khám phá bộ sưu tập độc đáo với logo HCMUTE, mang đậm dấu ấn của trường đại học
+            Những sản phẩm được yêu thích nhất với logo HCMUTE, được khách hàng tin tưởng lựa chọn
           </p>
         </motion.div>
 
@@ -158,7 +329,7 @@ const ProductShowcase: React.FC = () => {
                 <div className="space-y-2">
                   <h4 className="font-semibold text-gray-900">Tính năng nổi bật:</h4>
                   <ul className="grid grid-cols-2 gap-2">
-                    {product.features.map((feature, idx) => (
+                    {product.features.map((feature: string, idx: number) => (
                       <li key={idx} className="flex items-center text-gray-600">
                         <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
                         {feature}
@@ -184,11 +355,27 @@ const ProductShowcase: React.FC = () => {
 
                 {/* Action Buttons */}
                 <div className="flex gap-4">
-                  <button className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center justify-center gap-2">
-                    <ShoppingCart className="w-5 h-5" />
-                    Thêm vào giỏ
+                  <button 
+                    onClick={() => handleAddToCart(product.id)}
+                    disabled={addingToCart === product.id}
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {addingToCart === product.id ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        Đang thêm...
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingCart className="w-5 h-5" />
+                        Thêm vào giỏ
+                      </>
+                    )}
                   </button>
-                  <button className="px-6 py-3 border-2 border-blue-600 text-blue-600 rounded-xl font-semibold hover:bg-blue-600 hover:text-white transition-all duration-200">
+                  <button 
+                    onClick={() => handleViewDetails(product.id)}
+                    className="px-6 py-3 border-2 border-blue-600 text-blue-600 rounded-xl font-semibold hover:bg-blue-600 hover:text-white transition-all duration-200"
+                  >
                     Chi tiết
                   </button>
                 </div>
