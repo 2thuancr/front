@@ -384,6 +384,14 @@ getLatestProducts: (limit: number = 8) =>
     search?: string;
   }) => api.get('/products', { params }),
   
+  // Search products with Elasticsearch
+  search: (params: {
+    q: string;
+    categoryId?: number;
+    page?: number;
+    limit?: number;
+  }) => api.get('/products/search', { params }),
+  
 };
 
 // Track failed cart endpoints
