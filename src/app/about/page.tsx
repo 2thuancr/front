@@ -111,9 +111,9 @@ export default function AboutPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Hero Section */}
       <div className="relative py-20" style={{
-        backgroundImage: 'url(https://scontent.fhan4-1.fna.fbcdn.net/v/t39.30808-6/542089016_1112716014337985_4419394213277965335_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=127cfc&_nc_eui2=AeEiXSGeh_5Yt90INIeC55ahzse-mdCaXHDOx76Z0JpccITlObgyJNxZuP2C5O4WM8XQh9GFrYWDRCX7uvhMVgQf&_nc_ohc=WTTxbu3v8pgQ7kNvwEMrVjl&_nc_oc=Adm6NVy3M2U4h4Fuu73NC_ddzZUJJpVsgA3dEY_sYiVPcoCsIBso5akE-9khgQeE-dg&_nc_zt=23&_nc_ht=scontent.fhan4-1.fna&_nc_gid=YopUiAtn-sW23wcZSK-1Xg&oh=00_Afefhk9LlADgg8nXdKu0J8QUOGPlsh5twnYrv09GSXtBnQ&oe=68EE9A02)',
+        backgroundImage: 'url(/images/banner-hcmute-final.png)',
         backgroundSize: 'cover',
-        backgroundPosition: 'bottom',
+        backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }}>
         <div className="absolute inset-0 bg-black/40"></div>
@@ -186,7 +186,7 @@ export default function AboutPage() {
             <div className="relative">
               <div className="w-full h-96 rounded-2xl shadow-2xl overflow-hidden">
                 <img
-                  src="https://scontent.fhan4-4.fna.fbcdn.net/v/t39.30808-6/472714225_2790698411112315_6033508433177811243_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=cc71e4&_nc_eui2=AeHq2ZdOlSR4aQcdz_A62J87x8MVvHYkC9vHwxW8diQL25ib0DzImc2vV2kvY_ibFH85PvqWa_eM5CSw9Tj2-WYk&_nc_ohc=yTkMbac77kgQ7kNvwEaWOnp&_nc_oc=AdmXYQlXhFRszVcGtJQsXzgTi6cFm-1w1X322LjcziJcwXHlFuKOO8oS9iMveuAPNq0&_nc_zt=23&_nc_ht=scontent.fhan4-4.fna&_nc_gid=uo8Lih-xa7CXquo_CFs8Tw&oh=00_AfcdM9oExv0ojofi0Pv09_XfmM4KhKJe934ZVxateM41iQ&oe=68EE854B"
+                  src="/images/hcmute.png"
                   alt="HCMUTE Gift Shop Story"
                   className="w-full h-full object-cover"
                 />
@@ -342,9 +342,9 @@ export default function AboutPage() {
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
           className="rounded-2xl shadow-xl p-8 relative" style={{
-            backgroundImage: 'url(https://scontent.fhan4-1.fna.fbcdn.net/v/t39.30808-6/542089016_1112716014337985_4419394213277965335_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=127cfc&_nc_eui2=AeEiXSGeh_5Yt90INIeC55ahzse-mdCaXHDOx76Z0JpccITlObgyJNxZuP2C5O4WM8XQh9GFrYWDRCX7uvhMVgQf&_nc_ohc=WTTxbu3v8pgQ7kNvwEMrVjl&_nc_oc=Adm6NVy3M2U4h4Fuu73NC_ddzZUJJpVsgA3dEY_sYiVPcoCsIBso5akE-9khgQeE-dg&_nc_zt=23&_nc_ht=scontent.fhan4-1.fna&_nc_gid=YopUiAtn-sW23wcZSK-1Xg&oh=00_Afefhk9LlADgg8nXdKu0J8QUOGPlsh5twnYrv09GSXtBnQ&oe=68EE9A02)',
+            backgroundImage: 'url(/images/banner-hcmute-final.png)',
             backgroundSize: 'cover',
-            backgroundPosition: 'bottom',
+            backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat'
           }}
         >
