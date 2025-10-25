@@ -110,6 +110,10 @@ export const authAPI = {
     api.post('/auth/resend-otp', { email }),
   
   refreshToken: () => api.post('/auth/refresh-token'),
+  
+  // Google OAuth
+  googleLogin: (googleToken: string) =>
+    api.post('/auth/google-login', { googleToken }),
 };
 
 // Admin authentication

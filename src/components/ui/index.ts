@@ -17,6 +17,7 @@ export { default as ProductStats } from './ProductStats';
 export { default as SimilarProducts } from './SimilarProducts';
 export { default as StarRating } from './StarRating';
 export { default as ProductReviews } from './ProductReviews';
+export { default as GoogleLoginButton } from './GoogleLoginButton';
 
 // Toast Components
 export { 
