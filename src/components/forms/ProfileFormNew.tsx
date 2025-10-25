@@ -12,6 +12,7 @@ import { Message } from 'primereact/message';
 import { motion } from 'framer-motion';
 import { UserProfile, UpdateProfileData } from '@/types/user';
 import { userAPI } from '@/lib/api';
+import { useToastSuccess, useToastError } from '@/components/ui/Toast';
 import { 
   User, 
   Mail, 
@@ -47,6 +48,9 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  
+  const toastSuccess = useToastSuccess();
+  const toastError = useToastError();
 
   const {
     register,
@@ -86,14 +90,14 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
     if (file) {
       // Validate file size (1MB = 1024 * 1024 bytes)
       if (file.size > 1024 * 1024) {
-        alert('Dụng lượng file tối đa 1 MB');
+        toastError("Lỗi kích thước file", "Dụng lượng file tối đa 1 MB");
         return;
       }
 
       // Validate file type
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
       if (!allowedTypes.includes(file.type)) {
-        alert('Định dạng file không hợp lệ. Chỉ chấp nhận .JPEG, .PNG');
+        toastError("Lỗi định dạng file", "Định dạng file không hợp lệ. Chỉ chấp nhận .JPEG, .PNG");
         return;
       }
 
@@ -104,12 +108,12 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
           setAvatarPreview(result);
         };
         reader.onerror = (error) => {
-          alert('Có lỗi xảy ra khi đọc file');
+          toastError("Lỗi đọc file", "Có lỗi xảy ra khi đọc file");
         };
         reader.readAsDataURL(file);
       } catch (error) {
         console.error('Error reading file:', error);
-        alert('Có lỗi xảy ra khi xử lý file');
+        toastError("Lỗi xử lý file", "Có lỗi xảy ra khi xử lý file");
       }
     } 
   };
@@ -222,12 +226,10 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
       }
       
       // Hiển thị thông báo thành công
-      // toast.success('Cập nhật thông tin thành công!');
-      
-      alert('Hồ sơ đã được cập nhật thành công!');
+      toastSuccess("Thành công!", "Hồ sơ đã được cập nhật thành công!");
     } catch (error) {
       console.error('Update profile error:', error);
-      alert('Có lỗi xảy ra khi cập nhật hồ sơ!');
+      toastError("Lỗi cập nhật", "Có lỗi xảy ra khi cập nhật hồ sơ!");
     } finally {
       setIsLoading(false);
     }
