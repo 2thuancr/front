@@ -230,18 +230,23 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({
     });
   };
 
-  const getUserInitials = (user: any): string => {
-    if (user?.firstName && user?.lastName) {
-      return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
-    }
-    return user?.email?.charAt(0).toUpperCase() || 'U';
-  };
-
   const getUserName = (user: any): string => {
     if (user?.firstName && user?.lastName) {
       return `${user.firstName} ${user.lastName}`;
     }
     return user?.email?.split('@')[0] || 'Người dùng';
+  };
+
+  const getUserInitials = (user: any): string => {
+    if (!user) return '?';
+    const firstName = user.firstName || '';
+    const lastName = user.lastName || '';
+    if (firstName && lastName) {
+      return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    }
+    if (firstName) return firstName.charAt(0).toUpperCase();
+    if (user.email) return user.email.charAt(0).toUpperCase();
+    return '?';
   };
 
   if (loading) {
@@ -396,40 +401,62 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({
       )}
 
       {/* Reviews List */}
-      <div className="space-y-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {!reviews || !Array.isArray(reviews) || reviews.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <MessageCircle className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-            <p>Chưa có đánh giá nào cho sản phẩm này</p>
-            <p className="text-sm">Hãy là người đầu tiên đánh giá sản phẩm!</p>
+          <div className="col-span-full text-center py-12">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <MessageCircle className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có đánh giá nào</h3>
+            <p className="text-gray-600">Hãy là người đầu tiên đánh giá sản phẩm!</p>
           </div>
         ) : (
           reviews.map((review) => (
-            <div key={review.reviewId} className="bg-white border rounded-lg p-4">
-              <div className="flex items-start space-x-3">
-                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium">
-                  {getUserInitials(review.user)}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <h5 className="font-medium text-gray-900">
-                        {getUserName(review.user)}
-                      </h5>
-                      <div className="flex items-center space-x-2 text-sm text-gray-500">
-                        <StarRating rating={review.rating} size="sm" />
-                        <Calendar className="w-4 h-4" />
-                        <span>{formatDate(review.createdAt)}</span>
+            <div key={review.reviewId} className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-300">
+              {/* Review Header */}
+              <div className="p-6 border-b border-gray-100">
+                <div className="flex items-start space-x-4">
+                  {/* User Avatar */}
+                  <div className="flex-shrink-0">
+                    {review.user?.avatar ? (
+                      <img
+                        src={review.user.avatar}
+                        alt={getUserName(review.user)}
+                        className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                        {getUserInitials(review.user)}
                       </div>
+                    )}
+                  </div>
+
+                  {/* User Info */}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-gray-900 truncate">
+                      {getUserName(review.user)}
+                    </h4>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <StarRating rating={review.rating} size="sm" />
+                      <span className="text-sm text-gray-500">
+                        {review.rating}/5
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-1 mt-1 text-xs text-gray-500">
+                      <Calendar className="w-3 h-3" />
+                      <span>{formatDate(review.createdAt)}</span>
                     </div>
                   </div>
-                  
-                  {review.comment && (
-                    <p className="text-gray-700 leading-relaxed">
-                      {review.comment}
-                    </p>
-                  )}
                 </div>
+              </div>
+
+              {/* Review Content */}
+              <div className="p-6">
+                {review.comment && (
+                  <p className="text-gray-700 leading-relaxed">
+                    {review.comment}
+                  </p>
+                )}
               </div>
             </div>
           ))

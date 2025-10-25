@@ -12,6 +12,10 @@ import { Message } from 'primereact/message';
 import { motion } from 'framer-motion';
 import { UserProfile, UpdateProfileData } from '@/types/user';
 import { userAPI } from '@/lib/api';
+import { useToastSuccess, useToastError } from '@/components/ui/Toast';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '@/store';
+import { updateUserProfile } from '@/store/authSlice';
 import { 
   User, 
   Mail, 
@@ -26,7 +30,7 @@ import {
 
 interface ProfileFormNewProps {
   profile: UserProfile | null;
-  onRefresh?: () => Promise<void>;
+  onRefresh?: (updatedProfile?: UserProfile) => Promise<void>;
 }
 
 const profileSchema = yup.object({
@@ -47,6 +51,10 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  
+  const toastSuccess = useToastSuccess();
+  const toastError = useToastError();
+  const dispatch = useDispatch<AppDispatch>();
 
   const {
     register,
@@ -70,6 +78,11 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
       setValue('bio', profile.bio || '');
       setValue('dateOfBirth', profile.dateOfBirth || '');
       setValue('gender', profile.gender || 'other');
+      
+      // Only clear preview if there's no avatar in the profile
+      if (!profile.avatar) {
+        setAvatarPreview(null);
+      }
     }
   }, [profile, setValue]);
 
@@ -81,14 +94,14 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
     if (file) {
       // Validate file size (1MB = 1024 * 1024 bytes)
       if (file.size > 1024 * 1024) {
-        alert('Dụng lượng file tối đa 1 MB');
+        toastError("Lỗi kích thước file", "Dụng lượng file tối đa 1 MB");
         return;
       }
 
       // Validate file type
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
       if (!allowedTypes.includes(file.type)) {
-        alert('Định dạng file không hợp lệ. Chỉ chấp nhận .JPEG, .PNG');
+        toastError("Lỗi định dạng file", "Định dạng file không hợp lệ. Chỉ chấp nhận .JPEG, .PNG");
         return;
       }
 
@@ -99,58 +112,141 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
           setAvatarPreview(result);
         };
         reader.onerror = (error) => {
-          alert('Có lỗi xảy ra khi đọc file');
+          toastError("Lỗi đọc file", "Có lỗi xảy ra khi đọc file");
         };
         reader.readAsDataURL(file);
       } catch (error) {
         console.error('Error reading file:', error);
-        alert('Có lỗi xảy ra khi xử lý file');
+        toastError("Lỗi xử lý file", "Có lỗi xảy ra khi xử lý file");
       }
     } 
   };
 
+  // Hàm xóa thông tin người dùng khỏi localStorage
+  const clearUserFromLocalStorage = () => {
+    try {
+      localStorage.removeItem('user');
+    } catch (error) {
+      console.error('Lỗi khi xóa thông tin người dùng khỏi localStorage:', error);
+    }
+  };
+
   const handleSave = async (data: UpdateProfileData) => {
-    
     try {
       setIsLoading(true);
       
-      // Create FormData for sending both text and file data
+      // Tạo FormData để gửi cả dữ liệu text và file
       const formData = new FormData();
       
-      // Add text fields to FormData
+      // Thêm các trường dữ liệu vào FormData
       formData.append('firstName', data.firstName || '');
       formData.append('lastName', data.lastName || '');
       formData.append('phone', data.phone || '');
       formData.append('province', data.province || '');
       formData.append('ward', data.ward || '');
-      formData.append('gender', data.gender || '');
+      formData.append('gender', data.gender || 'other');
       formData.append('dateOfBirth', data.dateOfBirth || '');
       formData.append('bio', data.bio || '');
       
-      // Add avatar file if there's a preview
-      if (avatarPreview) {
-        const fileInput = document.getElementById('avatar-upload') as HTMLInputElement;
-        const file = fileInput?.files?.[0];
-        
-        if (file) {
-          formData.append('avatar', file);
-        }
-      } 
+      // Thêm file avatar nếu có preview mới
+      let hasNewAvatar = false;
+      const fileInput = document.getElementById('avatar-upload') as HTMLInputElement;
+      const file = fileInput?.files?.[0];
       
+      if (file) {
+        formData.append('avatar', file);
+        hasNewAvatar = true;
+      }
+      
+      // Gọi API cập nhật thông tin
       const response = await userAPI.updateProfile(formData);
- 
-      // Simple refresh - just call API to get updated data
-      if (onRefresh) {
+      
+      if (!response.data) {
+        throw new Error('Không nhận được dữ liệu từ server');
+      }
+      
+      const updatedData = response.data;
+      
+      // Cập nhật các giá trị form với dữ liệu mới
+      const formUpdates = {
+        firstName: updatedData.firstName || '',
+        lastName: updatedData.lastName || '',
+        phone: updatedData.phone || '',
+        province: updatedData.province || '',
+        ward: updatedData.ward || '',
+        bio: updatedData.bio || '',
+        dateOfBirth: updatedData.dateOfBirth || '',
+        gender: updatedData.gender || 'other'
+      };
+      
+      // Cập nhật tất cả các trường cùng lúc
+      Object.entries(formUpdates).forEach(([key, value]) => {
+        setValue(key as keyof UpdateProfileData, value);
+      });
+      
+      // Xử lý avatar mới nếu có
+      if (hasNewAvatar && updatedData.avatar) {
+        // Xóa preview tạm thời
+        setAvatarPreview(null);
+        
+        // Tạo object profile cập nhật
+        const updatedProfile: UserProfile = {
+          ...profile!,
+          ...formUpdates,
+          avatar: updatedData.avatar
+        };
+        
+        // Xóa thông tin người dùng khỏi localStorage
+        clearUserFromLocalStorage();
+        
+        // Gọi callback để cập nhật UI cha
+        if (onRefresh) {
+          await onRefresh(updatedProfile);
+        }
+      } else if (onRefresh) {
+        // Xóa thông tin người dùng khỏi localStorage
+        clearUserFromLocalStorage();
+        
+        // Gọi callback để cập nhật UI cha
         await onRefresh();
       }
       
-      setIsEditing(false);
-      setAvatarPreview(null);
+      // Reset trạng thái form
+      reset(undefined, {
+        keepValues: true,  // Giữ lại giá trị hiện tại
+        keepDirty: false,  // Đặt isDirty về false
+        keepIsSubmitted: false,
+        keepTouched: false,
+        keepIsValid: false,
+        keepSubmitCount: false
+      });
       
-      alert('Hồ sơ đã được cập nhật thành công!');
+      // Đóng chế độ chỉnh sửa
+      setIsEditing(false);
+      
+      // Xóa preview nếu không có avatar mới
+      if (!hasNewAvatar) {
+        setAvatarPreview(null);
+      }
+      
+      // Cập nhật Redux store với thông tin mới
+      dispatch(updateUserProfile({
+        firstName: updatedData.firstName,
+        lastName: updatedData.lastName,
+        phone: updatedData.phone,
+        province: updatedData.province,
+        ward: updatedData.ward,
+        gender: updatedData.gender,
+        dateOfBirth: updatedData.dateOfBirth,
+        bio: updatedData.bio,
+        avatar: updatedData.avatar
+      }));
+      
+      // Hiển thị thông báo thành công
+      toastSuccess("Thành công!", "Hồ sơ đã được cập nhật thành công!");
     } catch (error) {
       console.error('Update profile error:', error);
-      alert('Có lỗi xảy ra khi cập nhật hồ sơ!');
+      toastError("Lỗi cập nhật", "Có lỗi xảy ra khi cập nhật hồ sơ!");
     } finally {
       setIsLoading(false);
     }
@@ -251,29 +347,9 @@ const ProfileFormNew: React.FC<ProfileFormNewProps> = ({
     return `**/**/${year}`;
   };
 
-  // Debug log
-  console.log('🔄 ProfileFormNew - isEditing:', isEditing);
-  console.log('🔄 ProfileFormNew - isDirty:', isDirty);
-  console.log('🔄 ProfileFormNew - avatarPreview:', avatarPreview ? 'Has preview' : 'No preview');
-  console.log('🔄 ProfileFormNew - avatarPreview length:', avatarPreview?.length);
-  console.log('🔄 ProfileFormNew - should show save button:', isEditing && (isDirty || avatarPreview));
-  console.log('🔄 ProfileFormNew - Current profile.avatar:', profile?.avatar);
-  console.log('🔄 ProfileFormNew - Profile exists:', !!profile);
-  console.log('ProfileFormNew - Profile data:', profile);
-  if (profile?.avatar) {
-    const fullAvatarUrl = profile.avatar.startsWith('http') ? profile.avatar : `http://localhost:3001${profile.avatar}`;
-    console.log('ProfileFormNew - Avatar URL:', profile.avatar);
-    console.log('ProfileFormNew - Full Avatar URL:', fullAvatarUrl);
-  } else {
-    console.log('ProfileFormNew - No avatar in profile data');
-  }
-
   const getAvatarUrl = (avatar: string | undefined) => {
     if (!avatar) return null;
-    console.log('getAvatarUrl - Input avatar:', avatar);
-    // Avatar từ API đã là URL đầy đủ từ Cloudinary, không cần thêm base URL
     const fullUrl = avatar.startsWith('http') ? avatar : `http://localhost:3001${avatar}`;
-    console.log('getAvatarUrl - Full URL:', fullUrl);
     return fullUrl;
   };
 

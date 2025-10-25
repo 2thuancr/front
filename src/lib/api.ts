@@ -994,6 +994,12 @@ export const reviewApi = {
   // Get user's review for a specific product
   getUserReviewForProduct: (userId: number, productId: number) =>
     api.get(`/product-reviews/user/${userId}/product/${productId}`).then((res) => res.data),
+
+  // Get all product reviews with pagination and filters
+  getAllReviews: (page: number = 1, limit: number = 10, filters?: any) =>
+    api.get('/product-reviews', { 
+      params: { page, limit, ...filters } 
+    }).then((res) => res.data),
 };
 
 // Category API

@@ -109,7 +109,8 @@ const Navigation: React.FC = () => {
 
             {/* Action buttons */}
             <div className="flex items-center space-x-2">
-              <NotificationBell />
+              {/* Only show notification bell when user is authenticated */}
+              {isAuthenticated && <NotificationBell />}
               <button onClick= {goToCart } className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                 <ShoppingCart className="h-5 w-5" />
               </button>
@@ -199,6 +200,13 @@ const Navigation: React.FC = () => {
                     </div>
                     
                     {/* Mobile Menu Items */}
+                    <Link
+                      href="/notifications"
+                      className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Thông báo
+                    </Link>
                     <Link
                       href="/profile"
                       className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"

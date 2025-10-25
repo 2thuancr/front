@@ -336,8 +336,39 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.error = null;
       });
+
+    // UPDATE USER PROFILE
+    builder
+      .addCase(updateUserProfile.fulfilled, (state, action) => {
+        state.user = action.payload;
+        state.error = null;
+      })
+      .addCase(updateUserProfile.rejected, (state, action) => {
+        state.error = action.payload as string;
+      });
   },
 });
+
+// Update user profile action
+export const updateUserProfile = createAsyncThunk(
+  'auth/updateProfile',
+  async (updatedProfile: Partial<User>, { getState, rejectWithValue }) => {
+    try {
+      const state = getState() as { auth: AuthState };
+      if (!state.auth.user) {
+        throw new Error('No user found');
+      }
+      
+      // Return the updated user data with proper typing
+      return {
+        ...state.auth.user,
+        ...updatedProfile
+      } as User;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
 
 export const { clearError, setUser, setToken, restoreAuth } = authSlice.actions;
 export default authSlice.reducer;

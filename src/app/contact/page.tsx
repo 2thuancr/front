@@ -148,7 +148,7 @@ export default function ContactPage() {
       <div className='relative py-20' style={{
         backgroundImage: 'url(/images/banner-hcmute.jpg)',
         backgroundSize: 'cover',
-        backgroundPosition: 'bottom',
+        backgroundPosition: 'center 80%',
         backgroundRepeat: 'no-repeat'
       }}>
         <div className='absolute inset-0 bg-black/40'></div>
