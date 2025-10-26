@@ -261,11 +261,12 @@ export const useAuth = () => {
       console.log('🔍 Google login response:', result);
       console.log('🔍 needPassword:', result.needPassword);
       console.log('🔍 hasPassword:', result.hasPassword);
+      console.log('🔍 requirePassword:', result.requirePassword);
       console.log('🔍 access_token:', result.access_token);
       
       // Check if user needs to set password
-      // Backend might return: needPassword, hasPassword, requirePassword, etc.
-      const requiresPassword = !result.hasPassword || result.needPassword || result.requirePassword;
+      // Chỉ redirect nếu backend EXPLICITLY trả về needPassword: true
+      const requiresPassword = result.needPassword === true || result.requirePassword === true;
       
       if (requiresPassword && result.access_token) {
         console.log('✅ User needs to set password, redirecting to /set-password');
