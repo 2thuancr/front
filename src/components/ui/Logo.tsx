@@ -45,11 +45,11 @@ const Logo: React.FC<LogoProps> = ({ size = 'md', showText = true, className = '
 
       {/* Text */}
       {showText && (
-        <div className="flex flex-col">
-          <span className={`${textSizes[size]} font-bold text-blue-800`}>
+        <div className={`flex flex-col ${className?.includes('text-white') ? '' : ''}`}>
+          <span className={`${textSizes[size]} font-bold ${className?.includes('text-white') ? 'text-white' : 'text-blue-800'}`}>
             HCMUTE
           </span>
-          <span className={`${size === 'sm' ? 'text-xs' : 'text-sm'} font-medium bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent`}>
+          <span className={`${size === 'sm' ? 'text-xs' : 'text-sm'} font-medium ${className?.includes('text-white') ? 'text-white' : 'bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent'}`}>
             Gift Shop
           </span>
         </div>
