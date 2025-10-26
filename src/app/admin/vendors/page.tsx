@@ -29,7 +29,7 @@ export default function AdminVendors() {
       phone: '0123456789',
       address: '123 Đường ABC, Quận 1, TP.HCM',
       status: 'active',
-      joinDate: '2024-01-15',
+      joinDate: '2025-01-15',
       products: 25
     },
     {
@@ -39,7 +39,7 @@ export default function AdminVendors() {
       phone: '0987654321',
       address: '456 Đường XYZ, Quận 2, TP.HCM',
       status: 'pending',
-      joinDate: '2024-02-20',
+      joinDate: '2025-02-20',
       products: 12
     },
     {
@@ -49,7 +49,7 @@ export default function AdminVendors() {
       phone: '0555666777',
       address: '789 Đường DEF, Quận 3, TP.HCM',
       status: 'inactive',
-      joinDate: '2024-03-10',
+      joinDate: '2025-03-10',
       products: 8
     }
   ];

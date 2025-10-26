@@ -29,7 +29,7 @@ export default function AdminDashboard() {
       changeType: 'positive',
       icon: Eye,
       color: 'blue',
-      dateRange: '23/05 - 01/06 (2024)'
+      dateRange: '23/05 - 01/06 (2025)'
     },
     {
       title: 'Mục tiêu',
@@ -38,7 +38,7 @@ export default function AdminDashboard() {
       changeType: 'positive',
       icon: Target,
       color: 'green',
-      dateRange: '23/05 - 01/06 (2024)'
+      dateRange: '23/05 - 01/06 (2025)'
     },
     {
       title: 'Tác động',
@@ -47,7 +47,7 @@ export default function AdminDashboard() {
       changeType: 'negative',
       icon: TrendingUp,
       color: 'orange',
-      dateRange: '23/05 - 01/06 (2024)'
+      dateRange: '23/05 - 01/06 (2025)'
     }
   ];
 

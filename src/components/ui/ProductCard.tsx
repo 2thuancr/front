@@ -215,7 +215,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       <Card className="h-full border-0 shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden bg-white rounded-2xl flex flex-col">
         {/* Image Container */}
         <div className="relative overflow-hidden rounded-t-2xl">
-          <Link href={`/products/${product.id}`}>
+          <Link href={`/products/${product.slug || product.id}`}>
             <div className="relative w-full h-48 bg-gray-100">
               <img
                 src={product.image}
@@ -294,7 +294,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Link href={`/products/${product.id}`}>
+                  <Link href={`/products/${product.slug || product.id}`}>
                     <button
                       className="w-12 h-12 rounded-full bg-white hover:bg-blue-50 text-gray-700 hover:text-blue-600 transition-all duration-200 border-2 border-white shadow-xl hover:shadow-2xl flex items-center justify-center"
                       title="Xem chi tiết"
@@ -337,7 +337,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
           {/* Product Name - Fixed height */}
           <div className="h-10 mb-0.5">
-            <Link href={`/products/${product.id}`}>
+            <Link href={`/products/${product.slug || product.id}`}>
               <h3 className="text-sm font-bold text-gray-800 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors duration-200 leading-tight">
                 {product.name}
               </h3>

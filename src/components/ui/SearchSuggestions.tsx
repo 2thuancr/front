@@ -238,7 +238,7 @@ const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
                     {results.data.map((product) => (
                       <Link
                         key={product.productId}
-                        href={`/products/${product.productId}`}
+                        href={`/products/${product.slug || product.productId}`}
                         className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-md transition-colors"
                         onClick={() => {
                           setIsOpen(false);

@@ -20,6 +20,7 @@ import {
   DEFAULT_VIEW_MODE,
   ProductType 
 } from '@/lib/constants/products';
+import { generateSlug } from '@/lib/utils';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<LegacyProduct[]>([]);
@@ -56,6 +57,7 @@ export default function ProductsPage() {
     return {
       id: product.productId,
       name: product.productName,
+      slug: product.slug || generateSlug(product.productName, product.productId), // Include slug from API or generate from name
       description: product.description,
       price,
       originalPrice: originalPrice || price,

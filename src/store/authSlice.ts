@@ -44,42 +44,35 @@ export const loginUser = createAsyncThunk(
       const isEmail = credentials.username.includes('@');
       
       if (isEmail) {
-        // Try staff login first for email addresses
+        // Try customer login FIRST for email addresses
         try {
-          response = await staffAuthAPI.login({
+          response = await authAPI.login({
             email: credentials.username,
             password: credentials.password
           });
-          userType = 'staff';
-          // console.log('🔐 Staff login successful - response:', response.data);
-          // console.log('🔐 Staff login successful - userType:', userType);
-        } catch (staffError: any) {
-          // Only log if it's not a 401 (unauthorized) error, which is expected for non-staff users
-          if (staffError.response?.status !== 401) {
-            // console.log('🔐 Staff login failed with unexpected error:', staffError);
-          } else {
-            // console.log('🔐 Staff login failed (expected for non-staff users), trying customer login');
-          }
           
-          // If staff login fails, try customer login
+          // Check if this is actually a staff user by checking role in response
+          if (response.data.user && response.data.user.role === 'staff') {
+            // console.log('🔐 Customer API returned staff user, treating as staff');
+            // console.log('🔐 Staff user data:', response.data.user);
+            userType = 'staff';
+          } else {
+            // console.log('🔐 Customer API returned regular customer');
+            userType = 'customer';
+          }
+        } catch (customerError: any) {
+          // If customer login fails, try staff login
           try {
-            response = await authAPI.login({
+            response = await staffAuthAPI.login({
               email: credentials.username,
               password: credentials.password
             });
-            
-            // Check if this is actually a staff user by checking role in response
-            if (response.data.user && response.data.user.role === 'staff') {
-              // console.log('🔐 Customer API returned staff user, treating as staff');
-              // console.log('🔐 Staff user data:', response.data.user);
-              userType = 'staff';
-            } else {
-              // console.log('🔐 Customer API returned regular customer');
-              userType = 'customer';
-            }
-          } catch (customerError) {
-            // console.log('🔐 Customer login also failed:', customerError);
-            throw customerError;
+            userType = 'staff';
+            // console.log('🔐 Staff login successful - response:', response.data);
+            // console.log('🔐 Staff login successful - userType:', userType);
+          } catch (staffError) {
+            // console.log('🔐 Both customer and staff login failed');
+            throw customerError; // Throw original customer error
           }
         }
       } else {

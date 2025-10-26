@@ -172,7 +172,7 @@ const WishlistPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {wishlistItems.map((item: WishlistItem, index: number) => (
             <div key={item.wishlistId || item.productId || `wishlist-${index}`} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-              <Link href={`/products/${item.productId}`}>
+              <Link href={`/products/${item.product?.slug || item.productId}`}>
                 <div className="relative aspect-square overflow-hidden rounded-t-lg">
                   <Image
                     src={getProductImage(item.product)}
@@ -185,7 +185,7 @@ const WishlistPage: React.FC = () => {
               </Link>
               
               <div className="p-4">
-                <Link href={`/products/${item.productId}`}>
+                <Link href={`/products/${item.product?.slug || item.productId}`}>
                   <h3 className="font-medium text-gray-900 text-sm line-clamp-2 mb-2 hover:text-blue-600">
                     {item.product?.productName || 'Unknown Product'}
                   </h3>
@@ -216,7 +216,7 @@ const WishlistPage: React.FC = () => {
                   </button>
                   
                   <Link
-                    href={`/products/${item.productId}`}
+                    href={`/products/${item.product?.slug || item.productId}`}
                     className="flex items-center space-x-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
                   >
                     <Eye className="w-4 h-4" />

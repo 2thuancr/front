@@ -135,9 +135,6 @@ const handleGoogleError = (error: any) => {
             {errors.username && (
               <small className="p-error block mt-1">{errors.username.message}</small>
             )}
-            <small className="text-gray-500 mt-1 block">
-              Khách hàng/Nhân viên: Email | Admin/Nhà cung cấp: Tên đăng nhập
-            </small>
           </div>
 
           <Input
