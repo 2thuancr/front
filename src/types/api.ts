@@ -47,6 +47,7 @@ export interface Product {
   categoryId: number;
   vendorId?: number | null;
   productName: string;
+  slug?: string; // URL-friendly slug
   description?: string;
   price: string; // API returns as string
   discountPercent?: string; // API returns as string
@@ -63,6 +64,7 @@ export interface Product {
 export interface LegacyProduct {
   id: number;
   name: string;
+  slug?: string; // URL-friendly slug
   description?: string;
   price: number;
   originalPrice?: number;

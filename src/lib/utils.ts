@@ -179,3 +179,26 @@ export async function handleAsyncError<T>(
   }
 }
 
+// Generate slug from text (Vietnamese-friendly)
+export function generateSlug(text: string, fallbackId?: number): string {
+  if (!text) return fallbackId?.toString() || '';
+  
+  return text
+    .toLowerCase()
+    .trim()
+    // Handle Vietnamese accents
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove accents
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'd')
+    // Replace spaces with hyphens
+    .replace(/\s+/g, '-')
+    // Remove special characters
+    .replace(/[^a-z0-9\-]/g, '')
+    // Remove multiple hyphens
+    .replace(/-+/g, '-')
+    // Remove leading/trailing hyphens
+    .replace(/^-|-$/g, '')
+    || fallbackId?.toString() || 'product';
+}
+

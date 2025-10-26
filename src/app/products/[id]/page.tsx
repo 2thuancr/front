@@ -39,17 +39,33 @@ export default function ProductDetailPage() {
 
   // 🔹 Load sản phẩm + giỏ hàng
   useEffect(() => {
-    // Reset tracking state when product ID changes
+    // Reset tracking state when product id changes
     setHasTrackedView(false);
     hasTrackedRef.current = false;
     
     async function fetchProduct() {
       try {
         if (!id) return;
-        const numericId = Number(id);
 
-        const res = await productAPI.getProductById(numericId);
-        const productData = res.data?.product || res.data;
+        let productData;
+        // Check if id is numeric (actual ID) or string (slug)
+        const numericId = Number(id);
+        
+        if (!isNaN(numericId) && numericId > 0) {
+          // It's a numeric ID
+          const res = await productAPI.getProductById(numericId);
+          productData = res.data?.product || res.data;
+          
+          // If we have a slug, redirect to slug-based URL for better SEO
+          if (productData?.slug && productData.slug !== id) {
+            router.replace(`/products/${productData.slug}`);
+            return;
+          }
+        } else {
+          // It's a slug
+          const res = await productAPI.getProductBySlug(id as string);
+          productData = res.data?.product || res.data;
+        }
 
         setProduct(productData);
       } catch (error) {
@@ -127,11 +143,11 @@ export default function ProductDetailPage() {
   // 🔹 Track product view separately to avoid double calls
   useEffect(() => {
     const trackView = async () => {
-      if (!id || !userId || hasTrackedRef.current) return;
+      if (!id || !userId || !product || hasTrackedRef.current) return;
       
-      const numericId = Number(id);
+      const productId = product.productId;
       try {
-        const result = await viewTracker.trackView(numericId, productStatsApi.trackProductView);
+        const result = await viewTracker.trackView(productId, productStatsApi.trackProductView);
         if (result.tracked) {
           hasTrackedRef.current = true;
           setHasTrackedView(true);
@@ -142,7 +158,7 @@ export default function ProductDetailPage() {
     };
 
     trackView();
-  }, [id, userId]);
+  }, [id, userId, product]);
 
   // 🔹 Xử lý thêm vào giỏ hàng
   const handleAddToCart = async () => {

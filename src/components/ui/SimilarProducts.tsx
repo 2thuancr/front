@@ -119,7 +119,7 @@ const SimilarProducts: React.FC<SimilarProductsProps> = ({
         {products.map((product) => (
           <Link
             key={product.productId}
-            href={`/products/${product.productId}`}
+            href={`/products/${product.slug || product.productId}`}
             className="group block bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
           >
             <div className="relative aspect-square overflow-hidden rounded-t-lg">

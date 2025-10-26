@@ -366,6 +366,7 @@ export const staffCustomerAPI = {
 export const productAPI = {
   getAll: (params?: any) => api.get("/products", { params }),
   getProductById: (id: number) => api.get(`/products/${id}`),
+  getProductBySlug: (slug: string) => api.get(`/products/by-slug/${slug}`),
   getFeatured: (limit?: number) => api.get("/products/featured", { params: { limit } }),
   getLatest: (limit?: number) => api.get("/products/latest", { params: { limit } }),
   getBestSelling: (limit?: number) => api.get("/products/best-selling", { params: { limit } }),
