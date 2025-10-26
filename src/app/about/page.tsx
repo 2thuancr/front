@@ -24,8 +24,8 @@ import {
 } from 'lucide-react';
 
 const stats = [
-  { icon: Users, value: '50,000+', label: 'Sinh viên đã sử dụng' },
-  { icon: Award, value: '15+', label: 'Năm kinh nghiệm' },
+  { icon: Users, value: '10,000+', label: 'Sinh viên đã sử dụng' },
+  { icon: Award, value: '5+', label: 'Năm kinh nghiệm' },
   { icon: Target, value: '99%', label: 'Khách hàng hài lòng' },
   { icon: Heart, value: '1000+', label: 'Sản phẩm đã bán' },
 ];
@@ -74,33 +74,33 @@ const team = [
     name: 'Vương Lập Quế',
     position: 'Thành viên đội ngũ',
     image: '/images/Que.jpg',
-    description: 'MSSV: Cập nhật sau - Thành viên năng động của đội ngũ phát triển.'
+    description: 'MSSV: 22110402 - Thành viên năng động của đội ngũ phát triển.'
   }
 ];
 
 const timeline = [
   {
-    year: '2008',
+    year: '2015',
     title: 'Thành lập',
     description: 'HCMUTE Gift Shop được thành lập với mục tiêu phục vụ cộng đồng sinh viên.'
   },
   {
-    year: '2012',
+    year: '2018',
     title: 'Mở rộng',
-    description: 'Mở rộng danh mục sản phẩm và bắt đầu kinh doanh online.'
+    description: 'Mở rộng danh mục sản phẩm và bắt đầu kinh doanh tại shop trong trường.'
   },
   {
-    year: '2016',
+    year: '2022',
     title: 'Thương hiệu',
-    description: 'Xây dựng thành công thương hiệu HCMUTE Gift Shop trong cộng đồng giáo dục.'
+    description: 'Xây dựng thành công thương hiệu HCMUTE Gift Shop trong cộng đồng sinh viên.'
   },
   {
-    year: '2020',
+    year: '2025',
     title: 'Đổi mới',
-    description: 'Ứng dụng công nghệ số và mở rộng kênh bán hàng trực tuyến.'
+    description: 'Ứng dụng công nghệ số và mở rộng kênh bán hàng trực tuyến vào trang web.'
   },
   {
-    year: '2024',
+    year: '2025',
     title: 'Tương lai',
     description: 'Tiếp tục phát triển và trở thành thương hiệu hàng đầu về quà tặng giáo dục.'
   }
@@ -169,11 +169,11 @@ export default function AboutPage() {
                 Câu chuyện của chúng tôi
               </h2>
               <p className="text-lg text-gray-600 mb-6 leading-relaxed">
-                HCMUTE Gift Shop được thành lập vào năm 2008 với sứ mệnh mang đến những sản phẩm chất lượng cao, 
+                HCMUTE Gift Shop được thành lập vào năm 2015 với sứ mệnh mang đến những sản phẩm chất lượng cao, 
                 thiết kế độc đáo và ý nghĩa cho cộng đồng sinh viên, giảng viên và những người yêu mến trường Đại học Sư phạm Kỹ thuật TP.HCM.
               </p>
               <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                Trải qua hơn 15 năm phát triển, chúng tôi đã trở thành thương hiệu tin cậy, 
+                Trải qua hơn 10 năm phát triển, chúng tôi đã trở thành thương hiệu tin cậy, 
                 được hàng nghìn khách hàng lựa chọn và tin tưởng. Mỗi sản phẩm đều được chăm chút tỉ mỉ, 
                 thể hiện tình yêu và niềm tự hào về ngôi trường thân yêu.
               </p>
@@ -378,7 +378,7 @@ export default function AboutPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-800">Điện thoại</h3>
-                  <p className="text-gray-600">(028) 3896 1234</p>
+                  <p className="text-gray-600">0364 886 745</p>
                 </div>
               </div>
               
@@ -388,7 +388,7 @@ export default function AboutPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-800">Email</h3>
-                  <p className="text-gray-600">info@hcmute-giftshop.com</p>
+                  <p className="text-gray-600">giftshop@hcmute.edu.vn</p>
                 </div>
               </div>
               

@@ -29,7 +29,7 @@ const contactMethods = [
   {
     icon: MapPin,
     title: 'Địa chỉ',
-    description: '1 Võ Văn Ngân, Linh Chiểu, Thủ Đức, TP.HCM',
+    description: '1 Võ Văn Ngân, Thủ Đức, TP.HCM',
     color: 'from-blue-500 to-blue-600',
     action: 'Xem bản đồ',
     actionIcon: Globe,
@@ -37,7 +37,7 @@ const contactMethods = [
   {
     icon: Phone,
     title: 'Điện thoại',
-    description: '(028) 3896 1234',
+    description: '0364 886 745',
     color: 'from-green-500 to-green-600',
     action: 'Gọi ngay',
     actionIcon: Phone,
@@ -45,7 +45,7 @@ const contactMethods = [
   {
     icon: Mail,
     title: 'Email',
-    description: 'info@hcmute-giftshop.com',
+    description: 'giftshop@hcmute.edu.vn',
     color: 'from-purple-500 to-purple-600',
     action: 'Gửi email',
     actionIcon: Mail,
@@ -382,7 +382,7 @@ export default function ContactPage() {
                     <Globe className='w-16 h-16 mx-auto mb-4 opacity-80' />
                     <p className='text-lg font-medium'>Bản đồ Google Maps</p>
                     <p className='text-sm opacity-80'>
-                      1 Võ Văn Ngân, Linh Chiểu, Thủ Đức, TP.HCM
+                      1 Võ Văn Ngân, Thủ Đức, TP.HCM
                     </p>
 
                     <iframe

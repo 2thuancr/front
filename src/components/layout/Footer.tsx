@@ -69,7 +69,7 @@ const Footer: React.FC = () => {
             <div className="text-center md:text-left">
               <h4 className="font-semibold text-white mb-2">Địa Chỉ</h4>
               <p className="text-slate-300">
-                1 Võ Văn Ngân, Linh Chiểu,<br />
+                1 Võ Văn Ngân, <br />
                 Thủ Đức, TP.HCM
               </p>
             </div>
@@ -77,7 +77,7 @@ const Footer: React.FC = () => {
               <h4 className="font-semibold text-white mb-2">Liên Hệ</h4>
               <p className="text-slate-300">
                 Email: giftshop@hcmute.edu.vn<br />
-                Hotline: (028) 3896 1234
+                Hotline: 0364 886 745
               </p>
             </div>
             <div className="text-center md:text-left">
