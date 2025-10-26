@@ -258,7 +258,39 @@ export const useAuth = () => {
       const response = await authAPI.googleLogin(googleToken);
       const result = response.data;
       
+      console.log('🔍 Google login response:', result);
+      console.log('🔍 needPassword:', result.needPassword);
+      console.log('🔍 hasPassword:', result.hasPassword);
+      console.log('🔍 access_token:', result.access_token);
+      
+      // Check if user needs to set password
+      // Backend might return: needPassword, hasPassword, requirePassword, etc.
+      const requiresPassword = !result.hasPassword || result.needPassword || result.requirePassword;
+      
+      if (requiresPassword && result.access_token) {
+        console.log('✅ User needs to set password, redirecting to /set-password');
+        // Save access_token for Authorization header when calling set-password
+        localStorage.setItem('token', result.access_token);
+        
+        // Save user data temporarily if available
+        if (result.user) {
+          localStorage.setItem('user', JSON.stringify(result.user));
+          localStorage.setItem('userType', result.userType || 'user');
+          if (result.user.id) {
+            localStorage.setItem('userId', JSON.stringify(result.user.id));
+          }
+        }
+        
+        // Redirect to set password page
+        setTimeout(() => {
+          window.location.href = '/set-password';
+        }, 100);
+        return { needPassword: true, access_token: result.access_token };
+      }
+      
+      // Normal login flow - user has password or is existing user
       if (result.access_token) {
+        console.log('✅ Normal login flow, redirecting to home');
         localStorage.setItem('token', result.access_token);
         
         if (result.refresh_token) {
@@ -350,6 +382,20 @@ export const useAuth = () => {
     }
   };
 
+  const setPassword = async (password: string, confirmPassword: string) => {
+    try {
+      const { authAPI } = await import('@/lib/api');
+      const response = await authAPI.setPassword({ password, confirmPassword });
+      
+      // If successful, user can now login with email/password
+      // The token is already in localStorage from Google login
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Set password error:', error);
+      throw error;
+    }
+  };
+
   const verifyOTPCode = async (data: VerifyOTPData) => {
     try {
       const result = await dispatch(verifyOTP(data)).unwrap();
@@ -396,6 +442,7 @@ export const useAuth = () => {
     login,
     register,
     googleLogin,
+    setPassword,
     logout,
     verifyOTPCode,
     resendOTPCode,

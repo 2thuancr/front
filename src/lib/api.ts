@@ -114,6 +114,11 @@ export const authAPI = {
   // Google OAuth
   googleLogin: (googleToken: string) =>
     api.post('/auth/google-login', { googleToken }),
+  
+  // Set password for Google users
+  // Note: Authorization header will be added automatically by axios interceptor
+  setPassword: (data: { password: string; confirmPassword: string }) =>
+    api.post('/auth/set-password', data),
 };
 
 // Admin authentication
