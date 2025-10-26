@@ -130,6 +130,8 @@ export const adminAuthAPI = {
     api.post('/admin-auth/refresh', { refresh_token: refreshToken }),
   
   logout: () => api.post('/admin-auth/logout'),
+  
+  getStatistics: () => api.get('/admin/statistics'),
 };
 
 // Vendor authentication

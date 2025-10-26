@@ -402,14 +402,6 @@ export default function AdminOrders() {
             <Download className="w-4 h-4" />
             <span>Xuất báo cáo</span>
           </button>
-          <a 
-            href="/debug/socketio"
-            target="_blank"
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-          >
-            <AlertCircle className="w-4 h-4" />
-            <span>Debug Socket.IO</span>
-          </a>
         </div>
       </div>
 
