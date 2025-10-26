@@ -82,16 +82,12 @@ export const useSocketIO = ({
 
     // Connection events
     socketRef.current.on('connect', () => {
-      // console.log('✅ SocketIO: Connected');
-      // console.log('🔌 SocketIO: Socket ID:', socketRef.current?.id);
-      // console.log('🔌 SocketIO: Tab ID:', tabId);
       setIsConnected(true);
       setConnectionError(null);
       connectionAttemptsRef.current = 0; // Reset attempts on success
     });
 
     socketRef.current.on('disconnect', (reason) => {
-      // console.log('❌ SocketIO: Disconnected', reason);
       setIsConnected(false);
     });
 
@@ -103,21 +99,7 @@ export const useSocketIO = ({
 
     // Order events - Listen to multiple possible event names
     socketRef.current.on('order_status_update', (data) => {
-          // console.log('📦 SocketIO: Order status update received', data);
-          // console.log('📦 SocketIO: Event details:', {
-          //   orderId: data.orderId,
-          //   oldStatus: data.oldStatus,
-          //   newStatus: data.newStatus,
-          //   updatedBy: data.updatedBy,
-          //   timestamp: data.timestamp
-          // });
-          // console.log('📦 SocketIO: Current user context:', {
-          //   userType,
-          //   userId: 'id' in user ? user.id : null,
-          //   vendorId: 'vendorId' in user ? user.vendorId : null,
-          //   staffId: 'id' in user ? user.id : null
-          // });
-      
+         
       // Transform backend data structure to frontend expected structure
       const transformedData = {
         orderId: data.orderId,
@@ -375,17 +357,12 @@ export const useSocketIO = ({
       // console.log('🔌 SocketIO: User or token not available for connection');
     }
 
+    // Only cleanup on unmount, not on every dependency change
     return () => {
       disconnect();
     };
-  }, [autoConnect, user, token, connect, disconnect]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      disconnect();
-    };
-  }, [disconnect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoConnect, user, token]); // Removed connect and disconnect from dependencies to prevent connection loops
 
   return {
     socket: socketRef.current,
