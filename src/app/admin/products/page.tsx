@@ -142,14 +142,8 @@ export default function AdminProducts() {
     if (!deletingProduct) return;
 
     try {
-      // Log product data before deletion for debugging
-      console.log('🗑️ Deleting product:', {
-        id: deletingProduct.productId,
-        name: deletingProduct.productName,
-        images: deletingProduct.images,
-        createdAt: deletingProduct.createdAt,
-        hasImages: deletingProduct.images?.length > 0
-      });
+      
+    
 
       await adminProductAPI.deleteProduct(deletingProduct.productId);
       toastSuccess('Thành công', `Đã xóa sản phẩm "${deletingProduct.productName}"`);
@@ -163,16 +157,7 @@ export default function AdminProducts() {
     } catch (error: any) {
       console.error('Delete product error:', error);
       
-      // Log more details about the error
-      if (error.response) {
-        console.error('❌ Delete API Error Details:', {
-          status: error.response.status,
-          statusText: error.response.statusText,
-          data: error.response.data,
-          url: error.config?.url
-        });
-      }
-      
+
       // Show more specific error message
       const errorMessage = error.response?.data?.message || 'Không thể xóa sản phẩm. Vui lòng thử lại.';
       toastError('Lỗi', errorMessage);
