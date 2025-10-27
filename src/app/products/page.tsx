@@ -12,6 +12,7 @@ import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/store';
 import { toggleWishlist } from '@/store/wishlistSlice';
 import SearchSuggestions from '@/components/ui/SearchSuggestions';
+import { useCategories } from '@/hooks/useCategories';
 import { 
   PRODUCT_TYPES, 
   QUANTITY_OPTIONS, 
@@ -31,6 +32,7 @@ export default function ProductsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(DEFAULT_VIEW_MODE);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchMode, setIsSearchMode] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -39,6 +41,9 @@ export default function ProductsPage() {
   const toastSuccess = useToastSuccess();
   const toastError = useToastError();
   const dispatch = useDispatch<AppDispatch>();
+  
+  // Fetch categories with high limit to get all categories
+  const { categories, loading: categoriesLoading } = useCategories({ limit: 100 });
 
   // Convert API Product to LegacyProduct format
   const convertToLegacyProduct = (product: any): LegacyProduct => {
@@ -181,8 +186,47 @@ export default function ProductsPage() {
             page: 1,
             limit
           });
+        } else if (selectedCategory) {
+          // Filter by category - fetch more to allow sorting
+          const fetchLimit = 100; // Fetch more products to allow sorting
+          response = await productAPI.getByCategory(selectedCategory, fetchLimit);
+          
+          // Sort products based on selectedType
+          let productsData = Array.isArray(response.data) ? response.data : (response.data.data || response.data);
+          const convertedProducts = productsData.map(convertToLegacyProduct);
+          
+          // Sort based on selectedType
+          let sortedProducts = convertedProducts;
+          switch (selectedType) {
+            case 'latest':
+              sortedProducts = [...convertedProducts].sort((a, b) => {
+                return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+              });
+              break;
+            case 'highest-discount':
+              sortedProducts = [...convertedProducts].sort((a, b) => {
+                const discountA = a.originalPrice && a.price ? ((a.originalPrice - a.price) / a.originalPrice) * 100 : 0;
+                const discountB = b.originalPrice && b.price ? ((b.originalPrice - b.price) / b.originalPrice) * 100 : 0;
+                return discountB - discountA;
+              });
+              break;
+            case 'most-viewed':
+              sortedProducts = [...convertedProducts].sort((a, b) => b.reviewCount - a.reviewCount);
+              break;
+            case 'bestseller':
+              // For bestseller, keep original order (backend should return sorted)
+              sortedProducts = convertedProducts;
+              break;
+            default:
+              sortedProducts = convertedProducts;
+          }
+          
+          // Limit to requested limit
+          setProducts(sortedProducts.slice(0, limit));
+          setFilterLoading(false);
+          return;
         } else {
-          // Use regular product APIs when not searching
+          // Use regular product APIs when not searching and no category selected
           switch (selectedType) {
             case 'latest':
               response = await productAPI.getLatestProducts(limit);
@@ -221,7 +265,7 @@ export default function ProductsPage() {
     };
 
     fetchProducts();
-  }, [selectedType, limit, isSearchMode, searchQuery]);
+  }, [selectedType, limit, isSearchMode, searchQuery, selectedCategory]);
 
 
   if (filterLoading) {
@@ -252,7 +296,36 @@ export default function ProductsPage() {
         {/* Filter Controls */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           {/* Left Side - Filter Dropdown */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 flex-wrap">
+            <span className="text-sm font-medium text-gray-700">Danh mục:</span>
+            <select
+              value={selectedCategory || ''}
+              onChange={(e) => {
+                const categoryId = e.target.value ? Number(e.target.value) : null;
+                setSelectedCategory(categoryId);
+                setIsSearchMode(false);
+                setSearchQuery('');
+                // Clear search from URL when changing filter
+                const params = new URLSearchParams(searchParams.toString());
+                params.delete('search');
+                const newUrl = params.toString() ? `/products?${params.toString()}` : '/products';
+                router.push(newUrl, { scroll: false });
+              }}
+              disabled={isSearchMode || categoriesLoading}
+              className={`px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm min-w-[180px] ${
+                isSearchMode || categoriesLoading ? 'bg-gray-100 cursor-not-allowed' : ''
+              }`}
+            >
+              <option value="">Tất cả danh mục</option>
+              {categories.map((category) => (
+                <option key={category.categoryId} value={category.categoryId}>
+                  {category.categoryName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center space-x-3 flex-wrap">
             <span className="text-sm font-medium text-gray-700">Loại sản phẩm:</span>
             <select
               value={selectedType}
