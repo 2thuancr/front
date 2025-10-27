@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { AdminGuard } from '@/components/guards';
 import { useAuth } from '@/hooks/useAuth';
 import { Admin } from '@/types/auth';
+import Logo from '@/components/ui/Logo';
 import { 
   LayoutDashboard, 
   Users, 
@@ -211,18 +212,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       {/* Logo */}
       <div className="flex items-center justify-between p-4 border-b border-gray-700">
         <div className="flex items-center">
-          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-            <span className="text-white font-bold text-sm">A</span>
-          </div>
-          {!isCollapsed && (
-            <span className="ml-2 text-xl font-bold">ADMINDEK</span>
+          {!isCollapsed ? (
+            <Logo size="sm" showText={true} className="text-white" />
+          ) : (
+            <Logo size="sm" showText={false} />
           )}
         </div>
         <button
           onClick={onToggle}
-          className="p-1 hover:bg-gray-700 rounded"
+          className="p-1 hover:bg-gray-700 rounded transition-all"
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className={`w-4 h-4 transition-transform ${isCollapsed ? '' : 'rotate-180'}`} />
         </button>
       </div>
 
