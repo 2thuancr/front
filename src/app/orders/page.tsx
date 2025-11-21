@@ -11,10 +11,9 @@ import axios from 'axios';
 import Link from 'next/link';
 import { useCustomerOrderSync } from '@/hooks/useOrderStatusSync';
 
-// API base URL
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-// Trạng thái đơn hàng
+// Cấu hình trạng thái đơn hàng
 const statusConfig = {
   NEW: { label: 'Đơn hàng mới', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
   CONFIRMED: { label: 'Đã xác nhận', color: 'bg-blue-100 text-blue-800', icon: CheckCircle },
@@ -25,7 +24,7 @@ const statusConfig = {
   CANCELLATION_REQUESTED: { label: 'Yêu cầu hủy', color: 'bg-orange-100 text-orange-800', icon: Clock },
 };
 
-// Helper function to get user ID based on user type
+// Helper lấy userId tùy loại tài khoản
 const getUserId = (user: any): number | undefined => {
   if (!user) return undefined;
   if ('id' in user) return user.id;
@@ -43,38 +42,29 @@ export default function OrdersPage() {
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const hasFetchedRef = useRef(false);
 
-  // Function to update status counts
+  // Cập nhật bộ đếm trạng thái
   const updateStatusCounts = (orders: any[]) => {
     const counts: Record<string, number> = {};
     Object.keys(statusConfig).forEach(status => {
       counts[status] = orders.filter(o => o.status === status).length;
     });
-    
     setStatusCounts(counts);
   };
 
-  // Real-time order status sync for customers
+  // Đồng bộ trạng thái đơn hàng theo thời gian thực
   const { isConnected, connectionError } = useCustomerOrderSync({
     onStatusUpdate: (update) => {
-      
-      // Update orders in real-time
       setOrders(prevOrders => {
-        const updatedOrders = prevOrders.map(order => {
-          if (order.orderId === update.orderId) {
-            return { ...order, status: update.status };
-          }
-          return order;
-        });
-          
-        // Update status counts
+        const updatedOrders = prevOrders.map(order =>
+          order.orderId === update.orderId ? { ...order, status: update.status } : order
+        );
         updateStatusCounts(updatedOrders);
-        
         return updatedOrders;
       });
-    }
+    },
   });
 
-  // Fallback polling mechanism if Socket.IO is not working
+  // Polling fallback nếu socket không hoạt động
   useEffect(() => {
     if (!isConnected && orders.length > 0) {
       const pollInterval = setInterval(async () => {
@@ -82,77 +72,67 @@ export default function OrdersPage() {
           if (!user) return;
           const userId = getUserId(user);
           if (!userId) return;
-          
+
           const res = await axios.get(`${API_BASE}/orders/user/${userId}?page=1&limit=10`, {
             headers: { Authorization: `Bearer ${token}` },
           });
-          
+
           const fetchedOrders = res.data.orders || [];
-          
-          // Normalize cancelled status to CANCELLED
+
           const normalizedOrders = fetchedOrders.map((order: any) => {
-            if (order.status === 'CANCELED' || order.status === 'CANCEL') {
+            if (order.status === 'CANCELED' || order.status === 'CANCEL')
               return { ...order, status: 'CANCELLED' };
-            }
             return order;
           });
-          
-          const currentOrderIds = orders.map(o => o.orderId).sort();
-          const fetchedOrderIds = normalizedOrders.map((o: any) => o.orderId).sort();
-          
-          // Check if orders have changed
-          if (JSON.stringify(currentOrderIds) !== JSON.stringify(fetchedOrderIds)) {
+
+          const currentIds = orders.map(o => o.orderId).sort();
+          const fetchedIds = normalizedOrders.map((o: any) => o.orderId).sort();
+
+          if (JSON.stringify(currentIds) !== JSON.stringify(fetchedIds)) {
             setOrders(normalizedOrders);
             updateStatusCounts(normalizedOrders);
           }
         } catch (error) {
           console.error('❌ Polling error:', error);
         }
-      }, 5000); // Poll every 5 seconds
-      
+      }, 5000);
+
       return () => clearInterval(pollInterval);
     }
   }, [isConnected, orders, user, token]);
 
+  // Fetch danh sách đơn
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/login');
       return;
     }
-    
-    // Chỉ fetch một lần khi có user
     if (user && !hasFetchedRef.current) {
       hasFetchedRef.current = true;
       fetchOrders();
     }
   }, [isAuthenticated, user]);
 
-  // Lấy danh sách đơn
   const fetchOrders = async (force = false) => {
     if (!user) return;
     const userId = getUserId(user);
     if (!userId) return;
-    
-    // Nếu không phải force và đã fetch rồi thì skip
     if (!force && hasFetchedRef.current && orders.length > 0) return;
-    
+
     try {
       setLoading(true);
       const res = await axios.get(`${API_BASE}/orders/user/${userId}?page=1&limit=10`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       const fetchedOrders = res.data.orders || [];
-      
-      // Normalize cancelled status to CANCELLED
       const normalizedOrders = fetchedOrders.map((order: any) => {
-        if (order.status === 'CANCELED' || order.status === 'CANCEL') {
+        if (order.status === 'CANCELED' || order.status === 'CANCEL')
           return { ...order, status: 'CANCELLED' };
-        }
         return order;
       });
+
       setOrders(normalizedOrders);
-      // Update status counts after fetching
       updateStatusCounts(normalizedOrders);
     } catch (err) {
       console.error('Lỗi load orders', err);
@@ -161,43 +141,34 @@ export default function OrdersPage() {
     }
   };
 
-  // Hủy đơn
+  // Hủy đơn hàng
   const cancelOrder = async (orderId: string) => {
     try {
-      const response = await axios.patch(`${API_BASE}/orders/${orderId}/cancel`, {}, {
+      await axios.patch(`${API_BASE}/orders/${orderId}/cancel`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      
-      fetchOrders(true); // Force refresh sau khi cancel
+      fetchOrders(true);
     } catch (err: any) {
       console.error('❌ Customer order cancellation failed:', err);
-      console.error('❌ Error details:', {
-        status: err.response?.status,
-        message: err.response?.data?.message,
-        orderId
-      });
       alert(err.response?.data?.message || 'Không thể hủy đơn');
     }
   };
 
-  // Format
+  // Format tiền & ngày
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
-
   const formatDate = (dateString: string) =>
     new Date(dateString).toLocaleDateString('vi-VN');
 
-  // Lọc đơn
+  // Lọc theo trạng thái
   const filteredOrders =
-    selectedStatus === 'all' ? orders : orders.filter((o) => o.status === selectedStatus);
+    selectedStatus === 'all' ? orders : orders.filter(o => o.status === selectedStatus);
 
-  // Trạng thái
+  // Lấy icon/màu/nhãn trạng thái
   const getStatusIcon = (status: string) =>
     statusConfig[status as keyof typeof statusConfig]?.icon || Clock;
-
   const getStatusColor = (status: string) =>
     statusConfig[status as keyof typeof statusConfig]?.color || 'bg-gray-100 text-gray-800';
-
   const getStatusLabel = (status: string) =>
     statusConfig[status as keyof typeof statusConfig]?.label || status;
 
@@ -216,15 +187,12 @@ export default function OrdersPage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Đơn hàng của tôi</h1>
           <p className="text-gray-600">Theo dõi và quản lý các đơn hàng của bạn</p>
-          {/* Socket.IO Connection Status */}
           <div className="flex items-center justify-center space-x-2 mt-2">
             <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
             <span className="text-xs text-gray-500">
               {isConnected ? 'Cập nhật thời gian thực' : 'Chế độ tải thủ công'}
             </span>
-            {connectionError && (
-              <span className="text-xs text-red-500">({connectionError})</span>
-            )}
+            {connectionError && <span className="text-xs text-red-500">({connectionError})</span>}
           </div>
         </div>
 
@@ -263,13 +231,27 @@ export default function OrdersPage() {
           ) : (
             <AnimatePresence>
               {filteredOrders.map((order, index) => {
-                const orderTotal =
+                // ---- TÍNH TỔNG TIỀN + VOUCHER ----
+                let orderTotal =
                   order.totalAmount ??
                   order.orderDetails?.reduce(
                     (sum: number, d: any) => sum + d.unitPrice * d.quantity,
                     0
                   ) ??
                   0;
+
+                // Áp dụng voucher nếu có
+                if (order.voucher) {
+                  const { discountType, discountValue, maxDiscount } = order.voucher;
+                  if (discountType === 'percentage') {
+                    const discount = Math.min(orderTotal * (discountValue / 100), maxDiscount || Infinity);
+                    orderTotal -= discount;
+                  } else if (discountType === 'fixed') {
+                    orderTotal -= discountValue;
+                  }
+                }
+
+                if (orderTotal < 0) orderTotal = 0;
 
                 return (
                   <motion.div
@@ -281,7 +263,7 @@ export default function OrdersPage() {
                   >
                     <Card className="shadow-lg hover:shadow-xl">
                       <div className="p-6">
-                        {/* Order Header */}
+                        {/* Header đơn */}
                         <div className="flex justify-between mb-4">
                           <div className="flex items-center space-x-2">
                             <Package className="w-5 h-5 text-gray-600" />
@@ -295,29 +277,24 @@ export default function OrdersPage() {
                           </div>
                         </div>
 
-                        {/* Order Items */}
+                        {/* Chi tiết sản phẩm */}
                         <div className="space-y-2 mb-4">
                           {order.orderDetails?.map((detail: any, idx: number) => (
                             <div key={`${order.orderId}-${detail.productId || detail.id || idx}`} className="flex items-center justify-between bg-gray-50 p-2 rounded">
                               <div className="flex items-center space-x-3">
                                 <img
-                                  src={
-                                    detail.product?.images?.[0]?.imageUrl ||
-                                    'https://picsum.photos/200'
-                                  }
+                                  src={detail.product?.images?.[0]?.imageUrl || 'https://picsum.photos/200'}
                                   alt={detail.product?.name}
                                   className="w-12 h-12 object-cover rounded"
                                 />
-                                <span>
-                                  {detail.product?.name} × {detail.quantity}
-                                </span>
+                                <span>{detail.product?.name} × {detail.quantity}</span>
                               </div>
                               <span>{formatPrice(detail.unitPrice * detail.quantity)}</span>
                             </div>
                           ))}
                         </div>
 
-                        {/* Summary */}
+                        {/* Tóm tắt */}
                         <div className="border-t border-gray-200 pt-4 flex justify-between items-center">
                           <div>
                             <div className="flex items-center space-x-2 text-sm text-gray-600">
@@ -332,13 +309,18 @@ export default function OrdersPage() {
                                   : order.paymentMethod}
                               </span>
                             </div>
+                            {order.voucher && (
+                              <p className="text-sm text-green-600 mt-2">
+                                Đã áp dụng voucher: <strong>{order.voucher.code}</strong>
+                              </p>
+                            )}
                           </div>
                           <p className="text-lg font-bold text-gray-900">
                             Tổng cộng: {formatPrice(orderTotal)}
                           </p>
                         </div>
 
-                        {/* Actions */}
+                        {/* Hành động */}
                         <div className="flex justify-end mt-4 space-x-3">
                           <Link
                             href={`/orders/${order.orderId}`}
